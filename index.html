@@ -268,12 +268,12 @@
                         </select>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="min-w-0">
                             <label class="block text-xs font-medium text-zinc-400 mb-1.5">Data 1ª Parcela</label>
                             <input type="date" name="date" required class="w-full px-3 py-2.5 rounded-lg">
                         </div>
-                        <div>
+                        <div class="min-w-0">
                             <label class="block text-xs font-medium text-zinc-400 mb-1.5">Nº de Parcelas</label>
                             <input type="number" name="installments" min="1" value="1" required class="w-full px-3 py-2.5 rounded-lg">
                         </div>
@@ -448,9 +448,22 @@
                 expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
             });
 
-            for (const [category, limit] of Object.entries(budgets)) {
+            // Itera sobre todas as categorias conhecidas para garantir que novas apareçam
+            categories.forEach(category => {
+                // Garante que a categoria tenha um valor de orçamento, padrão 0
+                if (budgets[category] === undefined) {
+                    budgets[category] = 0;
+                }
+                const limit = budgets[category];
                 const spent = expensesByCategory[category] || 0;
-                const percentage = Math.min((spent / limit) * 100, 100);
+                
+                let percentage = 0;
+                if (limit > 0) {
+                    percentage = Math.min((spent / limit) * 100, 100);
+                } else if (spent > 0) {
+                    percentage = 100; // Se não há limite definido mas houve gasto, mostra como cheio
+                }
+
                 let colorClass = 'bg-primary';
                 if (percentage >= 100) colorClass = 'bg-danger';
                 else if (percentage >= 80) colorClass = 'bg-warning';
@@ -466,7 +479,7 @@
                     </div>
                 `;
                 container.appendChild(div);
-            }
+            });
         }
 
         function renderChart() {
@@ -481,13 +494,14 @@
             const labels = Object.keys(expensesByCategory);
             const data = Object.values(expensesByCategory);
             
+            // Destrói o gráfico anterior de forma limpa para evitar "fantasmas" visuais
             if (expenseChartInstance) {
                 expenseChartInstance.destroy();
+                expenseChartInstance = null;
             }
 
             if (labels.length === 0) {
-                // Empty state chart
-                return;
+                return; // Canvas já está limpo, sem dados para exibir
             }
 
             expenseChartInstance = new Chart(ctx, {
@@ -769,10 +783,13 @@
                 return;
             }
             categories.push(name);
+            budgets[name] = 0; // Inicializa o orçamento da nova categoria com 0
             saveCategories();
+            saveData(); // Salva também a atualização dos orçamentos
             input.value = '';
             renderCategoriesList();
             populateCategorySelects();
+            renderBudgets(); // Atualiza a seção de metas imediatamente
         }
 
         function deleteCategory(name) {
