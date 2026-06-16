@@ -95,17 +95,24 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
         
-        <!-- Month Filter & Export -->
-        <div class="flex items-center justify-between animate-fade-in">
+        <!-- Month Filter & Export/Import -->
+        <div class="flex items-center justify-between animate-fade-in flex-wrap gap-3">
             <div class="flex items-center gap-3 bg-surface border border-white/5 rounded-xl px-4 py-2.5">
                 <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 <label class="text-zinc-400 text-sm font-medium">Período:</label>
                 <input type="month" id="monthFilter" class="bg-transparent text-white text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
             </div>
-            <button onclick="exportData()" class="text-xs text-zinc-400 hover:text-accent transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-xl px-4 py-2.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Exportar CSV
-            </button>
+            <div class="flex items-center gap-2">
+                <input type="file" id="importFile" accept=".csv" class="hidden">
+                <button onclick="document.getElementById('importFile').click()" class="text-xs text-zinc-400 hover:text-accent transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-xl px-4 py-2.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    Importar CSV
+                </button>
+                <button onclick="exportData()" class="text-xs text-zinc-400 hover:text-accent transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-xl px-4 py-2.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Exportar CSV
+                </button>
+            </div>
         </div>
 
         <!-- Summary Cards -->
@@ -645,6 +652,64 @@
             link.click();
             document.body.removeChild(link);
         }
+
+        // Import Logic
+        document.getElementById('importFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    // Remove BOM se existir
+                    let text = event.target.result.replace(/^\uFEFF/, '');
+                    const rows = text.split('\n').filter(row => row.trim() !== '');
+                    
+                    if (rows.length < 2) {
+                        alert('O arquivo CSV está vazio ou não possui o formato correto.');
+                        return;
+                    }
+
+                    let importedCount = 0;
+                    // Pula o cabeçalho (índice 0)
+                    for (let i = 1; i < rows.length; i++) {
+                        const cols = rows[i].split(',');
+                        if (cols.length >= 5) {
+                            const dateStr = cols[0].trim(); // DD/MM/YYYY
+                            const typeStr = cols[1].trim().toLowerCase();
+                            const category = cols[2].trim();
+                            const description = cols[3].trim();
+                            const amount = parseFloat(cols[4].trim().replace(',', '.'));
+
+                            // Converte DD/MM/YYYY para YYYY-MM-DD
+                            const [day, month, year] = dateStr.split('/');
+                            const isoDate = `${year}-${month}-${day}`;
+
+                            const type = typeStr.includes('receita') ? 'income' : 'expense';
+
+                            transactions.push({
+                                id: Date.now() + i,
+                                type: type,
+                                amount: amount,
+                                category: category,
+                                date: isoDate,
+                                description: description
+                            });
+                            importedCount++;
+                        }
+                    }
+
+                    saveData();
+                    updateUI();
+                    alert(`${importedCount} transações importadas com sucesso!`);
+                    e.target.value = ''; // Reseta o input para permitir reimportar o mesmo arquivo
+                } catch (error) {
+                    alert('Erro ao ler o arquivo. Verifique se ele está no formato CSV correto exportado por este sistema.');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        });
 
         function saveData() {
             localStorage.setItem('fin_transactions', JSON.stringify(transactions));
