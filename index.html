@@ -181,14 +181,35 @@
     }
     setCurrentDateTime();
 
-    // Atualiza categorias sugeridas com base no tipo
-    typeSelect.addEventListener('change', () => {
-      if (typeSelect.value === 'income') {
-        categorySelect.value = 'Salário';
-      } else {
-        categorySelect.value = 'Alimentação';
-      }
-    });
+    // Categorias disponíveis para cada tipo
+    const incomeCategories = ['Salário', 'Vale', 'Extra', 'Outros'];
+    const expenseCategories = ['Aluguel', 'Mercado', 'Cartão de Crédito', 'Outros'];
+
+    // Função para atualizar as opções da categoria dinamicamente
+    function updateCategoryOptions() {
+      const isIncome = typeSelect.value === 'income';
+      const categories = isIncome ? incomeCategories : expenseCategories;
+      
+      // Limpa as opções atuais
+      categorySelect.innerHTML = '';
+      
+      // Adiciona as novas opções
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+      });
+      
+      // Seleciona a primeira opção por padrão
+      categorySelect.value = categories[0];
+    }
+
+    // Atualiza categorias quando o tipo muda
+    typeSelect.addEventListener('change', updateCategoryOptions);
+    
+    // Inicializa as categorias corretas ao carregar a página
+    updateCategoryOptions();
 
     // Mostra/esconde campo de parcelas
     paymentConditionSelect.addEventListener('change', () => {
