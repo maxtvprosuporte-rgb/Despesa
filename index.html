@@ -646,15 +646,19 @@
                 return;
             }
             
-            // Usa BOM (\uFEFF) para garantir que o Excel abra com acentos corretos
+            // BOM (\uFEFF) para garantir que o Excel abra com acentos corretos
             let csvContent = "\uFEFF";
-            csvContent += "Data,Tipo,Categoria,Descrição,Valor\n";
+            csvContent += "Data,Tipo,Categoria,Descrição,Valor (R$)\n";
             
             filtered.forEach(t => {
-                const date = formatDate(t.date);
+                const date = formatDate(t.date); // Formato DD/MM/AAAA
                 const type = t.type === 'income' ? 'Receita' : 'Despesa';
-                const desc = (t.description || '').replace(/,/g, ' '); // Remove vírgulas da descrição
-                csvContent += `${date},${type},${t.category},${desc},${t.amount.toFixed(2)}\n`;
+                // Remove vírgulas e aspas da descrição para não quebrar a estrutura do CSV
+                const desc = (t.description || t.category || 'Sem descrição').replace(/,/g, ' -').replace(/"/g, ' ');
+                // Formata o valor com vírgula decimal, padrão brasileiro para Excel
+                const value = t.amount.toFixed(2).replace('.', ',');
+                
+                csvContent += `${date},${type},${t.category},${desc},${value}\n`;
             });
             
             // Método moderno e 100% confiável com Blob
@@ -666,7 +670,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(url); // Limpa a memória
+            URL.revokeObjectURL(url); // Limpa a memória do navegador
         }
 
         function importData(inputElement) {
@@ -693,9 +697,15 @@
                             const typeStr = cols[1].trim().toLowerCase();
                             const category = cols[2].trim();
                             const description = cols[3].trim();
-                            const amount = parseFloat(cols[4].trim().replace(',', '.'));
+                            
+                            // Converte valor brasileiro (ex: "1.234,56" ou "12,50") para float
+                            // Remove pontos de milhar (se houver) e troca vírgula por ponto
+                            const amountStr = cols[4].trim().replace(/\./g, '').replace(',', '.');
+                            const amount = parseFloat(amountStr);
 
-                            // Converte DD/MM/YYYY para YYYY-MM-DD
+                            if (isNaN(amount)) continue; // Pula linhas com valor inválido
+
+                            // Converte DD/MM/AAAA para AAAA-MM-DD
                             const [day, month, year] = dateStr.split('/');
                             const isoDate = `${year}-${month}-${day}`;
                             const type = typeStr.includes('receita') ? 'income' : 'expense';
