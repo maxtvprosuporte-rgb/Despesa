@@ -86,7 +86,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
         
         <!-- Month Filter & Export -->
         <div class="flex items-center justify-between animate-fade-in">
@@ -102,8 +102,8 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="glass-panel rounded-2xl p-6 animate-fade-in delay-100 relative overflow-hidden group">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-100 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
                 <p class="text-zinc-400 text-sm font-medium mb-1">Saldo Total</p>
                 <h2 class="font-display text-3xl font-semibold text-white" id="totalBalance">R$ 0,00</h2>
@@ -113,20 +113,20 @@
                 </div>
             </div>
             
-            <div class="glass-panel rounded-2xl p-6 animate-fade-in delay-200 relative overflow-hidden group">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-200 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
                 <p class="text-zinc-400 text-sm font-medium mb-1">Receitas</p>
-                <h2 class="font-display text-3xl font-semibold text-primary" id="totalIncome">R$ 0,00</h2>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-primary" id="totalIncome">R$ 0,00</h2>
                 <div class="mt-4 flex items-center gap-2 text-xs text-zinc-500">
                     <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                     Entradas do período
                 </div>
             </div>
             
-            <div class="glass-panel rounded-2xl p-6 animate-fade-in delay-300 relative overflow-hidden group">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
                 <p class="text-zinc-400 text-sm font-medium mb-1">Despesas</p>
-                <h2 class="font-display text-3xl font-semibold text-danger" id="totalExpense">R$ 0,00</h2>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-danger" id="totalExpense">R$ 0,00</h2>
                 <div class="mt-4 flex items-center gap-2 text-xs text-zinc-500">
                     <svg class="w-3 h-3 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
                     Saídas do período
@@ -135,29 +135,29 @@
         </div>
 
         <!-- Main Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             
             <!-- Charts Section -->
-            <div class="lg:col-span-2 space-y-6">
-                <div class="glass-panel rounded-2xl p-6 animate-fade-in delay-300">
+            <div class="lg:col-span-2 space-y-4 sm:space-y-6">
+                <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300">
                     <h3 class="font-display font-semibold text-lg mb-4">Distribuição de Despesas</h3>
                     <div class="h-64 w-full flex items-center justify-center">
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
 
-                <div class="glass-panel rounded-2xl p-6 animate-fade-in delay-400">
+                <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-display font-semibold text-lg">Transações Recentes</h3>
+                        <h3 class="font-display font-semibold text-base sm:text-lg">Transações Recentes</h3>
                         <button onclick="clearAllData()" class="text-xs text-zinc-500 hover:text-danger transition-colors">Limpar tudo</button>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
+                    <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <table class="w-full text-left text-xs sm:text-sm min-w-[600px]">
                             <thead>
                                 <tr class="text-zinc-500 border-b border-white/5">
                                     <th class="pb-3 font-medium">Descrição</th>
                                     <th class="pb-3 font-medium">Categoria</th>
-                                    <th class="pb-3 font-medium">Data</th>
+                                    <th class="pb-3 font-medium hidden md:table-cell">Data</th>
                                     <th class="pb-3 font-medium text-right">Valor</th>
                                     <th class="pb-3 font-medium text-center">Ação</th>
                                 </tr>
@@ -175,19 +175,19 @@
             </div>
 
             <!-- Budgets Section -->
-            <div class="space-y-6">
-                <div class="glass-panel rounded-2xl p-6 animate-fade-in delay-400">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="font-display font-semibold text-lg">Metas e Orçamentos</h3>
+            <div class="space-y-4 sm:space-y-6">
+                <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
+                    <div class="flex items-center justify-between mb-4 sm:mb-6">
+                        <h3 class="font-display font-semibold text-base sm:text-lg">Metas e Orçamentos</h3>
                         <button onclick="openBudgetModal()" class="text-xs text-accent hover:text-accent/80 transition-colors">Editar</button>
                     </div>
-                    <div id="budgetsList" class="space-y-5">
+                    <div id="budgetsList" class="space-y-4 sm:space-y-5">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
                 <!-- Quick Tips -->
-                <div class="glass-panel rounded-2xl p-6 animate-fade-in delay-400 bg-gradient-to-br from-accent/10 to-transparent border-accent/20">
+                <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400 bg-gradient-to-br from-accent/10 to-transparent border-accent/20">
                     <h4 class="font-display font-medium text-accent mb-2">Dica Financeira</h4>
                     <p class="text-sm text-zinc-400 leading-relaxed">
                         A regra 50-30-20 é um ótimo ponto de partida: 50% para necessidades, 30% para desejos e 20% para poupança ou dívidas.
@@ -200,8 +200,8 @@
     <!-- Add Transaction Modal -->
     <div id="transactionModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-4">
-            <div class="glass-panel rounded-2xl p-6 shadow-2xl border border-white/10">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md p-0 sm:p-4">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="font-display font-semibold text-xl">Nova Transação</h3>
                     <button onclick="closeModal()" class="text-zinc-500 hover:text-white transition-colors">
@@ -226,8 +226,9 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Valor (R$)</label>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Valor Total (R$)</label>
                         <input type="number" name="amount" step="0.01" min="0.01" required class="w-full px-3 py-2.5 rounded-lg text-lg font-semibold" placeholder="0,00">
+                        <p class="text-[10px] text-zinc-500 mt-1">Será dividido automaticamente pelo nº de parcelas.</p>
                     </div>
 
                     <div>
@@ -245,9 +246,15 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Data</label>
-                        <input type="date" name="date" required class="w-full px-3 py-2.5 rounded-lg">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-400 mb-1.5">Data 1ª Parcela</label>
+                            <input type="date" name="date" required class="w-full px-3 py-2.5 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-400 mb-1.5">Nº de Parcelas</label>
+                            <input type="number" name="installments" min="1" value="1" required class="w-full px-3 py-2.5 rounded-lg">
+                        </div>
                     </div>
 
                     <div>
@@ -266,8 +273,8 @@
     <!-- Budget Modal -->
     <div id="budgetModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeBudgetModal()"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-4">
-            <div class="glass-panel rounded-2xl p-6 shadow-2xl border border-white/10">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md p-0 sm:p-4">
+            <div class="glass-panel rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="font-display font-semibold text-xl">Editar Orçamentos Mensais</h3>
                     <button onclick="closeBudgetModal()" class="text-zinc-500 hover:text-white transition-colors">
@@ -290,6 +297,7 @@
         };
 
         let currentMonth = new Date().toISOString().slice(0, 7); // Formato: "YYYY-MM"
+        let editingId = null;
         let expenseChartInstance = null;
 
         const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -360,14 +368,19 @@
                             ${t.category}
                         </span>
                     </td>
-                    <td class="py-3.5 text-zinc-400">${formatDate(t.date)}</td>
+                    <td class="py-3.5 text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>
                     <td class="py-3.5 text-right font-semibold ${isIncome ? 'text-primary' : 'text-danger'}">
                         ${isIncome ? '+' : '-'} ${formatCurrency(t.amount)}
                     </td>
                     <td class="py-3.5 text-center">
-                        <button onclick="deleteTransaction(${t.id})" class="text-zinc-600 hover:text-danger transition-colors opacity-0 group-hover:opacity-100">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
+                        <div class="flex items-center justify-center gap-3">
+                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -462,31 +475,69 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             
-            // Garante que o valor seja parseado corretamente (troca vírgula por ponto se o usuário colar)
             const amountStr = formData.get('amount').replace(',', '.');
-            const amount = parseFloat(amountStr);
+            const totalAmount = parseFloat(amountStr);
+            const installments = parseInt(formData.get('installments')) || 1;
             
-            if (isNaN(amount) || amount <= 0) {
+            if (isNaN(totalAmount) || totalAmount <= 0) {
                 alert('Por favor, insira um valor válido maior que zero.');
                 return;
             }
+            if (installments < 1) {
+                alert('O número de parcelas deve ser pelo menos 1.');
+                return;
+            }
 
-            const newTransaction = {
-                id: Date.now(),
-                type: formData.get('type'),
-                amount: amount,
-                category: formData.get('category'),
-                date: formData.get('date'),
-                description: formData.get('description') || formData.get('category')
-            };
+            const baseDate = new Date(formData.get('date') + 'T12:00:00');
+            const baseDescription = formData.get('description') || formData.get('category');
+            const installmentAmount = Math.round((totalAmount / installments) * 100) / 100;
 
-            transactions.push(newTransaction);
+            if (editingId) {
+                // Se estiver editando, atualiza apenas este registro específico (sem gerar novas parcelas)
+                const index = transactions.findIndex(t => t.id === editingId);
+                if (index !== -1) {
+                    transactions[index] = {
+                        ...transactions[index],
+                        type: formData.get('type'),
+                        amount: totalAmount,
+                        category: formData.get('category'),
+                        date: formData.get('date'),
+                        description: baseDescription
+                    };
+                }
+                editingId = null;
+            } else {
+                // Criação de novas transações (com parcelamento se > 1)
+                for (let i = 0; i < installments; i++) {
+                    const currentDate = new Date(baseDate);
+                    currentDate.setMonth(baseDate.getMonth() + i);
+                    
+                    const year = currentDate.getFullYear();
+                    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(currentDate.getDate()).padStart(2, '0');
+                    const dateStr = `${year}-${month}-${day}`;
+
+                    let desc = baseDescription;
+                    if (installments > 1) {
+                        desc = `${baseDescription} (${i + 1}/${installments})`;
+                    }
+
+                    transactions.push({
+                        id: Date.now() + i,
+                        type: formData.get('type'),
+                        amount: installmentAmount,
+                        category: formData.get('category'),
+                        date: dateStr,
+                        description: desc
+                    });
+                }
+            }
+
             saveData();
             updateUI();
             closeModal();
             e.target.reset();
             
-            // Reseta a data para hoje de forma segura
             const dateInput = e.target.querySelector('input[name="date"]');
             if (dateInput) dateInput.valueAsDate = new Date();
         }
@@ -550,8 +601,42 @@
         }
 
         // Modal Controls
-        function openModal() { document.getElementById('transactionModal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('transactionModal').classList.add('hidden'); }
+        function openModal(transaction = null) {
+            const modal = document.getElementById('transactionModal');
+            const form = document.getElementById('transactionForm');
+            form.reset();
+            
+            const dateInput = form.querySelector('input[name="date"]');
+            if (dateInput) dateInput.valueAsDate = new Date();
+
+            if (transaction) {
+                editingId = transaction.id;
+                form.querySelector(`input[name="type"][value="${transaction.type}"]`).checked = true;
+                form.querySelector('input[name="amount"]').value = transaction.amount;
+                form.querySelector('select[name="category"]').value = transaction.category;
+                form.querySelector('input[name="date"]').value = transaction.date;
+                form.querySelector('input[name="description"]').value = (transaction.description === transaction.category) ? '' : transaction.description;
+                form.querySelector('input[name="installments"]').value = 1; // Parcelas não se aplicam na edição de registro único
+                
+                modal.querySelector('h3').textContent = 'Editar Transação';
+                modal.querySelector('button[type="submit"]').textContent = 'Atualizar Transação';
+            } else {
+                editingId = null;
+                modal.querySelector('h3').textContent = 'Nova Transação';
+                modal.querySelector('button[type="submit"]').textContent = 'Salvar Transação';
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function editTransaction(id) {
+            const t = transactions.find(item => item.id === id);
+            if (t) openModal(t);
+        }
+
+        function closeModal() { 
+            document.getElementById('transactionModal').classList.add('hidden'); 
+            editingId = null;
+        }
         
         function openBudgetModal() {
             const form = document.getElementById('budgetForm');
