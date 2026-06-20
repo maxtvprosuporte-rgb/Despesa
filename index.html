@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinControl - Gestão Financeira Pessoal</title>
+    <title>FinControl - Controle Financeiro do Casal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,9 +68,110 @@
             border-color: #8b5cf6;
             box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
         }
+
+        /* Login screen */
+        #loginScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        #loginScreen.hidden { display: none; }
+        #appContent.hidden { display: none; }
+
+        .login-card {
+            background: rgba(24, 24, 27, 0.85);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 40px -4px rgba(0, 0, 0, 0.4);
+        }
+
+        .login-input {
+            background: #09090b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fafafa;
+            transition: all 0.2s;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+
+        .spinner {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="min-h-screen antialiased selection:bg-accent/30 selection:text-accent">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen">
+        <div class="w-full max-w-sm mx-4">
+            <div class="login-card rounded-2xl p-8 animate-fade-in">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-white text-2xl mb-4">F</div>
+                    <h1 class="font-display font-semibold text-2xl tracking-tight">FinControl</h1>
+                    <p class="text-zinc-500 text-sm mt-1">Controle financeiro do casal</p>
+                </div>
+
+                <div id="loginError" class="hidden mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm text-center"></div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">E-mail</label>
+                        <input type="email" id="loginEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Senha</label>
+                        <input type="password" id="loginPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
+                    </div>
+                    <button type="submit" id="loginBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
+                        <span id="loginBtnText">Entrar</span>
+                        <span id="loginSpinner" class="spinner hidden"></span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-zinc-500 text-xs">Não tem conta?</p>
+                    <button onclick="toggleRegister()" id="toggleRegBtn" class="text-accent hover:text-accent/80 text-sm font-medium mt-1 transition-colors">Criar conta</button>
+                </div>
+
+                <form id="registerForm" onsubmit="handleRegister(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-white/5">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Nome</label>
+                        <input type="text" id="regName" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="Seu nome">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">E-mail</label>
+                        <input type="email" id="regEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Senha (min. 6 caracteres)</label>
+                        <input type="password" id="regPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Código da Casa <span class="text-zinc-600">(opcional)</span></label>
+                        <input type="text" id="regHouseholdCode" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Deixe vazio para criar nova" maxlength="6">
+                        <p class="text-[11px] text-zinc-600 mt-1.5 leading-relaxed">Seu parceiro(a) já criou uma casa? Digite o código aqui para entrar. Se deixar vazio, uma nova casa será criada e você receberá um código para compartilhar.</p>
+                    </div>
+                    <button type="submit" id="regBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                        <span id="regBtnText">Criar Conta</span>
+                        <span id="regSpinner" class="spinner hidden"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP CONTENT (hidden until logged in) -->
+    <div id="appContent" class="hidden">
 
     <!-- Header -->
     <header class="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-40">
@@ -80,6 +181,15 @@
                 <h1 class="font-display font-semibold text-xl tracking-tight hidden sm:block">FinControl</h1>
             </div>
             <div class="flex items-center gap-2 sm:gap-3">
+                <div id="householdBadge" class="hidden sm:flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2.5 py-1.5" title="Código da casa - compartilhe com seu parceiro(a)">
+                    <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <span id="householdCodeDisplay" class="text-accent text-xs font-mono font-semibold tracking-wider"></span>
+                </div>
+                <span id="userNameDisplay" class="text-zinc-400 text-xs sm:text-sm font-medium hidden sm:inline"></span>
+                <button onclick="handleLogout()" class="text-zinc-400 hover:text-danger transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-lg px-3 py-2 text-sm" title="Sair">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span class="hidden sm:inline">Sair</span>
+                </button>
                 <button onclick="openCategoryModal()" class="bg-surface hover:bg-surfaceHighlight text-zinc-300 hover:text-white border border-white/10 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Gerenciar Categorias">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span class="hidden sm:inline">Categorias</span>
@@ -93,6 +203,7 @@
         </div>
     </header>
 
+    <!-- MAIN CONTENT PLACEHOLDER -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
         
         <!-- Month Filter & Export/Import -->
@@ -126,7 +237,6 @@
                     Atualizado em tempo real
                 </div>
             </div>
-            
             <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-200 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
                 <p class="text-zinc-400 text-sm font-medium mb-1">Receitas</p>
@@ -136,7 +246,6 @@
                     Entradas do período
                 </div>
             </div>
-            
             <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
                 <p class="text-zinc-400 text-sm font-medium mb-1">Despesas</p>
@@ -150,8 +259,6 @@
 
         <!-- Main Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            
-            <!-- Charts Section -->
             <div class="lg:col-span-2 space-y-4 sm:space-y-6">
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300">
                     <h3 class="font-display font-semibold text-lg mb-4">Distribuição de Despesas</h3>
@@ -159,7 +266,6 @@
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
-
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-display font-semibold text-base sm:text-lg">Transações Recentes</h3>
@@ -176,9 +282,7 @@
                                     <th class="pb-3 font-medium text-center">Ação</th>
                                 </tr>
                             </thead>
-                            <tbody id="transactionsList" class="divide-y divide-white/5">
-                                <!-- Populated by JS -->
-                            </tbody>
+                            <tbody id="transactionsList" class="divide-y divide-white/5"></tbody>
                         </table>
                         <div id="emptyState" class="hidden py-12 text-center text-zinc-500">
                             <p>Nenhuma transação registrada ainda.</p>
@@ -187,20 +291,14 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Budgets Section -->
             <div class="space-y-4 sm:space-y-6">
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
                     <div class="flex items-center justify-between mb-4 sm:mb-6">
                         <h3 class="font-display font-semibold text-base sm:text-lg">Metas e Orçamentos</h3>
                         <button onclick="openBudgetModal()" class="text-xs text-accent hover:text-accent/80 transition-colors">Editar</button>
                     </div>
-                    <div id="budgetsList" class="space-y-4 sm:space-y-5">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div id="budgetsList" class="space-y-4 sm:space-y-5"></div>
                 </div>
-
-                <!-- Quick Tips -->
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400 bg-gradient-to-br from-accent/10 to-transparent border-accent/20">
                     <h4 class="font-display font-medium text-accent mb-2">Dica Financeira</h4>
                     <p class="text-sm text-zinc-400 leading-relaxed">
@@ -222,52 +320,35 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                
                 <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-4">
                     <div class="grid grid-cols-2 gap-3">
                         <label class="cursor-pointer">
                             <input type="radio" name="type" value="expense" class="peer sr-only" checked>
-                            <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-danger/20 peer-checked:border-danger peer-checked:text-danger transition-all text-sm font-medium">
-                                Despesa
-                            </div>
+                            <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-danger/20 peer-checked:border-danger peer-checked:text-danger transition-all text-sm font-medium">Despesa</div>
                         </label>
                         <label class="cursor-pointer">
                             <input type="radio" name="type" value="income" class="peer sr-only">
-                            <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-primary/20 peer-checked:border-primary peer-checked:text-primary transition-all text-sm font-medium">
-                                Receita
-                            </div>
+                            <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-primary/20 peer-checked:border-primary peer-checked:text-primary transition-all text-sm font-medium">Receita</div>
                         </label>
                     </div>
-
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1.5">Valor (R$)</label>
                         <input type="number" name="amount" step="0.01" min="0.01" required class="w-full px-3 py-2.5 rounded-lg text-lg font-semibold" placeholder="0,00">
-                        
                         <div class="grid grid-cols-2 gap-2 mt-3">
                             <label class="cursor-pointer">
                                 <input type="radio" name="amountType" value="total" class="peer sr-only" checked>
-                                <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-xs font-medium">
-                                    Valor Total
-                                    <span class="block text-[10px] font-normal text-zinc-500 mt-0.5 peer-checked:text-accent/80">Divide pelas parcelas</span>
-                                </div>
+                                <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-xs font-medium">Valor Total<span class="block text-[10px] font-normal text-zinc-500 mt-0.5">Divide pelas parcelas</span></div>
                             </label>
                             <label class="cursor-pointer">
                                 <input type="radio" name="amountType" value="installment" class="peer sr-only">
-                                <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-xs font-medium">
-                                    Valor da Parcela
-                                    <span class="block text-[10px] font-normal text-zinc-500 mt-0.5 peer-checked:text-accent/80">Repete o valor</span>
-                                </div>
+                                <div class="text-center py-2.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-xs font-medium">Valor da Parcela<span class="block text-[10px] font-normal text-zinc-500 mt-0.5">Repete o valor</span></div>
                             </label>
                         </div>
                     </div>
-
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1.5">Categoria</label>
-                        <select name="category" required class="w-full px-3 py-2.5 rounded-lg">
-                            <!-- Populated by JS -->
-                        </select>
+                        <select name="category" required class="w-full px-3 py-2.5 rounded-lg"></select>
                     </div>
-
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1.5">Data 1ª Parcela</label>
                         <input type="date" name="date" required class="w-full px-3 py-2.5 rounded-lg appearance-none text-sm">
@@ -276,15 +357,11 @@
                         <label class="block text-xs font-medium text-zinc-400 mb-1.5">Nº de Parcelas</label>
                         <input type="number" name="installments" min="1" value="1" required class="w-full px-3 py-2.5 rounded-lg appearance-none text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]">
                     </div>
-
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1.5">Descrição (opcional)</label>
                         <input type="text" name="description" class="w-full px-3 py-2.5 rounded-lg" placeholder="Ex: Supermercado, Salário mensal...">
                     </div>
-
-                    <button type="submit" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all mt-2 shadow-lg shadow-accent/20">
-                        Salvar Transação
-                    </button>
+                    <button type="submit" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all mt-2 shadow-lg shadow-accent/20">Salvar Transação</button>
                 </form>
             </div>
         </div>
@@ -301,15 +378,11 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                
                 <form onsubmit="event.preventDefault(); addCategory();" class="flex gap-2 mb-4">
                     <input type="text" id="newCategoryInput" placeholder="Nome da nova categoria..." required class="flex-1 px-3 py-2.5 rounded-lg text-sm">
                     <button type="submit" class="bg-accent hover:bg-accent/90 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Adicionar</button>
                 </form>
-
-                <div id="categoriesList" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-                    <!-- Populated by JS -->
-                </div>
+                <div id="categoriesList" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
             </div>
         </div>
     </div>
@@ -325,113 +398,332 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                <form id="budgetForm" onsubmit="handleBudgetSubmit(event)" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                    <!-- Populated by JS -->
-                </form>
+                <form id="budgetForm" onsubmit="handleBudgetSubmit(event)" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2"></form>
             </div>
         </div>
     </div>
 
-    <script>
-        // State
-        let transactions = JSON.parse(localStorage.getItem('fin_transactions')) || [];
-        let budgets = JSON.parse(localStorage.getItem('fin_budgets')) || {
-            'Alimentação': 1500, 'Moradia': 2000, 'Transporte': 500, 
-            'Lazer': 400, 'Saúde': 300, 'Educação': 200, 'Outros': 500
-        };
-        let categories = JSON.parse(localStorage.getItem('fin_categories')) || [
-            'Alimentação', 'Moradia', 'Transporte', 'Lazer', 
-            'Saúde', 'Educação', 'Salário', 'Investimentos', 'Outros'
-        ];
+    </div><!-- end appContent -->
 
-        let currentMonth = new Date().toISOString().slice(0, 7); // Formato: "YYYY-MM"
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc as fsDeleteDoc } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA91xQGPS55qp8ckpnDaVa2d9vA4ztg9Hk",
+            authDomain: "sorteioavilar.firebaseapp.com",
+            projectId: "sorteioavilar",
+            storageBucket: "sorteioavilar.firebasestorage.app",
+            messagingSenderId: "716396310401",
+            appId: "1:716396310401:web:e17ce4f61e425d1c458280",
+            measurementId: "G-CNMH0N1C5L"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // ── App State ──
+        let transactions = [];
+        let budgets = {};
+        let categories = [];
+        let currentMonth = new Date().toISOString().slice(0, 7);
         let editingId = null;
         let expenseChartInstance = null;
+        let currentUser = null;
+        let householdCode = null; // Shared code for the couple
 
-        const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-        const formatDate = (dateStr) => new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR');
+        const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
+        const DEFAULT_BUDGETS = {'Alimentação':1500,'Moradia':2000,'Transporte':500,'Lazer':400,'Saúde':300,'Educação':200,'Outros':500};
 
-        // Initialization
-        document.addEventListener('DOMContentLoaded', () => {
-            const monthInput = document.getElementById('monthFilter');
-            monthInput.value = currentMonth;
-            monthInput.addEventListener('change', (e) => {
-                currentMonth = e.target.value;
-                updateUI();
-            });
+        const formatCurrency = (v) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+        const formatDate = (d) => new Date(d+'T12:00:00').toLocaleDateString('pt-BR');
 
-            const dateInput = document.querySelector('#transactionForm input[name="date"]');
-            if (dateInput) dateInput.valueAsDate = new Date();
-            
-            populateCategorySelects();
-            updateUI();
+        // ── Generate 6-char household code ──
+        function generateHouseholdCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No ambiguous chars (0/O, 1/I)
+            let code = '';
+            for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            return code;
+        }
+
+        // ── Expose functions to global scope for onclick handlers ──
+        window.handleLogin = handleLogin;
+        window.handleRegister = handleRegister;
+        window.toggleRegister = toggleRegister;
+        window.handleLogout = handleLogout;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.editTransaction = editTransaction;
+        window.deleteTransaction = deleteTransaction;
+        window.openCategoryModal = openCategoryModal;
+        window.closeCategoryModal = closeCategoryModal;
+        window.addCategory = addCategory;
+        window.deleteCategory = deleteCategory;
+        window.openBudgetModal = openBudgetModal;
+        window.closeBudgetModal = closeBudgetModal;
+        window.handleTransactionSubmit = handleTransactionSubmit;
+        window.handleBudgetSubmit = handleBudgetSubmit;
+        window.clearAllData = clearAllData;
+        window.exportData = exportData;
+        window.importData = importData;
+        window.copyHouseholdCode = copyHouseholdCode;
+
+        // ── Auth State Observer ──
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
+                await loadHouseholdData();
+                initApp();
+            } else {
+                currentUser = null;
+                householdCode = null;
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('appContent').classList.add('hidden');
+            }
         });
 
-        function getFilteredTransactions() {
-            return transactions.filter(t => t.date.startsWith(currentMonth));
+        // ── Login ──
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            showLoginLoading(true);
+            hideLoginError();
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (err) {
+                showLoginError(getPtBrError(err.code));
+            }
+            showLoginLoading(false);
         }
 
-        function updateUI() {
-            updateSummary();
-            renderTransactions();
-            renderBudgets();
-            renderChart();
+        // ── Register ──
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const inputCode = document.getElementById('regHouseholdCode').value.trim().toUpperCase();
+            showRegLoading(true);
+            hideLoginError();
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(cred.user, { displayName: name });
+
+                let code;
+                if (inputCode) {
+                    // Joining existing household
+                    code = inputCode;
+                    const householdRef = doc(db, 'households', code);
+                    const hhSnap = await getDoc(householdRef);
+                    if (!hhSnap.exists()) {
+                        // Household doesn't exist yet - create it with this user
+                        await setDoc(householdRef, {
+                            createdAt: new Date().toISOString(),
+                            createdBy: cred.user.uid,
+                            members: [cred.user.uid]
+                        });
+                        await setDoc(doc(householdRef, 'settings', 'main'), {
+                            categories: DEFAULT_CATEGORIES,
+                            budgets: DEFAULT_BUDGETS
+                        });
+                    } else {
+                        // Add this user to existing household members
+                        const hhData = hhSnap.data();
+                        const members = hhData.members || [];
+                        if (!members.includes(cred.user.uid)) {
+                            members.push(cred.user.uid);
+                            await setDoc(householdRef, { ...hhData, members }, { merge: true });
+                        }
+                    }
+                } else {
+                    // Creating new household
+                    code = generateHouseholdCode();
+                    // Ensure code is unique
+                    let exists = true;
+                    while (exists) {
+                        const check = await getDoc(doc(db, 'households', code));
+                        if (!check.exists()) exists = false;
+                        else code = generateHouseholdCode();
+                    }
+                    await setDoc(doc(db, 'households', code), {
+                        createdAt: new Date().toISOString(),
+                        createdBy: cred.user.uid,
+                        members: [cred.user.uid]
+                    });
+                    await setDoc(doc(db, 'households', code, 'settings', 'main'), {
+                        categories: DEFAULT_CATEGORIES,
+                        budgets: DEFAULT_BUDGETS
+                    });
+                }
+
+                // Save household code to user profile
+                await setDoc(doc(db, 'users', cred.user.uid), {
+                    name,
+                    email,
+                    householdCode: code,
+                    createdAt: new Date().toISOString()
+                });
+
+                householdCode = code;
+                showHouseholdBadge(code);
+            } catch (err) {
+                showLoginError(getPtBrError(err.code));
+            }
+            showRegLoading(false);
         }
+
+        // ── Logout ──
+        async function handleLogout() {
+            await signOut(auth);
+        }
+
+        // ── Toggle Register Form ──
+        function toggleRegister() {
+            const form = document.getElementById('registerForm');
+            const btn = document.getElementById('toggleRegBtn');
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                btn.textContent = 'Já tenho conta';
+            } else {
+                form.classList.add('hidden');
+                btn.textContent = 'Criar conta';
+            }
+        }
+
+        // ── Load Household Shared Data ──
+        async function loadHouseholdData() {
+            if (!currentUser) return;
+            const uid = currentUser.uid;
+
+            // Get user's household code
+            const userRef = doc(db, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                householdCode = userSnap.data().householdCode;
+            }
+
+            if (!householdCode) {
+                // Fallback: shouldn't happen for properly registered users
+                showLoginError('Erro: casa não encontrada. Entre em contato com o suporte.');
+                await signOut(auth);
+                return;
+            }
+
+            showHouseholdBadge(householdCode);
+
+            // Load shared settings (categories + budgets)
+            const settingsRef = doc(db, 'households', householdCode, 'settings', 'main');
+            const settingsSnap = await getDoc(settingsRef);
+            if (settingsSnap.exists()) {
+                const data = settingsSnap.data();
+                categories = data.categories || DEFAULT_CATEGORIES;
+                budgets = data.budgets || DEFAULT_BUDGETS;
+            } else {
+                categories = [...DEFAULT_CATEGORIES];
+                budgets = {...DEFAULT_BUDGETS};
+                await setDoc(settingsRef, { categories, budgets });
+            }
+
+            // Load shared transactions
+            const txSnap = await getDocs(collection(db, 'households', householdCode, 'transactions'));
+            transactions = txSnap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
+        }
+
+        function showHouseholdBadge(code) {
+            document.getElementById('householdCodeDisplay').textContent = code;
+            document.getElementById('householdBadge').classList.remove('hidden');
+            document.getElementById('householdBadge').style.display = 'flex';
+        }
+
+        function copyHouseholdCode() {
+            if (!householdCode) return;
+            navigator.clipboard.writeText(householdCode).then(() => {
+                const el = document.getElementById('householdCodeDisplay');
+                const original = el.textContent;
+                el.textContent = 'Copiado!';
+                setTimeout(() => { el.textContent = original; }, 1500);
+            });
+        }
+
+        // ── Firestore Data Operations (shared household) ──
+        async function saveSingleTransaction(t) {
+            if (!currentUser || !householdCode) return;
+            const { id, ...data } = t;
+            await setDoc(doc(db, 'households', householdCode, 'transactions', String(id)), data);
+        }
+
+        async function deleteTransactionFromFirestore(id) {
+            if (!currentUser || !householdCode) return;
+            await fsDeleteDoc(doc(db, 'households', householdCode, 'transactions', String(id)));
+        }
+
+        async function saveSettingsToFirestore() {
+            if (!currentUser || !householdCode) return;
+            await setDoc(doc(db, 'households', householdCode, 'settings', 'main'), { categories, budgets });
+        }
+
+        async function clearAllTransactionsInFirestore() {
+            if (!currentUser || !householdCode) return;
+            const snap = await getDocs(collection(db, 'households', householdCode, 'transactions'));
+            const promises = snap.docs.map(d => fsDeleteDoc(d.ref));
+            await Promise.all(promises);
+        }
+
+        // ── App Init ──
+        function initApp() {
+            const monthInput = document.getElementById('monthFilter');
+            monthInput.value = currentMonth;
+            monthInput.onchange = (e) => { currentMonth = e.target.value; updateUI(); };
+            const dateInput = document.querySelector('#transactionForm input[name="date"]');
+            if (dateInput) dateInput.valueAsDate = new Date();
+            populateCategorySelects();
+            updateUI();
+        }
+
+        // ── UI Updates ──
+        function getFilteredTransactions() { return transactions.filter(t => t.date.startsWith(currentMonth)); }
+
+        function updateUI() { updateSummary(); renderTransactions(); renderBudgets(); renderChart(); }
 
         function updateSummary() {
-            const filtered = getFilteredTransactions();
-            const income = filtered.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-            const expense = filtered.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-            
+            const f = getFilteredTransactions();
+            const income = f.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+            const expense = f.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
             document.getElementById('totalIncome').textContent = formatCurrency(income);
             document.getElementById('totalExpense').textContent = formatCurrency(expense);
-            document.getElementById('totalBalance').textContent = formatCurrency(income - expense);
+            document.getElementById('totalBalance').textContent = formatCurrency(income-expense);
         }
 
         function renderTransactions() {
             const tbody = document.getElementById('transactionsList');
             const emptyState = document.getElementById('emptyState');
             tbody.innerHTML = '';
-
             const filtered = getFilteredTransactions();
-
-            if (filtered.length === 0) {
-                emptyState.classList.remove('hidden');
-                return;
-            }
+            if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
-
-            const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            sorted.forEach((t, index) => {
+            const sorted = [...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date));
+            sorted.forEach(t => {
                 const tr = document.createElement('tr');
                 tr.className = 'group hover:bg-white/[0.02] transition-colors';
                 const isIncome = t.type === 'income';
                 tr.innerHTML = `
-                    <td class="py-3.5">
-                        <div class="font-medium text-zinc-200">${t.description || t.category}</div>
-                        ${t.description && t.description !== t.category ? `<div class="text-xs text-zinc-500">${t.category}</div>` : ''}
-                    </td>
-                    <td class="py-3.5">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">
-                            ${t.category}
-                        </span>
-                    </td>
+                    <td class="py-3.5"><div class="font-medium text-zinc-200">${t.description||t.category}</div>${t.description&&t.description!==t.category?`<div class="text-xs text-zinc-500">${t.category}</div>`:''}</td>
+                    <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span></td>
                     <td class="py-3.5 text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>
-                    <td class="py-3.5 text-right font-semibold ${isIncome ? 'text-primary' : 'text-danger'}">
-                        ${isIncome ? '+' : '-'} ${formatCurrency(t.amount)}
-                    </td>
-                    <td class="py-3.5 text-center">
-                        <div class="flex items-center justify-center gap-3">
-                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
-                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </div>
-                    </td>
-                `;
+                    <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
+                    <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-3">
+                        <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                        <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                    </div></td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -439,461 +731,237 @@
         function renderBudgets() {
             const container = document.getElementById('budgetsList');
             container.innerHTML = '';
-            
             const filtered = getFilteredTransactions();
             const expensesByCategory = {};
-            filtered.filter(t => t.type === 'expense').forEach(t => {
-                expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
-            });
-
-            // Itera sobre todas as categorias conhecidas para garantir que novas apareçam
+            filtered.filter(t=>t.type==='expense').forEach(t=>{ expensesByCategory[t.category]=(expensesByCategory[t.category]||0)+t.amount; });
             categories.forEach(category => {
-                // Garante que a categoria tenha um valor de orçamento, padrão 0
-                if (budgets[category] === undefined) {
-                    budgets[category] = 0;
-                }
-                const limit = budgets[category];
-                const spent = expensesByCategory[category] || 0;
-                
-                let percentage = 0;
-                if (limit > 0) {
-                    percentage = Math.min((spent / limit) * 100, 100);
-                } else if (spent > 0) {
-                    percentage = 100; // Se não há limite definido mas houve gasto, mostra como cheio
-                }
-
-                let colorClass = 'bg-primary';
-                if (percentage >= 100) colorClass = 'bg-danger';
-                else if (percentage >= 80) colorClass = 'bg-warning';
-
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div class="flex items-center justify-between text-sm mb-1.5">
-                        <span class="font-medium text-zinc-300">${category}</span>
-                        <span class="text-zinc-500 text-xs">${formatCurrency(spent)} / ${formatCurrency(limit)}</span>
-                    </div>
-                    <div class="h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div class="h-full ${colorClass} rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
-                    </div>
-                `;
+                if (budgets[category]===undefined) budgets[category]=0;
+                const limit=budgets[category], spent=expensesByCategory[category]||0;
+                let pct=0;
+                if(limit>0) pct=Math.min((spent/limit)*100,100);
+                else if(spent>0) pct=100;
+                let cc='bg-primary'; if(pct>=100)cc='bg-danger'; else if(pct>=80)cc='bg-warning';
+                const div=document.createElement('div');
+                div.innerHTML=`<div class="flex items-center justify-between text-sm mb-1.5"><span class="font-medium text-zinc-300">${category}</span><span class="text-zinc-500 text-xs">${formatCurrency(spent)} / ${formatCurrency(limit)}</span></div><div class="h-2 bg-white/5 rounded-full overflow-hidden"><div class="h-full ${cc} rounded-full transition-all duration-500" style="width:${pct}%"></div></div>`;
                 container.appendChild(div);
             });
         }
 
         function renderChart() {
-            const ctx = document.getElementById('expenseChart').getContext('2d');
-            
-            const filtered = getFilteredTransactions();
-            const expensesByCategory = {};
-            filtered.filter(t => t.type === 'expense').forEach(t => {
-                expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
-            });
-
-            const labels = Object.keys(expensesByCategory);
-            const data = Object.values(expensesByCategory);
-            
-            // Destrói o gráfico anterior de forma limpa para evitar "fantasmas" visuais
-            if (expenseChartInstance) {
-                expenseChartInstance.destroy();
-                expenseChartInstance = null;
-            }
-
-            if (labels.length === 0) {
-                return; // Canvas já está limpo, sem dados para exibir
-            }
-
-            expenseChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: ['#f43f5e', '#8b5cf6', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#6b7280'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                color: '#a1a1aa',
-                                font: { family: 'Plus Jakarta Sans', size: 11 },
-                                padding: 16,
-                                usePointStyle: true,
-                                pointStyleWidth: 8
-                            }
-                        }
-                    },
-                    cutout: '75%'
-                }
-            });
+            const ctx=document.getElementById('expenseChart').getContext('2d');
+            const filtered=getFilteredTransactions();
+            const ebc={};
+            filtered.filter(t=>t.type==='expense').forEach(t=>{ebc[t.category]=(ebc[t.category]||0)+t.amount;});
+            const labels=Object.keys(ebc), data=Object.values(ebc);
+            if(expenseChartInstance){expenseChartInstance.destroy();expenseChartInstance=null;}
+            if(labels.length===0) return;
+            expenseChartInstance=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:['#f43f5e','#8b5cf6','#f59e0b','#10b981','#3b82f6','#ec4899','#6b7280'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#a1a1aa',font:{family:'Plus Jakarta Sans',size:11},padding:16,usePointStyle:true,pointStyleWidth:8}}},cutout:'75%'}});
         }
 
-        // Actions
-        function handleTransactionSubmit(e) {
+        // ── Transaction Actions ──
+        async function handleTransactionSubmit(e) {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            
-            const amountStr = formData.get('amount').replace(',', '.');
-            const inputAmount = parseFloat(amountStr);
-            const installments = parseInt(formData.get('installments')) || 1;
-            const amountType = formData.get('amountType');
-            
-            if (isNaN(inputAmount) || inputAmount <= 0) {
-                alert('Por favor, insira um valor válido maior que zero.');
-                return;
-            }
-            if (installments < 1) {
-                alert('O número de parcelas deve ser pelo menos 1.');
-                return;
-            }
-
-            const baseDate = new Date(formData.get('date') + 'T12:00:00');
-            const baseDescription = formData.get('description') || formData.get('category');
-            
-            let installmentAmount;
-            if (amountType === 'total') {
-                installmentAmount = Math.round((inputAmount / installments) * 100) / 100;
-            } else {
-                installmentAmount = inputAmount;
-            }
+            const fd=new FormData(e.target);
+            const amountStr=fd.get('amount').replace(',','.');
+            const inputAmount=parseFloat(amountStr);
+            const installments=parseInt(fd.get('installments'))||1;
+            const amountType=fd.get('amountType');
+            if(isNaN(inputAmount)||inputAmount<=0){alert('Por favor, insira um valor válido maior que zero.');return;}
+            if(installments<1){alert('O número de parcelas deve ser pelo menos 1.');return;}
+            const baseDate=new Date(fd.get('date')+'T12:00:00');
+            const baseDesc=fd.get('description')||fd.get('category');
+            let instAmt = amountType==='total' ? Math.round((inputAmount/installments)*100)/100 : inputAmount;
 
             if (editingId) {
-                // Se estiver editando, atualiza apenas este registro específico
-                const index = transactions.findIndex(t => t.id === editingId);
-                if (index !== -1) {
-                    transactions[index] = {
-                        ...transactions[index],
-                        type: formData.get('type'),
-                        amount: inputAmount, // Na edição, o valor é o valor deste registro específico
-                        category: formData.get('category'),
-                        date: formData.get('date'),
-                        description: baseDescription
-                    };
+                const idx=transactions.findIndex(t=>t.id===editingId);
+                if(idx!==-1){
+                    transactions[idx]={...transactions[idx],type:fd.get('type'),amount:inputAmount,category:fd.get('category'),date:fd.get('date'),description:baseDesc};
+                    await saveSingleTransaction(transactions[idx]);
                 }
-                editingId = null;
+                editingId=null;
             } else {
-                // Criação de novas transações (com parcelamento se > 1)
-                for (let i = 0; i < installments; i++) {
-                    const currentDate = new Date(baseDate);
-                    currentDate.setMonth(baseDate.getMonth() + i);
-                    
-                    const year = currentDate.getFullYear();
-                    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-                    const day = String(currentDate.getDate()).padStart(2, '0');
-                    const dateStr = `${year}-${month}-${day}`;
-
-                    let desc = baseDescription;
-                    if (installments > 1) {
-                        desc = `${baseDescription} (${i + 1}/${installments})`;
-                    }
-
-                    transactions.push({
-                        id: Date.now() + i,
-                        type: formData.get('type'),
-                        amount: installmentAmount,
-                        category: formData.get('category'),
-                        date: dateStr,
-                        description: desc
-                    });
+                for(let i=0;i<installments;i++){
+                    const cd=new Date(baseDate); cd.setMonth(baseDate.getMonth()+i);
+                    const ds=`${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
+                    let desc=baseDesc; if(installments>1) desc=`${baseDesc} (${i+1}/${installments})`;
+                    const t={id:Date.now()+i, type:fd.get('type'), amount:instAmt, category:fd.get('category'), date:ds, description:desc};
+                    transactions.push(t);
+                    await saveSingleTransaction(t);
                 }
             }
+            updateUI(); closeModal(); e.target.reset();
+            const di=e.target.querySelector('input[name="date"]'); if(di)di.valueAsDate=new Date();
+        }
 
-            saveData();
+        async function deleteTransaction(id) {
+            if(!confirm('Deseja excluir esta transação?')) return;
+            transactions=transactions.filter(t=>t.id!==id);
+            await deleteTransactionFromFirestore(id);
             updateUI();
-            closeModal();
-            e.target.reset();
-            
-            const dateInput = e.target.querySelector('input[name="date"]');
-            if (dateInput) dateInput.valueAsDate = new Date();
         }
 
-        function deleteTransaction(id) {
-            if (confirm('Deseja excluir esta transação?')) {
-                transactions = transactions.filter(t => t.id !== id);
-                saveData();
-                updateUI();
-            }
-        }
-
-        function handleBudgetSubmit(e) {
+        async function handleBudgetSubmit(e) {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            for (const [category, value] of formData.entries()) {
-                budgets[category] = parseFloat(value) || 0;
-            }
-            saveData();
+            const fd=new FormData(e.target);
+            for(const [cat,val] of fd.entries()) budgets[cat]=parseFloat(val)||0;
+            await saveSettingsToFirestore();
+            updateUI(); closeBudgetModal();
+        }
+
+        async function clearAllData() {
+            if(!confirm('ATENÇÃO: Isso apagará TODAS as transações para ambos. Tem certeza?')) return;
+            transactions=[];
+            await clearAllTransactionsInFirestore();
             updateUI();
-            closeBudgetModal();
         }
 
-        function clearAllData() {
-            if (confirm('ATENÇÃO: Isso apagará TODAS as transações. Tem certeza?')) {
-                transactions = [];
-                saveData();
-                updateUI();
-            }
-        }
-
+        // ── Export/Import ──
         function exportData() {
-            const filtered = getFilteredTransactions();
-            if (filtered.length === 0) {
-                alert('Nenhuma transação neste período para exportar.');
-                return;
-            }
-            
-            // BOM (\uFEFF) para garantir que o Excel abra com acentos corretos
-            let csvContent = "\uFEFF";
-            csvContent += "Data,Tipo,Categoria,Descrição,Valor (R$)\n";
-            
-            filtered.forEach(t => {
-                const date = formatDate(t.date); // Formato DD/MM/AAAA
-                const type = t.type === 'income' ? 'Receita' : 'Despesa';
-                // Remove vírgulas e aspas da descrição para não quebrar a estrutura do CSV
-                const desc = (t.description || t.category || 'Sem descrição').replace(/,/g, ' -').replace(/"/g, ' ');
-                // Formata o valor com vírgula decimal, padrão brasileiro para Excel
-                const value = t.amount.toFixed(2).replace('.', ',');
-                
-                csvContent += `${date},${type},${t.category},${desc},${value}\n`;
+            const filtered=getFilteredTransactions();
+            if(filtered.length===0){alert('Nenhuma transação neste período para exportar.');return;}
+            let csv="\uFEFF"; csv+="Data,Tipo,Categoria,Descrição,Valor (R$)\n";
+            filtered.forEach(t=>{
+                const date=formatDate(t.date), type=t.type==='income'?'Receita':'Despesa';
+                const desc=(t.description||t.category||'Sem descrição').replace(/,/g,' -').replace(/"/g,' ');
+                const value=t.amount.toFixed(2).replace('.',',');
+                csv+=`${date},${type},${t.category},${desc},${value}\n`;
             });
-            
-            // Método moderno e 100% confiável com Blob
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `fincontrol_${currentMonth}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url); // Limpa a memória do navegador
+            const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+            const url=URL.createObjectURL(blob);
+            const link=document.createElement("a");
+            link.setAttribute("href",url); link.setAttribute("download",`fincontrol_${currentMonth}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
         }
 
-        function importData(inputElement) {
-            const file = inputElement.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    let text = event.target.result.replace(/^\uFEFF/, ''); // Remove BOM
-                    const rows = text.split('\n').filter(row => row.trim() !== '');
-                    
-                    if (rows.length < 2) {
-                        alert('O arquivo CSV está vazio ou não possui o formato correto.');
-                        inputElement.value = '';
-                        return;
-                    }
-
-                    let importedCount = 0;
-                    for (let i = 1; i < rows.length; i++) {
-                        const cols = rows[i].split(',');
-                        if (cols.length >= 5) {
-                            const dateStr = cols[0].trim();
-                            const typeStr = cols[1].trim().toLowerCase();
-                            const category = cols[2].trim();
-                            const description = cols[3].trim();
-                            
-                            // Converte valor brasileiro (ex: "1.234,56" ou "12,50") para float
-                            // Remove pontos de milhar (se houver) e troca vírgula por ponto
-                            const amountStr = cols[4].trim().replace(/\./g, '').replace(',', '.');
-                            const amount = parseFloat(amountStr);
-
-                            if (isNaN(amount)) continue; // Pula linhas com valor inválido
-
-                            // Converte DD/MM/AAAA para AAAA-MM-DD
-                            const [day, month, year] = dateStr.split('/');
-                            const isoDate = `${year}-${month}-${day}`;
-                            const type = typeStr.includes('receita') ? 'income' : 'expense';
-
-                            transactions.push({
-                                id: Date.now() + i + Math.random(), // Garante ID único
-                                type: type,
-                                amount: amount,
-                                category: category,
-                                date: isoDate,
-                                description: description
-                            });
-                            importedCount++;
+        async function importData(inputElement) {
+            const file=inputElement.files[0]; if(!file) return;
+            const reader=new FileReader();
+            reader.onload=async function(event){
+                try{
+                    let text=event.target.result.replace(/^\uFEFF/,'');
+                    const rows=text.split('\n').filter(r=>r.trim()!=='');
+                    if(rows.length<2){alert('O arquivo CSV está vazio.');inputElement.value='';return;}
+                    let count=0;
+                    for(let i=1;i<rows.length;i++){
+                        const cols=rows[i].split(',');
+                        if(cols.length>=5){
+                            const dateStr=cols[0].trim(), typeStr=cols[1].trim().toLowerCase(), category=cols[2].trim(), description=cols[3].trim();
+                            const amountStr=cols[4].trim().replace(/\./g,'').replace(',','.');
+                            const amount=parseFloat(amountStr);
+                            if(isNaN(amount)) continue;
+                            const [day,month,year]=dateStr.split('/');
+                            const isoDate=`${year}-${month}-${day}`;
+                            const type=typeStr.includes('receita')?'income':'expense';
+                            const t={id:Date.now()+i+Math.random(),type,amount,category,date:isoDate,description};
+                            transactions.push(t);
+                            await saveSingleTransaction(t);
+                            count++;
                         }
                     }
-
-                    saveData();
                     updateUI();
-                    alert(`${importedCount} transações importadas com sucesso!`);
-                    inputElement.value = ''; // Reseta para permitir reimportar o mesmo arquivo
-                } catch (error) {
-                    alert('Erro ao ler o arquivo. Verifique se ele foi exportado por este sistema.');
-                    console.error(error);
-                    inputElement.value = '';
-                }
+                    alert(`${count} transações importadas com sucesso!`);
+                    inputElement.value='';
+                }catch(err){alert('Erro ao ler o arquivo.');console.error(err);inputElement.value='';}
             };
-            reader.readAsText(file, 'UTF-8');
+            reader.readAsText(file,'UTF-8');
         }
 
-        function saveData() {
-            localStorage.setItem('fin_transactions', JSON.stringify(transactions));
-            localStorage.setItem('fin_budgets', JSON.stringify(budgets));
-        }
-
-        function saveCategories() {
-            localStorage.setItem('fin_categories', JSON.stringify(categories));
-        }
-
+        // ── Categories ──
         function populateCategorySelects() {
-            const selects = document.querySelectorAll('select[name="category"]');
-            selects.forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = '';
-                categories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat;
-                    option.textContent = cat;
-                    if (cat === currentValue) option.selected = true;
-                    select.appendChild(option);
-                });
+            document.querySelectorAll('select[name="category"]').forEach(sel=>{
+                const cv=sel.value; sel.innerHTML='';
+                categories.forEach(cat=>{const o=document.createElement('option');o.value=cat;o.textContent=cat;if(cat===cv)o.selected=true;sel.appendChild(o);});
             });
         }
 
-        function openCategoryModal() {
-            renderCategoriesList();
-            document.getElementById('categoryModal').classList.remove('hidden');
-        }
+        function openCategoryModal(){renderCategoriesList();document.getElementById('categoryModal').classList.remove('hidden');}
+        function closeCategoryModal(){document.getElementById('categoryModal').classList.add('hidden');}
 
-        function closeCategoryModal() { 
-            document.getElementById('categoryModal').classList.add('hidden'); 
-        }
-
-        function renderCategoriesList() {
-            const container = document.getElementById('categoriesList');
-            container.innerHTML = '';
-            categories.forEach(cat => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 group hover:border-white/10 transition-colors';
-                div.innerHTML = `
-                    <span class="text-sm font-medium text-zinc-200">${cat}</span>
-                    <button onclick="deleteCategory('${cat}')" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100 p-1" title="Excluir">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-                `;
-                container.appendChild(div);
+        function renderCategoriesList(){
+            const c=document.getElementById('categoriesList'); c.innerHTML='';
+            categories.forEach(cat=>{
+                const d=document.createElement('div');
+                d.className='flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 group hover:border-white/10 transition-colors';
+                d.innerHTML=`<span class="text-sm font-medium text-zinc-200">${cat}</span><button onclick="deleteCategory('${cat}')" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100 p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>`;
+                c.appendChild(d);
             });
         }
 
-        function addCategory() {
-            const input = document.getElementById('newCategoryInput');
-            const name = input.value.trim();
-            if (!name) return;
-            if (categories.includes(name)) {
-                alert('Esta categoria já existe.');
-                return;
-            }
-            categories.push(name);
-            budgets[name] = 0; // Inicializa o orçamento da nova categoria com 0
-            saveCategories();
-            saveData(); // Salva também a atualização dos orçamentos
-            input.value = '';
-            renderCategoriesList();
-            populateCategorySelects();
-            renderBudgets(); // Atualiza a seção de metas imediatamente
+        async function addCategory(){
+            const input=document.getElementById('newCategoryInput');
+            const name=input.value.trim(); if(!name) return;
+            if(categories.includes(name)){alert('Esta categoria já existe.');return;}
+            categories.push(name); budgets[name]=0;
+            await saveSettingsToFirestore();
+            input.value=''; renderCategoriesList(); populateCategorySelects(); renderBudgets();
         }
 
-        function deleteCategory(name) {
-            if (categories.length <= 1) {
-                alert('Você deve ter pelo menos uma categoria.');
-                return;
-            }
-            if (confirm(`Deseja excluir a categoria "${name}"?\n\nAs transações existentes com esta categoria manterão o nome, mas ela será removida das opções de novas transações e dos orçamentos.`)) {
-                categories = categories.filter(c => c !== name);
-                delete budgets[name];
-                saveCategories();
-                saveData();
-                renderCategoriesList();
-                populateCategorySelects();
-                updateUI();
-            }
+        async function deleteCategory(name){
+            if(categories.length<=1){alert('Você deve ter pelo menos uma categoria.');return;}
+            if(!confirm(`Deseja excluir a categoria "${name}"?`)) return;
+            categories=categories.filter(c=>c!==name); delete budgets[name];
+            await saveSettingsToFirestore();
+            renderCategoriesList(); populateCategorySelects(); updateUI();
         }
 
-        // Modal Controls
-        function openModal(transaction = null) {
-            const modal = document.getElementById('transactionModal');
-            const form = document.getElementById('transactionForm');
+        // ── Modal Controls ──
+        function openModal(transaction=null){
+            const modal=document.getElementById('transactionModal'), form=document.getElementById('transactionForm');
             form.reset();
-            
-            const dateInput = form.querySelector('input[name="date"]');
-            if (dateInput) dateInput.valueAsDate = new Date();
-
-            populateCategorySelects(); // Refresh category list
-
-            if (transaction) {
-                editingId = transaction.id;
-                form.querySelector(`input[name="type"][value="${transaction.type}"]`).checked = true;
-                form.querySelector('input[name="amount"]').value = transaction.amount;
-                
-                const catSelect = form.querySelector('select[name="category"]');
-                catSelect.value = transaction.category;
-                // If the category was deleted, add it back temporarily so it shows up
-                if (!catSelect.value) {
-                    const option = document.createElement('option');
-                    option.value = transaction.category;
-                    option.textContent = transaction.category + ' (Removida)';
-                    option.selected = true;
-                    catSelect.appendChild(option);
-                }
-                
-                form.querySelector('input[name="date"]').value = transaction.date;
-                form.querySelector('input[name="description"]').value = (transaction.description === transaction.category) ? '' : transaction.description;
-                form.querySelector('input[name="installments"]').value = 1;
-                
-                modal.querySelector('h3').textContent = 'Editar Transação';
-                modal.querySelector('button[type="submit"]').textContent = 'Atualizar Transação';
+            const di=form.querySelector('input[name="date"]'); if(di)di.valueAsDate=new Date();
+            populateCategorySelects();
+            if(transaction){
+                editingId=transaction.id;
+                form.querySelector(`input[name="type"][value="${transaction.type}"]`).checked=true;
+                form.querySelector('input[name="amount"]').value=transaction.amount;
+                const cs=form.querySelector('select[name="category"]'); cs.value=transaction.category;
+                if(!cs.value){const o=document.createElement('option');o.value=transaction.category;o.textContent=transaction.category+' (Removida)';o.selected=true;cs.appendChild(o);}
+                form.querySelector('input[name="date"]').value=transaction.date;
+                form.querySelector('input[name="description"]').value=(transaction.description===transaction.category)?'':transaction.description;
+                form.querySelector('input[name="installments"]').value=1;
+                modal.querySelector('h3').textContent='Editar Transação';
+                modal.querySelector('button[type="submit"]').textContent='Atualizar Transação';
             } else {
-                editingId = null;
-                modal.querySelector('h3').textContent = 'Nova Transação';
-                modal.querySelector('button[type="submit"]').textContent = 'Salvar Transação';
+                editingId=null;
+                modal.querySelector('h3').textContent='Nova Transação';
+                modal.querySelector('button[type="submit"]').textContent='Salvar Transação';
             }
             modal.classList.remove('hidden');
         }
 
-        function editTransaction(id) {
-            const t = transactions.find(item => item.id === id);
-            if (t) openModal(t);
-        }
+        function editTransaction(id){const t=transactions.find(i=>i.id===id);if(t)openModal(t);}
+        function closeModal(){document.getElementById('transactionModal').classList.add('hidden');editingId=null;}
 
-        function closeModal() { 
-            document.getElementById('transactionModal').classList.add('hidden'); 
-            editingId = null;
-        }
-        
-        function openBudgetModal() {
-            const form = document.getElementById('budgetForm');
-            form.innerHTML = '';
-            for (const [category, limit] of Object.entries(budgets)) {
-                form.innerHTML += `
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">${category}</label>
-                        <input type="number" name="${category}" value="${limit}" step="0.01" min="0" class="w-full px-3 py-2 rounded-lg">
-                    </div>
-                `;
+        function openBudgetModal(){
+            const form=document.getElementById('budgetForm'); form.innerHTML='';
+            for(const [cat,limit] of Object.entries(budgets)){
+                form.innerHTML+=`<div><label class="block text-xs font-medium text-zinc-400 mb-1">${cat}</label><input type="number" name="${cat}" value="${limit}" step="0.01" min="0" class="w-full px-3 py-2 rounded-lg"></div>`;
             }
-            form.innerHTML += `<button type="submit" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-all mt-2">Salvar Orçamentos</button>`;
+            form.innerHTML+=`<button type="submit" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-all mt-2">Salvar Orçamentos</button>`;
             document.getElementById('budgetModal').classList.remove('hidden');
         }
-        function closeBudgetModal() { document.getElementById('budgetModal').classList.add('hidden'); }
+        function closeBudgetModal(){document.getElementById('budgetModal').classList.add('hidden');}
 
-        // Close modals on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeModal();
-                closeBudgetModal();
-                closeCategoryModal();
-            }
-        });
+        // ── Keyboard shortcuts ──
+        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();closeBudgetModal();closeCategoryModal();}});
+
+        // ── Helpers ──
+        function showLoginLoading(on){
+            document.getElementById('loginBtnText').textContent=on?'Entrando...':'Entrar';
+            document.getElementById('loginSpinner').classList.toggle('hidden',!on);
+        }
+        function showRegLoading(on){
+            document.getElementById('regBtnText').textContent=on?'Criando...':'Criar Conta';
+            document.getElementById('regSpinner').classList.toggle('hidden',!on);
+        }
+        function showLoginError(msg){const el=document.getElementById('loginError');el.textContent=msg;el.classList.remove('hidden');}
+        function hideLoginError(){document.getElementById('loginError').classList.add('hidden');}
+        function getPtBrError(code){
+            const map={'auth/invalid-email':'E-mail inválido.','auth/user-not-found':'Usuário não encontrado.','auth/wrong-password':'Senha incorreta.','auth/invalid-credential':'E-mail ou senha incorretos.','auth/email-already-in-use':'Este e-mail já está cadastrado.','auth/weak-password':'A senha deve ter pelo menos 6 caracteres.','auth/network-request-failed':'Erro de conexão. Verifique sua internet.'};
+            return map[code]||'Ocorreu um erro. Tente novamente.';
+        }
     </script>
+
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
