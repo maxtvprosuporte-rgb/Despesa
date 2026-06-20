@@ -70,13 +70,13 @@
         }
 
         /* Login screen */
-        #loginScreen {
+        #loginScreen, #setupHouseholdScreen {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
         }
-        #loginScreen.hidden { display: none; }
+        #loginScreen.hidden, #setupHouseholdScreen.hidden { display: none; }
         #appContent.hidden { display: none; }
 
         .login-card {
@@ -165,6 +165,56 @@
                         <span id="regBtnText">Criar Conta</span>
                         <span id="regSpinner" class="spinner hidden"></span>
                     </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETUP HOUSEHOLD SCREEN (shown when user is logged in but has no household) -->
+    <div id="setupHouseholdScreen" class="hidden">
+        <div class="w-full max-w-sm mx-4">
+            <div class="login-card rounded-2xl p-8 animate-fade-in">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-white text-2xl mb-4">F</div>
+                    <h1 class="font-display font-semibold text-2xl tracking-tight">Configurar Casa</h1>
+                    <p class="text-zinc-500 text-sm mt-1 text-center">Sua conta não está vinculada a nenhuma casa ainda.</p>
+                </div>
+
+                <div id="setupError" class="hidden mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm text-center"></div>
+
+                <div id="setupOptions" class="space-y-4">
+                    <button onclick="createNewHousehold()" id="createHouseBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <span id="createHouseBtnText">Criar Nova Casa</span>
+                        <span id="createHouseSpinner" class="spinner hidden"></span>
+                    </button>
+
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-white/10"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-surface text-zinc-500">ou</span>
+                        </div>
+                    </div>
+
+                    <button onclick="showJoinHouseholdForm()" class="w-full bg-surface hover:bg-surfaceHighlight text-white font-medium py-3 rounded-lg transition-all border border-white/10 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        Entrar com Código da Casa
+                    </button>
+                </div>
+
+                <form id="joinHouseForm" onsubmit="joinExistingHousehold(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-white/5">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Código da Casa</label>
+                        <input type="text" id="joinHouseCode" required maxlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Ex: A7K3NP">
+                        <p class="text-[11px] text-zinc-600 mt-1.5 leading-relaxed">Peça o código para seu parceiro(a). Ele aparece no header do app após o login.</p>
+                    </div>
+                    <button type="submit" id="joinHouseBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
+                        <span id="joinHouseBtnText">Entrar na Casa</span>
+                        <span id="joinHouseSpinner" class="spinner hidden"></span>
+                    </button>
+                    <button type="button" onclick="hideJoinHouseholdForm()" class="w-full text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Voltar</button>
                 </form>
             </div>
         </div>
@@ -472,23 +522,181 @@
         window.exportData = exportData;
         window.importData = importData;
         window.copyHouseholdCode = copyHouseholdCode;
+        window.createNewHousehold = createNewHousehold;
+        window.showJoinHouseholdForm = showJoinHouseholdForm;
+        window.hideJoinHouseholdForm = hideJoinHouseholdForm;
+        window.joinExistingHousehold = joinExistingHousehold;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('appContent').classList.remove('hidden');
                 document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
-                await loadHouseholdData();
-                initApp();
+                
+                // Check if user has household data
+                const hasHousehold = await checkUserHousehold();
+                
+                if (hasHousehold) {
+                    document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                    document.getElementById('appContent').classList.remove('hidden');
+                    await loadHouseholdData();
+                    initApp();
+                } else {
+                    // Show setup screen
+                    document.getElementById('appContent').classList.add('hidden');
+                    document.getElementById('setupHouseholdScreen').classList.remove('hidden');
+                }
             } else {
                 currentUser = null;
                 householdCode = null;
                 document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('setupHouseholdScreen').classList.add('hidden');
                 document.getElementById('appContent').classList.add('hidden');
             }
         });
+
+        // ── Check if user has household ──
+        async function checkUserHousehold() {
+            if (!currentUser) return false;
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                const userSnap = await getDoc(userRef);
+                return userSnap.exists() && userSnap.data().householdCode;
+            } catch (error) {
+                console.error('Error checking household:', error);
+                return false;
+            }
+        }
+
+        // ── Create New Household ──
+        async function createNewHousehold() {
+            if (!currentUser) return;
+            
+            const btn = document.getElementById('createHouseBtn');
+            const btnText = document.getElementById('createHouseBtnText');
+            const spinner = document.getElementById('createHouseSpinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Criando...';
+            spinner.classList.remove('hidden');
+            
+            try {
+                const code = generateHouseholdCode();
+                
+                // Create household document
+                await setDoc(doc(db, 'households', code), {
+                    createdAt: new Date().toISOString(),
+                    createdBy: currentUser.uid,
+                    members: [currentUser.uid]
+                });
+                
+                // Create default settings
+                await setDoc(doc(db, 'households', code, 'settings', 'main'), {
+                    categories: DEFAULT_CATEGORIES,
+                    budgets: DEFAULT_BUDGETS
+                });
+                
+                // Update user document
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    name: currentUser.displayName || currentUser.email,
+                    email: currentUser.email,
+                    householdCode: code,
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+                
+                householdCode = code;
+                
+                // Hide setup, show app
+                document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+                
+                await loadHouseholdData();
+                initApp();
+                
+            } catch (error) {
+                console.error('Error creating household:', error);
+                document.getElementById('setupError').textContent = `Erro ao criar casa: ${error.message}`;
+                document.getElementById('setupError').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Criar Nova Casa';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // ── Show/Hide Join Form ──
+        function showJoinHouseholdForm() {
+            document.getElementById('setupOptions').classList.add('hidden');
+            document.getElementById('joinHouseForm').classList.remove('hidden');
+        }
+
+        function hideJoinHouseholdForm() {
+            document.getElementById('setupOptions').classList.remove('hidden');
+            document.getElementById('joinHouseForm').classList.add('hidden');
+            document.getElementById('setupError').classList.add('hidden');
+        }
+
+        // ── Join Existing Household ──
+        async function joinExistingHousehold(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const code = document.getElementById('joinHouseCode').value.trim().toUpperCase();
+            
+            const btn = document.getElementById('joinHouseBtn');
+            const btnText = document.getElementById('joinHouseBtnText');
+            const spinner = document.getElementById('joinHouseSpinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Entrando...';
+            spinner.classList.remove('hidden');
+            document.getElementById('setupError').classList.add('hidden');
+            
+            try {
+                // Check if household exists
+                const householdRef = doc(db, 'households', code);
+                const hhSnap = await getDoc(householdRef);
+                
+                if (!hhSnap.exists()) {
+                    throw new Error('Código da casa não encontrado. Verifique com seu parceiro(a).');
+                }
+                
+                // Add user to members
+                const hhData = hhSnap.data();
+                const members = hhData.members || [];
+                if (!members.includes(currentUser.uid)) {
+                    members.push(currentUser.uid);
+                    await setDoc(householdRef, { ...hhData, members }, { merge: true });
+                }
+                
+                // Update user document
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    name: currentUser.displayName || currentUser.email,
+                    email: currentUser.email,
+                    householdCode: code,
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+                
+                householdCode = code;
+                
+                // Hide setup, show app
+                document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+                
+                await loadHouseholdData();
+                initApp();
+                
+            } catch (error) {
+                console.error('Error joining household:', error);
+                document.getElementById('setupError').textContent = error.message;
+                document.getElementById('setupError').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Entrar na Casa';
+                spinner.classList.add('hidden');
+            }
+        }
 
         // ── Login ──
         async function handleLogin(e) {
@@ -601,41 +809,33 @@
 
         // ── Load Household Shared Data ──
         async function loadHouseholdData() {
-            if (!currentUser) return;
-            const uid = currentUser.uid;
+            if (!currentUser || !householdCode) return;
 
-            // Get user's household code
-            const userRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-                householdCode = userSnap.data().householdCode;
-            }
+            try {
+                showHouseholdBadge(householdCode);
 
-            if (!householdCode) {
-                // Fallback: shouldn't happen for properly registered users
-                showLoginError('Erro: casa não encontrada. Entre em contato com o suporte.');
+                // Load shared settings (categories + budgets)
+                const settingsRef = doc(db, 'households', householdCode, 'settings', 'main');
+                const settingsSnap = await getDoc(settingsRef);
+                if (settingsSnap.exists()) {
+                    const data = settingsSnap.data();
+                    categories = data.categories || DEFAULT_CATEGORIES;
+                    budgets = data.budgets || DEFAULT_BUDGETS;
+                } else {
+                    categories = [...DEFAULT_CATEGORIES];
+                    budgets = {...DEFAULT_BUDGETS};
+                    await setDoc(settingsRef, { categories, budgets });
+                }
+
+                // Load shared transactions
+                const txSnap = await getDocs(collection(db, 'households', householdCode, 'transactions'));
+                transactions = txSnap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                alert(`Erro ao acessar dados: ${error.message}\n\nVerifique as regras do Firestore no Firebase Console.`);
                 await signOut(auth);
-                return;
             }
-
-            showHouseholdBadge(householdCode);
-
-            // Load shared settings (categories + budgets)
-            const settingsRef = doc(db, 'households', householdCode, 'settings', 'main');
-            const settingsSnap = await getDoc(settingsRef);
-            if (settingsSnap.exists()) {
-                const data = settingsSnap.data();
-                categories = data.categories || DEFAULT_CATEGORIES;
-                budgets = data.budgets || DEFAULT_BUDGETS;
-            } else {
-                categories = [...DEFAULT_CATEGORIES];
-                budgets = {...DEFAULT_BUDGETS};
-                await setDoc(settingsRef, { categories, budgets });
-            }
-
-            // Load shared transactions
-            const txSnap = await getDocs(collection(db, 'households', householdCode, 'transactions'));
-            transactions = txSnap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
         }
 
         function showHouseholdBadge(code) {
