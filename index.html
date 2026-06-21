@@ -2,7 +2,7 @@
 <html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>FinControl - Controle Financeiro do Casal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -128,14 +128,17 @@
         .toast {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             padding: 12px 20px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
             z-index: 9999;
-            animation: slideIn 0.3s ease-out;
+            animation: slideUp 0.3s ease-out;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: calc(100vw - 40px);
+            text-align: center;
         }
         .toast.success {
             background: rgba(16, 185, 129, 0.9);
@@ -147,9 +150,63 @@
             border: 1px solid rgba(244, 63, 94, 0.5);
             color: white;
         }
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        /* Safe area padding for notched devices */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            header { padding-top: env(safe-area-inset-top); }
+            main { padding-bottom: env(safe-area-inset-bottom); }
+        }
+
+        /* Mobile transaction cards */
+        .transaction-card {
+            display: none;
+        }
+        @media (max-width: 639px) {
+            .transaction-table-wrapper { display: none; }
+            .transaction-card { display: block; }
+        }
+        @media (min-width: 640px) {
+            .transaction-table-wrapper { display: block; }
+            .transaction-card { display: none; }
+        }
+
+        /* Header mobile menu */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        @media (max-width: 639px) {
+            .header-actions {
+                gap: 0.375rem;
+            }
+            .header-actions .btn-icon-only {
+                width: 2.25rem;
+                height: 2.25rem;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        /* Mobile filter bar */
+        @media (max-width: 639px) {
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-bar .csv-buttons {
+                justify-content: stretch;
+            }
+            .filter-bar .csv-buttons button {
+                flex: 1;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -269,81 +326,83 @@
 
     <!-- Header -->
     <header class="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-white text-lg">F</div>
-                <h1 class="font-display font-semibold text-xl tracking-tight hidden sm:block">FinControl</h1>
-            </div>
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
             <div class="flex items-center gap-2 sm:gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-white text-lg">F</div>
+                <h1 class="font-display font-semibold text-lg sm:text-xl tracking-tight hidden sm:block">FinControl</h1>
+            </div>
+            <div class="header-actions">
                 <div id="householdBadge" class="hidden sm:flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2.5 py-1.5" title="Código da casa - compartilhe com seu parceiro(a)">
                     <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     <span id="householdCodeDisplay" class="text-accent text-xs font-mono font-semibold tracking-wider"></span>
                 </div>
-                <span id="userNameDisplay" class="text-zinc-400 text-xs sm:text-sm font-medium hidden sm:inline"></span>
-                <button onclick="handleLogout()" class="text-zinc-400 hover:text-danger transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-lg px-3 py-2 text-sm" title="Sair">
+                <span id="userNameDisplay" class="text-zinc-400 text-xs sm:text-sm font-medium hidden md:inline"></span>
+                <button onclick="handleLogout()" class="btn-icon-only text-zinc-400 hover:text-danger transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Sair">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     <span class="hidden sm:inline">Sair</span>
                 </button>
-                <button onclick="openCategoryModal()" class="bg-surface hover:bg-surfaceHighlight text-zinc-300 hover:text-white border border-white/10 px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Gerenciar Categorias">
+                <button onclick="openCategoryModal()" class="btn-icon-only bg-surface hover:bg-surfaceHighlight text-zinc-300 hover:text-white border border-white/10 px-2 sm:px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Categorias">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span class="hidden sm:inline">Categorias</span>
                 </button>
-                <button onclick="openModal()" class="bg-accent hover:bg-accent/90 text-white px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2 shadow-lg shadow-accent/20">
+                <button onclick="openModal()" class="bg-accent hover:bg-accent/90 text-white px-2.5 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-accent/20">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     <span class="hidden sm:inline">Nova Transação</span>
-                    <span class="sm:hidden">Nova</span>
+                    <span class="sm:hidden text-xs">Nova</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-8 space-y-3 sm:space-y-6">
         
         <!-- Month Filter & Export/Import -->
-        <div class="flex items-center justify-between animate-fade-in flex-wrap gap-3">
-            <div class="flex items-center gap-3 bg-surface border border-white/5 rounded-xl px-4 py-2.5">
-                <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <label class="text-zinc-400 text-sm font-medium">Período:</label>
-                <input type="month" id="monthFilter" class="bg-transparent text-white text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
+        <div class="filter-bar flex items-center justify-between animate-fade-in flex-wrap gap-3">
+            <div class="flex items-center gap-2 sm:gap-3 bg-surface border border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <label class="text-zinc-400 text-xs sm:text-sm font-medium">Período:</label>
+                <input type="month" id="monthFilter" class="bg-transparent text-white text-xs sm:text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
             </div>
-            <div class="flex items-center gap-2">
+            <div class="csv-buttons flex items-center gap-2">
                 <input type="file" id="importFile" accept=".csv" class="hidden" onchange="importData(this)">
-                <button onclick="document.getElementById('importFile').click()" class="text-xs text-zinc-400 hover:text-accent transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-xl px-4 py-2.5">
+                <button onclick="document.getElementById('importFile').click()" class="text-xs text-zinc-400 hover:text-accent transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    Importar CSV
+                    <span class="hidden sm:inline">Importar CSV</span>
+                    <span class="sm:hidden">Importar</span>
                 </button>
-                <button onclick="exportData()" class="text-xs text-zinc-400 hover:text-accent transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-xl px-4 py-2.5">
+                <button onclick="exportData()" class="text-xs text-zinc-400 hover:text-accent transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Exportar CSV
+                    <span class="hidden sm:inline">Exportar CSV</span>
+                    <span class="sm:hidden">Exportar</span>
                 </button>
             </div>
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-100 relative overflow-hidden group">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-100 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
-                <p class="text-zinc-400 text-sm font-medium mb-1">Saldo Total</p>
-                <h2 class="font-display text-3xl font-semibold text-white" id="totalBalance">R$ 0,00</h2>
-                <div class="mt-4 flex items-center gap-2 text-xs text-zinc-500">
+                <p class="text-zinc-400 text-xs sm:text-sm font-medium mb-1">Saldo Total</p>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-white break-all" id="totalBalance">R$ 0,00</h2>
+                <div class="mt-3 sm:mt-4 flex items-center gap-2 text-xs text-zinc-500">
                     <span class="w-2 h-2 rounded-full bg-primary"></span>
                     Atualizado em tempo real
                 </div>
             </div>
-            <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-200 relative overflow-hidden group">
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-200 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
-                <p class="text-zinc-400 text-sm font-medium mb-1">Receitas</p>
-                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-primary" id="totalIncome">R$ 0,00</h2>
-                <div class="mt-4 flex items-center gap-2 text-xs text-zinc-500">
+                <p class="text-zinc-400 text-xs sm:text-sm font-medium mb-1">Receitas</p>
+                <h2 class="font-display text-xl sm:text-3xl font-semibold text-primary break-all" id="totalIncome">R$ 0,00</h2>
+                <div class="mt-3 sm:mt-4 flex items-center gap-2 text-xs text-zinc-500">
                     <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                     Entradas do período
                 </div>
             </div>
-            <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
-                <p class="text-zinc-400 text-sm font-medium mb-1">Despesas</p>
-                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-danger" id="totalExpense">R$ 0,00</h2>
-                <div class="mt-4 flex items-center gap-2 text-xs text-zinc-500">
+                <p class="text-zinc-400 text-xs sm:text-sm font-medium mb-1">Despesas</p>
+                <h2 class="font-display text-xl sm:text-3xl font-semibold text-danger break-all" id="totalExpense">R$ 0,00</h2>
+                <div class="mt-3 sm:mt-4 flex items-center gap-2 text-xs text-zinc-500">
                     <svg class="w-3 h-3 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
                     Saídas do período
                 </div>
@@ -361,7 +420,7 @@
                             <button onclick="setChartFilter('user')" id="chartFilterUser" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Minhas</button>
                         </div>
                     </div>
-                    <div class="h-64 w-full flex items-center justify-center">
+                    <div class="h-48 sm:h-64 w-full flex items-center justify-center">
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
@@ -370,7 +429,8 @@
                         <h3 class="font-display font-semibold text-base sm:text-lg">Histórico de Transações</h3>
                         <button onclick="clearAllData()" class="text-xs text-zinc-500 hover:text-danger transition-colors">Limpar tudo</button>
                     </div>
-                    <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                    <!-- Desktop Table -->
+                    <div class="transaction-table-wrapper overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                         <table class="w-full text-left text-xs sm:text-sm min-w-[700px]">
                             <thead>
                                 <tr class="text-zinc-500 border-b border-white/5">
@@ -384,10 +444,12 @@
                             </thead>
                             <tbody id="transactionsList" class="divide-y divide-white/5"></tbody>
                         </table>
-                        <div id="emptyState" class="hidden py-12 text-center text-zinc-500">
-                            <p>Nenhuma transação registrada ainda.</p>
-                            <button onclick="openModal()" class="mt-2 text-accent hover:underline text-sm">Adicionar primeira transação</button>
-                        </div>
+                    </div>
+                    <!-- Mobile Cards -->
+                    <div id="transactionsListMobile" class="transaction-card space-y-3"></div>
+                    <div id="emptyState" class="hidden py-12 text-center text-zinc-500">
+                        <p>Nenhuma transação registrada ainda.</p>
+                        <button onclick="openModal()" class="mt-2 text-accent hover:underline text-sm">Adicionar primeira transação</button>
                     </div>
                 </div>
             </div>
@@ -397,11 +459,11 @@
     <!-- Add Transaction Modal -->
     <div id="transactionModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md p-0 sm:p-4">
-            <div class="glass-panel rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="font-display font-semibold text-xl">Nova Transação</h3>
-                    <button onclick="closeModal()" class="text-zinc-500 hover:text-white transition-colors">
+        <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center">
+            <div class="glass-panel rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/10 sm:border-t max-h-[85vh] sm:max-h-[90vh] overflow-y-auto w-full sm:w-auto sm:max-w-md">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="font-display font-semibold text-lg sm:text-xl">Nova Transação</h3>
+                    <button onclick="closeModal()" class="text-zinc-500 hover:text-white transition-colors p-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -446,7 +508,7 @@
                         <label class="block text-xs font-medium text-zinc-400 mb-1.5">Descrição (opcional)</label>
                         <input type="text" name="description" class="w-full px-3 py-2.5 rounded-lg" placeholder="Ex: Supermercado, Salário mensal...">
                     </div>
-                    <button type="submit" id="saveTransactionBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all mt-2 shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
+                    <button type="submit" id="saveTransactionBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all mt-2 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 mb-[env(safe-area-inset-bottom)]">
                         <span id="saveBtnText">Salvar Transação</span>
                         <span id="saveBtnSpinner" class="spinner hidden"></span>
                     </button>
@@ -458,11 +520,11 @@
     <!-- Category Modal -->
     <div id="categoryModal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCategoryModal()"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md p-0 sm:p-4">
-            <div class="glass-panel rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="font-display font-semibold text-xl">Gerenciar Categorias</h3>
-                    <button onclick="closeCategoryModal()" class="text-zinc-500 hover:text-white transition-colors">
+        <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center">
+            <div class="glass-panel rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/10 sm:border-t max-h-[85vh] sm:max-h-[90vh] overflow-y-auto w-full sm:w-auto sm:max-w-md">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="font-display font-semibold text-lg sm:text-xl">Gerenciar Categorias</h3>
+                    <button onclick="closeCategoryModal()" class="text-zinc-500 hover:text-white transition-colors p-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -614,22 +676,22 @@
             try {
                 const code = generateHouseholdCode();
                 
-                await setDoc(doc(db, 'households', code), {
+                await withTimeout(setDoc(doc(db, 'households', code), {
                     createdAt: new Date().toISOString(),
                     createdBy: currentUser.uid,
                     members: [currentUser.uid]
-                });
+                }));
                 
-                await setDoc(doc(db, 'households', code, 'settings', 'main'), {
+                await withTimeout(setDoc(doc(db, 'households', code, 'settings', 'main'), {
                     categories: DEFAULT_CATEGORIES
-                });
+                }));
                 
-                await setDoc(doc(db, 'users', currentUser.uid), {
+                await withTimeout(setDoc(doc(db, 'users', currentUser.uid), {
                     name: currentUser.displayName || currentUser.email,
                     email: currentUser.email,
                     householdCode: code,
                     createdAt: new Date().toISOString()
-                }, { merge: true });
+                }, { merge: true }));
                 
                 householdCode = code;
                 
@@ -828,16 +890,16 @@
                 showHouseholdBadge(householdCode);
 
                 const settingsRef = doc(db, 'households', householdCode, 'settings', 'main');
-                const settingsSnap = await getDoc(settingsRef);
+                const settingsSnap = await withTimeout(getDoc(settingsRef));
                 if (settingsSnap.exists()) {
                     const data = settingsSnap.data();
                     categories = data.categories || DEFAULT_CATEGORIES;
                 } else {
                     categories = [...DEFAULT_CATEGORIES];
-                    await setDoc(settingsRef, { categories });
+                    await withTimeout(setDoc(settingsRef, { categories }));
                 }
 
-                const txSnap = await getDocs(collection(db, 'households', householdCode, 'transactions'));
+                const txSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'transactions')));
                 transactions = txSnap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
                 
             } catch (error) {
@@ -862,28 +924,35 @@
             });
         }
 
+        function withTimeout(promise, ms = 10000) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo limite excedido. Verifique sua conexão.')), ms))
+            ]);
+        }
+
         async function saveSingleTransaction(t) {
             if (!currentUser || !householdCode) {
                 throw new Error('Usuário ou casa não configurados');
             }
             const { id, ...data } = t;
-            await setDoc(doc(db, 'households', householdCode, 'transactions', String(id)), data);
+            await withTimeout(setDoc(doc(db, 'households', householdCode, 'transactions', String(id)), data));
         }
 
         async function deleteTransactionFromFirestore(id) {
             if (!currentUser || !householdCode) return;
-            await fsDeleteDoc(doc(db, 'households', householdCode, 'transactions', String(id)));
+            await withTimeout(fsDeleteDoc(doc(db, 'households', householdCode, 'transactions', String(id))));
         }
 
         async function saveSettingsToFirestore() {
             if (!currentUser || !householdCode) return;
-            await setDoc(doc(db, 'households', householdCode, 'settings', 'main'), { categories });
+            await withTimeout(setDoc(doc(db, 'households', householdCode, 'settings', 'main'), { categories }));
         }
 
         async function clearAllTransactionsInFirestore() {
             if (!currentUser || !householdCode) return;
-            const snap = await getDocs(collection(db, 'households', householdCode, 'transactions'));
-            const promises = snap.docs.map(d => fsDeleteDoc(d.ref));
+            const snap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'transactions')));
+            const promises = snap.docs.map(d => withTimeout(fsDeleteDoc(d.ref)));
             await Promise.all(promises);
         }
 
@@ -913,19 +982,23 @@
 
         function renderTransactions() {
             const tbody = document.getElementById('transactionsList');
+            const mobileList = document.getElementById('transactionsListMobile');
             const emptyState = document.getElementById('emptyState');
             tbody.innerHTML = '';
+            mobileList.innerHTML = '';
             const filtered = getFilteredTransactions();
             if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
             const sorted = [...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date));
             sorted.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.className = 'group hover:bg-white/[0.02] transition-colors';
                 const isIncome = t.type === 'income';
                 const userName = t.userName || 'Desconhecido';
                 const isCurrentUser = t.userId === currentUser?.uid;
                 const userBadgeClass = isCurrentUser ? 'bg-accent/20 text-accent border-accent/30' : 'bg-primary/20 text-primary border-primary/30';
+                
+                // Desktop table row
+                const tr = document.createElement('tr');
+                tr.className = 'group hover:bg-white/[0.02] transition-colors';
                 tr.innerHTML = `
                     <td class="py-3.5"><div class="font-medium text-zinc-200">${t.description||t.category}</div>${t.description&&t.description!==t.category?`<div class="text-xs text-zinc-500">${t.category}</div>`:''}</td>
                     <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span></td>
@@ -937,6 +1010,30 @@
                         <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                     </div></td>`;
                 tbody.appendChild(tr);
+                
+                // Mobile card
+                const card = document.createElement('div');
+                card.className = 'bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-zinc-200 text-sm truncate">${t.description||t.category}</p>
+                            ${t.description&&t.description!==t.category?`<p class="text-xs text-zinc-500 mt-0.5">${t.category}</p>`:''}
+                        </div>
+                        <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${userName}</span>
+                            <span class="text-[10px] text-zinc-500">${formatDate(t.date)}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </div>
+                    </div>`;
+                mobileList.appendChild(card);
             });
         }
 
@@ -966,6 +1063,25 @@
         async function handleTransactionSubmit(e) {
             e.preventDefault();
             
+            // Validate BEFORE disabling the button
+            const fd=new FormData(e.target);
+            const amountStr=fd.get('amount').replace(',','.');
+            const inputAmount=parseFloat(amountStr);
+            const installments=parseInt(fd.get('installments'))||1;
+            const amountType=fd.get('amountType');
+            if(isNaN(inputAmount)||inputAmount<=0){showToast('Por favor, insira um valor válido maior que zero.', 'error');return;}
+            if(installments<1){showToast('O número de parcelas deve ser pelo menos 1.', 'error');return;}
+
+            // Check prerequisites before disabling button
+            if (!currentUser) {
+                showToast('Sessão expirada. Faça login novamente.', 'error');
+                return;
+            }
+            if (!householdCode) {
+                showToast('Casa não configurada. Faça login novamente.', 'error');
+                return;
+            }
+            
             const btn = document.getElementById('saveTransactionBtn');
             const btnText = document.getElementById('saveBtnText');
             const spinner = document.getElementById('saveBtnSpinner');
@@ -975,13 +1091,6 @@
             spinner.classList.remove('hidden');
             
             try {
-                const fd=new FormData(e.target);
-                const amountStr=fd.get('amount').replace(',','.');
-                const inputAmount=parseFloat(amountStr);
-                const installments=parseInt(fd.get('installments'))||1;
-                const amountType=fd.get('amountType');
-                if(isNaN(inputAmount)||inputAmount<=0){alert('Por favor, insira um valor válido maior que zero.');return;}
-                if(installments<1){alert('O número de parcelas deve ser pelo menos 1.');return;}
                 const baseDate=new Date(fd.get('date')+'T12:00:00');
                 const baseDesc=fd.get('description')||fd.get('category');
                 let instAmt = amountType==='total' ? Math.round((inputAmount/installments)*100)/100 : inputAmount;
@@ -994,11 +1103,12 @@
                     }
                     editingId=null;
                 } else {
+                    const baseId = Date.now();
                     for(let i=0;i<installments;i++){
                         const cd=new Date(baseDate); cd.setMonth(baseDate.getMonth()+i);
                         const ds=`${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
                         let desc=baseDesc; if(installments>1) desc=`${baseDesc} (${i+1}/${installments})`;
-                        const t={id:Date.now()+i, type:fd.get('type'), amount:instAmt, category:fd.get('category'), date:ds, description:desc, userId:currentUser.uid, userName:currentUser.displayName||currentUser.email};
+                        const t={id:baseId+i, type:fd.get('type'), amount:instAmt, category:fd.get('category'), date:ds, description:desc, userId:currentUser.uid, userName:currentUser.displayName||currentUser.email};
                         transactions.push(t);
                         await saveSingleTransaction(t);
                     }
