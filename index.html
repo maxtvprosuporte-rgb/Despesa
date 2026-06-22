@@ -174,6 +174,109 @@
             .transaction-card { display: none; }
         }
 
+        /* Mobile bottom sheet modal */
+        #transactionModal.hidden,
+        #categoryModal.hidden {
+            display: none !important;
+        }
+
+        #transactionModal,
+        #categoryModal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        #transactionModal .modal-backdrop,
+        #categoryModal .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        #transactionModal .modal-content,
+        #categoryModal .modal-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 639px) {
+            #transactionModal .modal-content,
+            #categoryModal .modal-content {
+                border-radius: 16px 16px 0 0;
+                max-height: 90vh;
+            }
+        }
+
+        @media (min-width: 640px) {
+            #transactionModal,
+            #categoryModal {
+                align-items: center;
+                padding: 1rem;
+            }
+            #transactionModal .modal-content,
+            #categoryModal .modal-content {
+                max-width: 28rem;
+                max-height: 90vh;
+                border-radius: 1rem;
+            }
+        }
+
+        #transactionModal,
+        #categoryModal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        #transactionModal .modal-backdrop,
+        #categoryModal .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        #transactionModal .modal-content,
+        #categoryModal .modal-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 639px) {
+            #transactionModal .modal-content,
+            #categoryModal .modal-content {
+                border-radius: 16px 16px 0 0;
+            }
+        }
+
+        @media (min-width: 640px) {
+            #transactionModal,
+            #categoryModal {
+                align-items: center;
+                padding: 1rem;
+            }
+            #transactionModal .modal-content,
+            #categoryModal .modal-content {
+                max-width: 28rem;
+                max-height: 90vh;
+                border-radius: 1rem;
+            }
+        }
+
         /* Header mobile menu */
         .header-actions {
             display: flex;
@@ -461,84 +564,80 @@
     </main>
 
     <!-- Add Transaction Modal -->
-    <div id="transactionModal" class="fixed inset-0 z-[100] hidden">
-        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="relative z-10 flex items-end sm:items-center justify-center min-h-screen p-0 sm:p-4">
-            <div class="glass-panel w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10">
-                <div class="sticky top-0 bg-surface/95 backdrop-blur-sm p-3 sm:p-4 border-b border-white/5 flex items-center justify-between">
-                    <h3 class="font-display font-semibold text-base sm:text-xl">Nova Transação</h3>
-                    <button onclick="closeModal()" class="text-zinc-500 hover:text-white transition-colors p-1 -mr-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="p-3 sm:p-4 space-y-3">
-                    <div class="grid grid-cols-2 gap-2">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="type" value="expense" class="peer sr-only" checked>
-                            <div class="text-center py-2 rounded-lg border border-white/10 peer-checked:bg-danger/20 peer-checked:border-danger peer-checked:text-danger transition-all text-xs sm:text-sm font-medium">Despesa</div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="type" value="income" class="peer sr-only">
-                            <div class="text-center py-2 rounded-lg border border-white/10 peer-checked:bg-primary/20 peer-checked:border-primary peer-checked:text-primary transition-all text-xs sm:text-sm font-medium">Receita</div>
-                        </label>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Valor (R$)</label>
-                        <input type="number" name="amount" step="0.01" min="0.01" required class="w-full px-3 py-2 rounded-lg text-sm sm:text-base font-semibold" placeholder="0,00">
-                        <div class="grid grid-cols-2 gap-2 mt-2">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="amountType" value="total" class="peer sr-only" checked>
-                                <div class="text-center py-1.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-[10px] sm:text-xs font-medium">Valor Total<span class="block text-[9px] font-normal text-zinc-500 mt-0.5">Divide pelas parcelas</span></div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="amountType" value="installment" class="peer sr-only">
-                                <div class="text-center py-1.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-[10px] sm:text-xs font-medium">Valor da Parcela<span class="block text-[9px] font-normal text-zinc-500 mt-0.5">Repete o valor</span></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Categoria</label>
-                        <select name="category" required class="w-full px-3 py-2 rounded-lg text-sm"></select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Data 1ª Parcela</label>
-                        <input type="date" name="date" required class="w-full px-3 py-2 rounded-lg appearance-none text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Nº de Parcelas</label>
-                        <input type="number" name="installments" min="1" value="1" required class="w-full px-3 py-2 rounded-lg appearance-none text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-400 mb-1">Descrição (opcional)</label>
-                        <input type="text" name="description" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="Ex: Supermercado, Salário...">
-                    </div>
-                    <button type="submit" id="saveTransactionBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 text-sm sm:text-base">
-                        <span id="saveBtnText">Salvar Transação</span>
-                        <span id="saveBtnSpinner" class="spinner hidden"></span>
-                    </button>
-                </form>
+    <div id="transactionModal" class="hidden">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-content glass-panel shadow-2xl border border-white/10">
+            <div style="position:sticky;top:0;background:rgba(24,24,27,0.95);backdrop-filter:blur(8px);padding:0.75rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;">
+                <h3 class="font-display font-semibold text-base sm:text-xl">Nova Transação</h3>
+                <button onclick="closeModal()" style="color:#71717a;padding:0.25rem;" class="hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
+            <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" style="padding:0.75rem 1rem;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
+                    <label style="cursor:pointer;">
+                        <input type="radio" name="type" value="expense" class="peer sr-only" checked>
+                        <div style="text-align:center;padding:0.5rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.1);font-size:0.75rem;font-weight:500;" class="peer-checked:bg-danger/20 peer-checked:border-danger peer-checked:text-danger transition-all sm:text-sm">Despesa</div>
+                    </label>
+                    <label style="cursor:pointer;">
+                        <input type="radio" name="type" value="income" class="peer sr-only">
+                        <div style="text-align:center;padding:0.5rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.1);font-size:0.75rem;font-weight:500;" class="peer-checked:bg-primary/20 peer-checked:border-primary peer-checked:text-primary transition-all sm:text-sm">Receita</div>
+                    </label>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="display:block;font-size:0.75rem;font-weight:500;color:#a1a1aa;margin-bottom:0.25rem;">Valor (R$)</label>
+                    <input type="number" name="amount" step="0.01" min="0.01" required style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;font-weight:600;" class="sm:text-base" placeholder="0,00">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.5rem;">
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="amountType" value="total" class="peer sr-only" checked>
+                            <div style="text-align:center;padding:0.375rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.1);font-size:0.625rem;font-weight:500;" class="peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all sm:text-xs">Valor Total<span style="display:block;font-size:0.5625rem;font-weight:400;color:#71717a;margin-top:0.125rem;">Divide pelas parcelas</span></div>
+                        </label>
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="amountType" value="installment" class="peer sr-only">
+                            <div style="text-align:center;padding:0.375rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.1);font-size:0.625rem;font-weight:500;" class="peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all sm:text-xs">Valor da Parcela<span style="display:block;font-size:0.5625rem;font-weight:400;color:#71717a;margin-top:0.125rem;">Repete o valor</span></div>
+                        </label>
+                    </div>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="display:block;font-size:0.75rem;font-weight:500;color:#a1a1aa;margin-bottom:0.25rem;">Categoria</label>
+                    <select name="category" required style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;"></select>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="display:block;font-size:0.75rem;font-weight:500;color:#a1a1aa;margin-bottom:0.25rem;">Data 1ª Parcela</label>
+                    <input type="date" name="date" required style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;" class="appearance-none">
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="display:block;font-size:0.75rem;font-weight:500;color:#a1a1aa;margin-bottom:0.25rem;">Nº de Parcelas</label>
+                    <input type="number" name="installments" min="1" value="1" required style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;" class="appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]">
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <label style="display:block;font-size:0.75rem;font-weight:500;color:#a1a1aa;margin-bottom:0.25rem;">Descrição (opcional)</label>
+                    <input type="text" name="description" style="width:100%;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;" placeholder="Ex: Supermercado, Salário...">
+                </div>
+                <button type="submit" id="saveTransactionBtn" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:0.625rem;border-radius:0.5rem;font-size:0.875rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;box-shadow:0 10px 15px -3px rgba(139,92,246,0.2);" class="hover:bg-accent/90 transition-all sm:text-base sm:py-3">
+                    <span id="saveBtnText">Salvar Transação</span>
+                    <span id="saveBtnSpinner" class="spinner hidden"></span>
+                </button>
+            </form>
         </div>
     </div>
 
     <!-- Category Modal -->
-    <div id="categoryModal" class="fixed inset-0 z-[100] hidden">
-        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeCategoryModal()"></div>
-        <div class="relative z-10 flex items-end sm:items-center justify-center min-h-screen p-0 sm:p-4">
-            <div class="glass-panel w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10">
-                <div class="sticky top-0 bg-surface/95 backdrop-blur-sm p-3 sm:p-4 border-b border-white/5 flex items-center justify-between">
-                    <h3 class="font-display font-semibold text-base sm:text-xl">Gerenciar Categorias</h3>
-                    <button onclick="closeCategoryModal()" class="text-zinc-500 hover:text-white transition-colors p-1 -mr-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                <div class="p-3 sm:p-4">
-                    <form onsubmit="event.preventDefault(); addCategory();" class="flex gap-2 mb-3">
-                        <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required class="flex-1 px-3 py-2 rounded-lg text-sm">
-                        <button type="submit" class="bg-accent hover:bg-accent/90 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Adicionar</button>
-                    </form>
-                    <div id="categoriesList" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
-                </div>
+    <div id="categoryModal" class="hidden">
+        <div class="modal-backdrop" onclick="closeCategoryModal()"></div>
+        <div class="modal-content glass-panel shadow-2xl border border-white/10">
+            <div style="position:sticky;top:0;background:rgba(24,24,27,0.95);backdrop-filter:blur(8px);padding:0.75rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;">
+                <h3 class="font-display font-semibold text-base sm:text-xl">Gerenciar Categorias</h3>
+                <button onclick="closeCategoryModal()" style="color:#71717a;padding:0.25rem;" class="hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div style="padding:0.75rem 1rem;">
+                <form onsubmit="event.preventDefault(); addCategory();" style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
+                    <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required style="flex:1;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;">
+                    <button type="submit" style="background:#8b5cf6;color:white;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;white-space:nowrap;" class="hover:bg-accent/90 transition-all">Adicionar</button>
+                </form>
+                <div id="categoriesList" style="max-height:50vh;overflow-y:auto;padding-right:0.25rem;"></div>
             </div>
         </div>
     </div>
