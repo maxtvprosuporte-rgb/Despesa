@@ -174,56 +174,47 @@
             .transaction-card { display: none; }
         }
 
-        /* Mobile bottom sheet modal */
-        #transactionModal.hidden,
-        #categoryModal.hidden {
-            display: none !important;
-        }
-
-        #transactionModal,
-        #categoryModal {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        #transactionModal .modal-backdrop,
-        #categoryModal .modal-backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
-        }
-
-        #transactionModal .modal-content,
-        #categoryModal .modal-content {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-
+        /* Modal responsive */
         @media (max-width: 639px) {
-            #transactionModal .modal-content,
-            #categoryModal .modal-content {
-                border-radius: 16px 16px 0 0;
-                max-height: 90vh;
+            .modal-panel {
+                border-radius: 12px !important;
+                max-width: 90vw !important;
+            }
+        }
+        @media (min-width: 640px) {
+            .modal-container {
+                align-items: center !important;
+                padding: 16px !important;
+            }
+            .modal-panel {
+                border-radius: 12px !important;
+                max-width: 400px !important;
             }
         }
 
-        @media (min-width: 640px) {
-            #transactionModal,
-            #categoryModal {
-                align-items: center;
-                padding: 1rem;
-            }
-            #transactionModal .modal-content,
-            #categoryModal .modal-content {
-                max-width: 28rem;
+        /* Radio button styling */
+        input[type="radio"]:checked + .type-btn-expense {
+            background: rgba(244, 63, 94, 0.2);
+            border-color: #f43f5e;
+            color: #f43f5e;
+        }
+        input[type="radio"]:checked + .type-btn-income {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: #10b981;
+            color: #10b981;
+        }
+        input[type="radio"]:checked + .amount-type-total {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+        input[type="radio"]:checked + .amount-type-installment {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+
+        /* Mobile transaction cards */
                 max-height: 90vh;
                 border-radius: 1rem;
             }
@@ -564,15 +555,65 @@
     </main>
 
     <!-- Add Transaction Modal -->
-    <div id="transactionModal" class="hidden">
-        <div class="modal-backdrop" onclick="closeModal()"></div>
-        <div class="modal-content glass-panel shadow-2xl border border-white/10">
-            <div style="position:sticky;top:0;background:rgba(24,24,27,0.95);backdrop-filter:blur(8px);padding:0.75rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;">
-                <h3 class="font-display font-semibold text-base sm:text-xl">Nova Transação</h3>
-                <button onclick="closeModal()" style="color:#71717a;padding:0.25rem;" class="hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+    <div id="transactionModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Nova Transação</h3>
+                    <button onclick="closeModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" style="padding:16px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="type" value="expense" style="display:none;" checked>
+                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:12px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="type-btn-expense">Despesa</div>
+                        </label>
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="type" value="income" style="display:none;">
+                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:12px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="type-btn-income">Receita</div>
+                        </label>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Valor (R$)</label>
+                        <input type="number" name="amount" step="0.01" min="0.01" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:600;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="0,00">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <label style="cursor:pointer;">
+                                <input type="radio" name="amountType" value="total" style="display:none;" checked>
+                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:10px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="amount-type-total">Valor Total<span style="display:block;font-size:9px;font-weight:400;color:#71717a;margin-top:2px;">Divide pelas parcelas</span></div>
+                            </label>
+                            <label style="cursor:pointer;">
+                                <input type="radio" name="amountType" value="installment" style="display:none;">
+                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:10px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="amount-type-installment">Valor da Parcela<span style="display:block;font-size:9px;font-weight:400;color:#71717a;margin-top:2px;">Repete o valor</span></div>
+                            </label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Categoria</label>
+                        <select name="category" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;"></select>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Data 1ª Parcela</label>
+                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Nº de Parcelas</label>
+                        <input type="number" name="installments" min="1" value="1" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Descrição (opcional)</label>
+                        <input type="text" name="description" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="Ex: Supermercado, Salário...">
+                    </div>
+                    <button type="submit" id="saveTransactionBtn" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:all 0.2s;">
+                        <span id="saveBtnText">Salvar Transação</span>
+                        <span id="saveBtnSpinner" class="spinner" style="display:none;"></span>
+                    </button>
+                </form>
             </div>
+        </div>
+    </div>
             <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" style="padding:0.75rem 1rem;">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
                     <label style="cursor:pointer;">
@@ -623,21 +664,23 @@
     </div>
 
     <!-- Category Modal -->
-    <div id="categoryModal" class="hidden">
-        <div class="modal-backdrop" onclick="closeCategoryModal()"></div>
-        <div class="modal-content glass-panel shadow-2xl border border-white/10">
-            <div style="position:sticky;top:0;background:rgba(24,24,27,0.95);backdrop-filter:blur(8px);padding:0.75rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;">
-                <h3 class="font-display font-semibold text-base sm:text-xl">Gerenciar Categorias</h3>
-                <button onclick="closeCategoryModal()" style="color:#71717a;padding:0.25rem;" class="hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div style="padding:0.75rem 1rem;">
-                <form onsubmit="event.preventDefault(); addCategory();" style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
-                    <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required style="flex:1;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;">
-                    <button type="submit" style="background:#8b5cf6;color:white;padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:0.875rem;font-weight:500;white-space:nowrap;" class="hover:bg-accent/90 transition-all">Adicionar</button>
-                </form>
-                <div id="categoriesList" style="max-height:50vh;overflow-y:auto;padding-right:0.25rem;"></div>
+    <div id="categoryModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeCategoryModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Gerenciar Categorias</h3>
+                    <button onclick="closeCategoryModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div style="padding:16px;">
+                    <form onsubmit="event.preventDefault(); addCategory();" style="display:flex;gap:8px;margin-bottom:12px;">
+                        <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required style="flex:1;padding:8px 12px;border-radius:8px;font-size:14px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                        <button type="submit" style="background:#8b5cf6;color:white;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;white-space:nowrap;border:none;cursor:pointer;">Adicionar</button>
+                    </form>
+                    <div id="categoriesList" style="max-height:50vh;overflow-y:auto;padding-right:4px;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1320,8 +1363,8 @@
             });
         }
 
-        function openCategoryModal(){renderCategoriesList();document.getElementById('categoryModal').classList.remove('hidden');}
-        function closeCategoryModal(){document.getElementById('categoryModal').classList.add('hidden');}
+        function openCategoryModal(){renderCategoriesList();document.getElementById('categoryModal').style.display='block';}
+        function closeCategoryModal(){document.getElementById('categoryModal').style.display='none';}
 
         function renderCategoriesList(){
             const c=document.getElementById('categoriesList'); c.innerHTML='';
@@ -1373,11 +1416,11 @@
                 modal.querySelector('h3').textContent='Nova Transação';
                 modal.querySelector('button[type="submit"]').textContent='Salvar Transação';
             }
-            modal.classList.remove('hidden');
+            modal.style.display='block';
         }
 
         function editTransaction(id){const t=transactions.find(i=>i.id===id);if(t)openModal(t);}
-        function closeModal(){document.getElementById('transactionModal').classList.add('hidden');editingId=null;}
+        function closeModal(){document.getElementById('transactionModal').style.display='none';editingId=null;}
 
         document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();closeCategoryModal();}});
 
