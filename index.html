@@ -178,19 +178,23 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.375rem;
         }
         @media (max-width: 639px) {
             .header-actions {
-                gap: 0.375rem;
+                gap: 0.25rem;
             }
             .header-actions .btn-icon-only {
-                width: 2.25rem;
-                height: 2.25rem;
+                width: 2rem;
+                height: 2rem;
                 padding: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+            }
+            .header-actions button:last-child {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
             }
         }
 
@@ -326,12 +330,12 @@
 
     <!-- Header -->
     <header class="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
-            <div class="flex items-center gap-2 sm:gap-3">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-white text-lg">F</div>
                 <h1 class="font-display font-semibold text-lg sm:text-xl tracking-tight hidden sm:block">FinControl</h1>
             </div>
-            <div class="header-actions">
+            <div class="header-actions flex-shrink-0">
                 <div id="householdBadge" class="hidden sm:flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2.5 py-1.5" title="Código da casa - compartilhe com seu parceiro(a)">
                     <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     <span id="householdCodeDisplay" class="text-accent text-xs font-mono font-semibold tracking-wider"></span>
@@ -457,58 +461,58 @@
     </main>
 
     <!-- Add Transaction Modal -->
-    <div id="transactionModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center z-10 pointer-events-none">
-            <div class="glass-panel rounded-t-2xl sm:rounded-2xl p-3 sm:p-6 shadow-2xl border border-white/10 sm:border-t max-h-[80vh] sm:max-h-[90vh] overflow-y-auto w-full sm:w-auto sm:max-w-md pointer-events-auto">
-                <div class="flex items-center justify-between mb-3 sm:mb-5">
+    <div id="transactionModal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="relative z-10 flex items-end sm:items-center justify-center min-h-screen p-0 sm:p-4">
+            <div class="glass-panel w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10">
+                <div class="sticky top-0 bg-surface/95 backdrop-blur-sm p-3 sm:p-4 border-b border-white/5 flex items-center justify-between">
                     <h3 class="font-display font-semibold text-base sm:text-xl">Nova Transação</h3>
-                    <button onclick="closeModal()" class="text-zinc-500 hover:text-white transition-colors p-1">
+                    <button onclick="closeModal()" class="text-zinc-500 hover:text-white transition-colors p-1 -mr-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-3 sm:space-y-4">
-                    <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="p-3 sm:p-4 space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
                         <label class="cursor-pointer">
                             <input type="radio" name="type" value="expense" class="peer sr-only" checked>
-                            <div class="text-center py-2 sm:py-2.5 rounded-lg border border-white/10 peer-checked:bg-danger/20 peer-checked:border-danger peer-checked:text-danger transition-all text-xs sm:text-sm font-medium">Despesa</div>
+                            <div class="text-center py-2 rounded-lg border border-white/10 peer-checked:bg-danger/20 peer-checked:border-danger peer-checked:text-danger transition-all text-xs sm:text-sm font-medium">Despesa</div>
                         </label>
                         <label class="cursor-pointer">
                             <input type="radio" name="type" value="income" class="peer sr-only">
-                            <div class="text-center py-2 sm:py-2.5 rounded-lg border border-white/10 peer-checked:bg-primary/20 peer-checked:border-primary peer-checked:text-primary transition-all text-xs sm:text-sm font-medium">Receita</div>
+                            <div class="text-center py-2 rounded-lg border border-white/10 peer-checked:bg-primary/20 peer-checked:border-primary peer-checked:text-primary transition-all text-xs sm:text-sm font-medium">Receita</div>
                         </label>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1">Valor (R$)</label>
-                        <input type="number" name="amount" step="0.01" min="0.01" required class="w-full px-3 py-2 sm:py-2.5 rounded-lg text-base sm:text-lg font-semibold" placeholder="0,00">
-                        <div class="grid grid-cols-2 gap-2 mt-2 sm:mt-3">
+                        <input type="number" name="amount" step="0.01" min="0.01" required class="w-full px-3 py-2 rounded-lg text-sm sm:text-base font-semibold" placeholder="0,00">
+                        <div class="grid grid-cols-2 gap-2 mt-2">
                             <label class="cursor-pointer">
                                 <input type="radio" name="amountType" value="total" class="peer sr-only" checked>
-                                <div class="text-center py-2 sm:py-2.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-[11px] sm:text-xs font-medium">Valor Total<span class="block text-[9px] sm:text-[10px] font-normal text-zinc-500 mt-0.5">Divide pelas parcelas</span></div>
+                                <div class="text-center py-1.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-[10px] sm:text-xs font-medium">Valor Total<span class="block text-[9px] font-normal text-zinc-500 mt-0.5">Divide pelas parcelas</span></div>
                             </label>
                             <label class="cursor-pointer">
                                 <input type="radio" name="amountType" value="installment" class="peer sr-only">
-                                <div class="text-center py-2 sm:py-2.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-[11px] sm:text-xs font-medium">Valor da Parcela<span class="block text-[9px] sm:text-[10px] font-normal text-zinc-500 mt-0.5">Repete o valor</span></div>
+                                <div class="text-center py-1.5 rounded-lg border border-white/10 peer-checked:bg-accent/20 peer-checked:border-accent peer-checked:text-accent transition-all text-[10px] sm:text-xs font-medium">Valor da Parcela<span class="block text-[9px] font-normal text-zinc-500 mt-0.5">Repete o valor</span></div>
                             </label>
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1">Categoria</label>
-                        <select name="category" required class="w-full px-3 py-2 sm:py-2.5 rounded-lg text-sm"></select>
+                        <select name="category" required class="w-full px-3 py-2 rounded-lg text-sm"></select>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1">Data 1ª Parcela</label>
-                        <input type="date" name="date" required class="w-full px-3 py-2 sm:py-2.5 rounded-lg appearance-none text-sm">
+                        <input type="date" name="date" required class="w-full px-3 py-2 rounded-lg appearance-none text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1">Nº de Parcelas</label>
-                        <input type="number" name="installments" min="1" value="1" required class="w-full px-3 py-2 sm:py-2.5 rounded-lg appearance-none text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]">
+                        <input type="number" name="installments" min="1" value="1" required class="w-full px-3 py-2 rounded-lg appearance-none text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-zinc-400 mb-1">Descrição (opcional)</label>
-                        <input type="text" name="description" class="w-full px-3 py-2 sm:py-2.5 rounded-lg text-sm" placeholder="Ex: Supermercado, Salário mensal...">
+                        <input type="text" name="description" class="w-full px-3 py-2 rounded-lg text-sm" placeholder="Ex: Supermercado, Salário...">
                     </div>
-                    <button type="submit" id="saveTransactionBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 sm:py-3 rounded-lg transition-all mt-1 sm:mt-2 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 mb-[env(safe-area-inset-bottom)] text-sm sm:text-base">
+                    <button type="submit" id="saveTransactionBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 text-sm sm:text-base">
                         <span id="saveBtnText">Salvar Transação</span>
                         <span id="saveBtnSpinner" class="spinner hidden"></span>
                     </button>
@@ -518,21 +522,23 @@
     </div>
 
     <!-- Category Modal -->
-    <div id="categoryModal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCategoryModal()"></div>
-        <div class="absolute inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center z-10 pointer-events-none">
-            <div class="glass-panel rounded-t-2xl sm:rounded-2xl p-3 sm:p-6 shadow-2xl border border-white/10 sm:border-t max-h-[80vh] sm:max-h-[90vh] overflow-y-auto w-full sm:w-auto sm:max-w-md pointer-events-auto">
-                <div class="flex items-center justify-between mb-3 sm:mb-5">
+    <div id="categoryModal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeCategoryModal()"></div>
+        <div class="relative z-10 flex items-end sm:items-center justify-center min-h-screen p-0 sm:p-4">
+            <div class="glass-panel w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10">
+                <div class="sticky top-0 bg-surface/95 backdrop-blur-sm p-3 sm:p-4 border-b border-white/5 flex items-center justify-between">
                     <h3 class="font-display font-semibold text-base sm:text-xl">Gerenciar Categorias</h3>
-                    <button onclick="closeCategoryModal()" class="text-zinc-500 hover:text-white transition-colors p-1">
+                    <button onclick="closeCategoryModal()" class="text-zinc-500 hover:text-white transition-colors p-1 -mr-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                <form onsubmit="event.preventDefault(); addCategory();" class="flex gap-2 mb-4">
-                    <input type="text" id="newCategoryInput" placeholder="Nome da nova categoria..." required class="flex-1 px-3 py-2.5 rounded-lg text-sm">
-                    <button type="submit" class="bg-accent hover:bg-accent/90 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Adicionar</button>
-                </form>
-                <div id="categoriesList" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
+                <div class="p-3 sm:p-4">
+                    <form onsubmit="event.preventDefault(); addCategory();" class="flex gap-2 mb-3">
+                        <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required class="flex-1 px-3 py-2 rounded-lg text-sm">
+                        <button type="submit" class="bg-accent hover:bg-accent/90 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Adicionar</button>
+                    </form>
+                    <div id="categoriesList" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
+                </div>
             </div>
         </div>
     </div>
