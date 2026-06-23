@@ -214,6 +214,23 @@
             color: #8b5cf6;
         }
 
+        /* Save transaction button */
+        #saveTransactionBtn {
+            cursor: pointer;
+        }
+        #saveTransactionBtn:hover:not(:disabled) {
+            background: #7c3aed !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4) !important;
+        }
+        #saveTransactionBtn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        #saveTransactionBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         #transactionModal,
         #categoryModal {
             position: fixed;
@@ -600,7 +617,7 @@
                         <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Descrição (opcional)</label>
                         <input type="text" name="description" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="Ex: Supermercado, Salário...">
                     </div>
-                    <button type="submit" id="saveTransactionBtn" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:all 0.2s;">
+                    <button type="button" id="saveTransactionBtn" onclick="document.getElementById('transactionForm').requestSubmit()" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:all 0.2s;">
                         <span id="saveBtnText">Salvar Transação</span>
                         <span id="saveBtnSpinner" class="spinner" style="display:none;"></span>
                     </button>
@@ -1359,11 +1376,11 @@
                 form.querySelector('input[name="description"]').value=(transaction.description===transaction.category)?'':transaction.description;
                 form.querySelector('input[name="installments"]').value=1;
                 modal.querySelector('h3').textContent='Editar Transação';
-                modal.querySelector('button[type="submit"]').textContent='Atualizar Transação';
+                document.getElementById('saveBtnText').textContent='Atualizar Transação';
             } else {
                 editingId=null;
                 modal.querySelector('h3').textContent='Nova Transação';
-                modal.querySelector('button[type="submit"]').textContent='Salvar Transação';
+                document.getElementById('saveBtnText').textContent='Salvar Transação';
             }
             modal.style.display='block';
         }
