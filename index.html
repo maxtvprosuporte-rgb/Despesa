@@ -539,13 +539,14 @@
             <div class="space-y-4 sm:space-y-6">
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300">
                     <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-                        <h3 class="font-display font-semibold text-lg">Distribuição de Despesas</h3>
+                        <h3 class="font-display font-semibold text-lg">Evolução Mensal</h3>
                         <div class="flex items-center gap-2">
-                            <button onclick="setChartFilter('all')" id="chartFilterAll" class="chart-filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Geral</button>
+                            <button onclick="setChartFilter('all')" id="chartFilterAll" class="chart-filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Casa</button>
                             <button onclick="setChartFilter('user')" id="chartFilterUser" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Minhas</button>
+                            <select id="chartYearSelect" onchange="renderChart()" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"></select>
                         </div>
                     </div>
-                    <div class="h-48 sm:h-64 w-full flex items-center justify-center">
+                    <div class="h-64 sm:h-80 w-full flex items-center justify-center">
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
@@ -706,11 +707,19 @@
                         <label style="display:block;font-size:11px;font-weight:500;color:#71717a;margin-bottom:4px;">E-mail</label>
                         <div id="profileEmailDisplay" style="padding:8px 12px;border-radius:8px;font-size:13px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);color:#71717a;box-sizing:border-box;"></div>
                     </div>
+                    <div style="margin-bottom:16px;padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;">
+                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                            <input type="checkbox" id="profileAnonymousToggle" style="width:18px;height:18px;accent-color:#8b5cf6;cursor:pointer;">
+                            <div style="flex:1;">
+                                <div style="font-size:13px;color:#fafafa;font-weight:500;">Transações Anônimas</div>
+                                <div style="font-size:11px;color:#71717a;margin-top:2px;">Outros membros da casa não verão suas transações no histórico</div>
+                            </div>
+                        </label>
+                    </div>
                     <button type="submit" id="saveProfileBtn" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:all 0.2s;">
-                        <span id="saveProfileBtnText">Salvar Nome</span>
+                        <span id="saveProfileBtnText">Salvar Configurações</span>
                         <span id="saveProfileSpinner" class="spinner" style="display:none;"></span>
                     </button>
-                    <p style="font-size:11px;color:#71717a;margin-top:10px;text-align:center;">O nome aparecerá nas transações para toda a casa.</p>
                 </form>
             </div>
         </div>
@@ -750,6 +759,7 @@
         let householdCode = null;
         let chartFilter = 'all';
         let meuNome = ''; // Nome personalizado do usuário atual
+        let isAnonymous = false; // Modo anônimo
 
         const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
 
@@ -1153,6 +1163,7 @@
             const dateInput = document.querySelector('#transactionForm input[name="date"]');
             if (dateInput) dateInput.valueAsDate = new Date();
             populateCategorySelects();
+            populateChartYearSelector();
             setChartFilter('all');
             updateUI();
         }
@@ -1162,10 +1173,17 @@
         function updateUI() { updateSummary(); renderTransactions(); renderChart(); }
 
         function updateSummary() {
-            const f = getFilteredTransactions();
+            let f = getFilteredTransactions();
             const uid = currentUser?.uid;
 
-            // House totals (all members)
+            // Filter out anonymous transactions from other users for house totals
+            f = f.filter(t => {
+                if (t.userId === uid) return true; // Own transactions always visible
+                if (t.isAnonymous) return false;
+                return true;
+            });
+
+            // House totals (all members, excluding anonymous from others)
             const houseIncome = f.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
             const houseExpense = f.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
@@ -1227,6 +1245,13 @@
             // Apply type filter
             const typeFilter = document.getElementById('filterType')?.value || 'all';
             if (typeFilter !== 'all') filtered = filtered.filter(t => t.type === typeFilter);
+
+            // Filter out anonymous transactions from other users
+            filtered = filtered.filter(t => {
+                if (t.userId === currentUser?.uid) return true; // Own transactions always visible
+                if (t.isAnonymous) return false;
+                return true;
+            });
 
             if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
@@ -1324,20 +1349,178 @@
             renderChart();
         }
 
-        function renderChart() {
-            const ctx=document.getElementById('expenseChart').getContext('2d');
-            let filtered=getFilteredTransactions();
+        function populateChartYearSelector() {
+            const select = document.getElementById('chartYearSelect');
+            const currentYear = new Date().getFullYear();
+            const years = new Set();
+            years.add(currentYear);
             
+            // Get years from transactions
+            transactions.forEach(t => {
+                if (t.date) {
+                    const year = new Date(t.date).getFullYear();
+                    years.add(year);
+                }
+            });
+            
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            select.innerHTML = sortedYears.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const yearSelect = document.getElementById('chartYearSelect');
+            const selectedYear = yearSelect?.value ? parseInt(yearSelect.value) : new Date().getFullYear();
+            
+            // Get all transactions for the selected year
+            let yearTransactions = transactions.filter(t => {
+                const txDate = new Date(t.date);
+                return txDate.getFullYear() === selectedYear;
+            });
+            
+            // Apply user filter
             if (chartFilter === 'user' && currentUser) {
-                filtered = filtered.filter(t => t.userId === currentUser.uid);
+                yearTransactions = yearTransactions.filter(t => t.userId === currentUser.uid);
             }
             
-            const ebc={};
-            filtered.filter(t=>t.type==='expense').forEach(t=>{ebc[t.category]=(ebc[t.category]||0)+t.amount;});
-            const labels=Object.keys(ebc), data=Object.values(ebc);
-            if(expenseChartInstance){expenseChartInstance.destroy();expenseChartInstance=null;}
-            if(labels.length===0) return;
-            expenseChartInstance=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:['#f43f5e','#8b5cf6','#f59e0b','#10b981','#3b82f6','#ec4899','#6b7280'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#a1a1aa',font:{family:'Plus Jakarta Sans',size:11},padding:16,usePointStyle:true,pointStyleWidth:8}}},cutout:'75%'}});
+            // Filter out anonymous transactions from other users
+            yearTransactions = yearTransactions.filter(t => {
+                if (t.userId === currentUser?.uid) return true; // Own transactions always visible
+                if (t.isAnonymous) return false;
+                return true;
+            });
+            
+            // Aggregate by month
+            const monthlyData = Array(12).fill({ income: 0, expense: 0 });
+            const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            
+            yearTransactions.forEach(t => {
+                const month = new Date(t.date).getMonth();
+                if (t.type === 'income') {
+                    monthlyData[month].income += t.amount;
+                } else if (t.type === 'expense') {
+                    monthlyData[month].expense += t.amount;
+                }
+            });
+            
+            const labels = monthNames;
+            const incomeData = monthlyData.map(d => d.income);
+            const expenseData = monthlyData.map(d => d.expense);
+            
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy();
+                expenseChartInstance = null;
+            }
+            
+            // Check if there's any data
+            const hasData = incomeData.some(v => v > 0) || expenseData.some(v => v > 0);
+            if (!hasData) return;
+            
+            expenseChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Receitas',
+                            data: incomeData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#10b981',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Despesas',
+                            data: expenseData,
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#f43f5e',
+                            pointBorderColor: '#f43f5e',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#a1a1aa',
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    size: 11
+                                },
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyleWidth: 8
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(24, 24, 27, 0.95)',
+                            titleColor: '#fafafa',
+                            bodyColor: '#a1a1aa',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y || 0;
+                                    return `${label}: ${formatCurrency(value)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#71717a',
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#71717a',
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
         }
 
         async function handleTransactionSubmit(e) {
@@ -1421,6 +1604,7 @@
                             description: desc,
                             userId: userId,
                             userName: userName,
+                            isAnonymous: isAnonymous,
                             groupId: newGroupId,
                             installmentNum: instNum,
                             totalInstallments: totalInst
@@ -1446,6 +1630,7 @@
                             description:desc,
                             userId:currentUser.uid,
                             userName:getMyDisplayName(),
+                            isAnonymous:isAnonymous,
                             groupId: baseId,
                             installmentNum: i+1,
                             totalInstallments: installments
@@ -1575,8 +1760,10 @@
             try {
                 const userRef = doc(db, 'users', currentUser.uid);
                 const userSnap = await withTimeout(getDoc(userRef));
-                if (userSnap.exists() && userSnap.data().name) {
-                    return userSnap.data().name;
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    isAnonymous = data.isAnonymous || false;
+                    return data.name || '';
                 }
             } catch (e) {
                 console.warn('Could not load user name:', e);
@@ -1588,6 +1775,7 @@
             document.getElementById('profileModal').style.display = 'block';
             document.getElementById('profileNameInput').value = getMyDisplayName();
             document.getElementById('profileEmailDisplay').textContent = currentUser?.email || '';
+            document.getElementById('profileAnonymousToggle').checked = isAnonymous;
         }
 
         function closeProfileModal() {
@@ -1597,6 +1785,7 @@
         async function handleProfileSubmit(e) {
             e.preventDefault();
             const newName = document.getElementById('profileNameInput').value.trim();
+            const newAnonymous = document.getElementById('profileAnonymousToggle').checked;
             if (!newName) { showToast('Por favor, insira um nome.', 'error'); return; }
 
             const btn = document.getElementById('saveProfileBtn');
@@ -1614,21 +1803,33 @@
                 await withTimeout(setDoc(doc(db, 'users', currentUser.uid), {
                     name: newName,
                     email: currentUser.email,
-                    householdCode: householdCode || null
+                    householdCode: householdCode || null,
+                    isAnonymous: newAnonymous
                 }, { merge: true }));
 
                 // Update Firebase Auth displayName
                 try { await updateProfile(currentUser, { displayName: newName }); } catch(e) {}
 
                 meuNome = newName;
+                isAnonymous = newAnonymous;
 
-                // Update current user's existing transactions to reflect new name
+                // Update current user's existing transactions to reflect new name and anonymous status
                 const updatedIds = [];
                 for (const t of transactions) {
-                    if (t.userId === currentUser.uid && t.userName !== newName) {
-                        t.userName = newName;
-                        await saveSingleTransaction(t);
-                        updatedIds.push(t.id);
+                    if (t.userId === currentUser.uid) {
+                        let needsUpdate = false;
+                        if (t.userName !== newName) {
+                            t.userName = newName;
+                            needsUpdate = true;
+                        }
+                        if (t.isAnonymous !== newAnonymous) {
+                            t.isAnonymous = newAnonymous;
+                            needsUpdate = true;
+                        }
+                        if (needsUpdate) {
+                            await saveSingleTransaction(t);
+                            updatedIds.push(t.id);
+                        }
                     }
                 }
 
@@ -1637,16 +1838,17 @@
 
                 updateUI();
                 closeProfileModal();
-                showToast(updatedIds.length > 0
-                    ? `Nome atualizado! ${updatedIds.length} transações atualizadas.`
-                    : 'Nome atualizado com sucesso!');
+                const msg = [];
+                if (updatedIds.length > 0) msg.push(`${updatedIds.length} transações atualizadas`);
+                msg.push(newAnonymous ? 'Modo anônimo ativado' : 'Modo anônimo desativado');
+                showToast(msg.join('. ') + '!');
 
             } catch (error) {
                 console.error('Error saving profile:', error);
                 showToast(`Erro ao salvar: ${error.message}`, 'error');
             } finally {
                 btn.disabled = false;
-                btnText.textContent = 'Salvar Nome';
+                btnText.textContent = 'Salvar Configurações';
                 spinner.classList.add('hidden');
             }
         }
@@ -1656,18 +1858,34 @@
             form.reset();
             const di=form.querySelector('input[name="date"]'); if(di)di.valueAsDate=new Date();
             populateCategorySelects();
+
+            // Track category changes to update description
+            const categorySelect = form.querySelector('select[name="category"]');
+            const descriptionInput = form.querySelector('input[name="description"]');
+            let categoryChanged = false;
+
+            categorySelect.addEventListener('change', () => {
+                categoryChanged = true;
+                // Auto-update description to match new category (only if empty or was auto-set)
+                if (!descriptionInput.value || descriptionInput.value === categorySelect.options[0]?.text || descriptionInput.dataset.autoCategory === descriptionInput.value) {
+                    descriptionInput.value = categorySelect.value;
+                    descriptionInput.dataset.autoCategory = categorySelect.value;
+                }
+            });
+
             if(transaction){
                 editingId=transaction.id;
                 form.querySelector(`input[name="type"][value="${transaction.type}"]`).checked=true;
                 form.querySelector('input[name="amount"]').value=transaction.amount;
-                const cs=form.querySelector('select[name="category"]'); cs.value=transaction.category;
-                if(!cs.value){const o=document.createElement('option');o.value=transaction.category;o.textContent=transaction.category+' (Removida)';o.selected=true;cs.appendChild(o);}
+                categorySelect.value=transaction.category;
+                if(!categorySelect.value){const o=document.createElement('option');o.value=transaction.category;o.textContent=transaction.category+' (Removida)';o.selected=true;categorySelect.appendChild(o);}
                 form.querySelector('input[name="date"]').value=transaction.date;
 
                 // Strip installment suffix from description for clean editing
                 let cleanDesc = (transaction.description === transaction.category) ? '' : transaction.description;
                 cleanDesc = cleanDesc.replace(/\s*\(\d+\/\d+\)\s*$/, '');
-                form.querySelector('input[name="description"]').value = cleanDesc;
+                descriptionInput.value = cleanDesc;
+                descriptionInput.dataset.autoCategory = cleanDesc; // Mark as auto-set
 
                 // Show remaining installments if grouped
                 const groupId = transaction.groupId || transaction.id;
