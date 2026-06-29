@@ -538,12 +538,38 @@
         <div class="grid grid-cols-1 gap-4 sm:gap-6">
             <div class="space-y-4 sm:space-y-6">
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300">
-                    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-                        <h3 class="font-display font-semibold text-lg">Evolução Mensal</h3>
-                        <div class="flex items-center gap-2">
-                            <button onclick="setChartFilter('all')" id="chartFilterAll" class="chart-filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Casa</button>
-                            <button onclick="setChartFilter('user')" id="chartFilterUser" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Minhas</button>
-                            <select id="chartYearSelect" onchange="renderChart()" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer"></select>
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+                        <h3 class="font-display font-semibold text-lg">Evolução Financeira</h3>
+                    </div>
+                    <!-- Chart Filter Bar -->
+                    <div class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div class="flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Filtros:</span>
+                        </div>
+                        <select id="chartViewMode" onchange="onChartViewModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="month">Mês Atual</option>
+                            <option value="year">Ano Inteiro</option>
+                            <option value="custom">Período Personalizado</option>
+                        </select>
+                        <button onclick="setChartFilter('all')" id="chartFilterAll" class="chart-filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Casa</button>
+                        <button onclick="setChartFilter('user')" id="chartFilterUser" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Minhas</button>
+                        <div id="customDateSelectors" style="display:none" class="flex items-center gap-2">
+                            <select id="chartCustomMonth" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                                <option value="0">Janeiro</option>
+                                <option value="1">Fevereiro</option>
+                                <option value="2">Março</option>
+                                <option value="3">Abril</option>
+                                <option value="4">Maio</option>
+                                <option value="5">Junho</option>
+                                <option value="6">Julho</option>
+                                <option value="7">Agosto</option>
+                                <option value="8">Setembro</option>
+                                <option value="9">Outubro</option>
+                                <option value="10">Novembro</option>
+                                <option value="11">Dezembro</option>
+                            </select>
+                            <select id="chartCustomYear" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors"></select>
                         </div>
                     </div>
                     <div class="h-64 sm:h-80 w-full flex items-center justify-center">
@@ -803,6 +829,7 @@
         window.deleteCategory = deleteCategory;
         window.handleTransactionSubmit = handleTransactionSubmit;
         window.setChartFilter = setChartFilter;
+        window.onChartViewModeChange = onChartViewModeChange;
         window.clearAllData = clearAllData;
         window.copyHouseholdCode = copyHouseholdCode;
         window.createNewHousehold = createNewHousehold;
@@ -1163,7 +1190,7 @@
             const dateInput = document.querySelector('#transactionForm input[name="date"]');
             if (dateInput) dateInput.valueAsDate = new Date();
             populateCategorySelects();
-            populateChartYearSelector();
+            onChartViewModeChange();
             setChartFilter('all');
             updateUI();
         }
@@ -1349,8 +1376,25 @@
             renderChart();
         }
 
-        function populateChartYearSelector() {
-            const select = document.getElementById('chartYearSelect');
+        function onChartViewModeChange() {
+            const viewMode = document.getElementById('chartViewMode').value;
+            const customSelectors = document.getElementById('customDateSelectors');
+            
+            // Show/hide custom date selectors
+            if (viewMode === 'custom') {
+                customSelectors.style.display = 'flex';
+                populateCustomYearSelector();
+            } else {
+                customSelectors.style.display = 'none';
+            }
+            
+            renderChart();
+        }
+
+        function populateCustomYearSelector() {
+            const select = document.getElementById('chartCustomYear');
+            if (!select) return;
+            
             const currentYear = new Date().getFullYear();
             const years = new Set();
             years.add(currentYear);
@@ -1365,47 +1409,125 @@
             
             const sortedYears = Array.from(years).sort((a, b) => b - a);
             select.innerHTML = sortedYears.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
+            
+            // Set default month to current month
+            const currentMonth = new Date().getMonth();
+            document.getElementById('chartCustomMonth').value = currentMonth;
         }
 
         function renderChart() {
             const ctx = document.getElementById('expenseChart').getContext('2d');
-            const yearSelect = document.getElementById('chartYearSelect');
-            const selectedYear = yearSelect?.value ? parseInt(yearSelect.value) : new Date().getFullYear();
+            const viewMode = document.getElementById('chartViewMode').value;
             
-            // Get all transactions for the selected year
-            let yearTransactions = transactions.filter(t => {
-                const txDate = new Date(t.date);
-                return txDate.getFullYear() === selectedYear;
-            });
+            let labels = [];
+            let incomeData = [];
+            let expenseData = [];
             
-            // Apply user filter
-            if (chartFilter === 'user' && currentUser) {
-                yearTransactions = yearTransactions.filter(t => t.userId === currentUser.uid);
-            }
-            
-            // Filter out anonymous transactions from other users
-            yearTransactions = yearTransactions.filter(t => {
-                if (t.userId === currentUser?.uid) return true; // Own transactions always visible
-                if (t.isAnonymous) return false;
-                return true;
-            });
-            
-            // Aggregate by month
-            const monthlyData = Array(12).fill({ income: 0, expense: 0 });
-            const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            
-            yearTransactions.forEach(t => {
-                const month = new Date(t.date).getMonth();
-                if (t.type === 'income') {
-                    monthlyData[month].income += t.amount;
-                } else if (t.type === 'expense') {
-                    monthlyData[month].expense += t.amount;
+            if (viewMode === 'month') {
+                // Current month - show daily breakdown
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                let monthTransactions = transactions.filter(t => {
+                    const txDate = new Date(t.date);
+                    return txDate.getFullYear() === year && txDate.getMonth() === month;
+                });
+                
+                // Apply filters
+                if (chartFilter === 'user' && currentUser) {
+                    monthTransactions = monthTransactions.filter(t => t.userId === currentUser.uid);
                 }
-            });
-            
-            const labels = monthNames;
-            const incomeData = monthlyData.map(d => d.income);
-            const expenseData = monthlyData.map(d => d.expense);
+                monthTransactions = monthTransactions.filter(t => {
+                    if (t.userId === currentUser?.uid) return true;
+                    if (t.isAnonymous) return false;
+                    return true;
+                });
+                
+                // Aggregate by day
+                const dailyData = Array(daysInMonth).fill({ income: 0, expense: 0 });
+                monthTransactions.forEach(t => {
+                    const day = new Date(t.date).getDate() - 1;
+                    if (t.type === 'income') {
+                        dailyData[day].income += t.amount;
+                    } else if (t.type === 'expense') {
+                        dailyData[day].expense += t.amount;
+                    }
+                });
+                
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                incomeData = dailyData.map(d => d.income);
+                expenseData = dailyData.map(d => d.expense);
+                
+            } else if (viewMode === 'year') {
+                // Full year - show monthly breakdown
+                const year = new Date().getFullYear();
+                
+                let yearTransactions = transactions.filter(t => {
+                    const txDate = new Date(t.date);
+                    return txDate.getFullYear() === year;
+                });
+                
+                // Apply filters
+                if (chartFilter === 'user' && currentUser) {
+                    yearTransactions = yearTransactions.filter(t => t.userId === currentUser.uid);
+                }
+                yearTransactions = yearTransactions.filter(t => {
+                    if (t.userId === currentUser?.uid) return true;
+                    if (t.isAnonymous) return false;
+                    return true;
+                });
+                
+                const monthlyData = Array(12).fill({ income: 0, expense: 0 });
+                yearTransactions.forEach(t => {
+                    const month = new Date(t.date).getMonth();
+                    if (t.type === 'income') {
+                        monthlyData[month].income += t.amount;
+                    } else if (t.type === 'expense') {
+                        monthlyData[month].expense += t.amount;
+                    }
+                });
+                
+                labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                incomeData = monthlyData.map(d => d.income);
+                expenseData = monthlyData.map(d => d.expense);
+                
+            } else if (viewMode === 'custom') {
+                // Custom month/year - show daily breakdown for selected period
+                const year = parseInt(document.getElementById('chartCustomYear').value);
+                const month = parseInt(document.getElementById('chartCustomMonth').value);
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                let monthTransactions = transactions.filter(t => {
+                    const txDate = new Date(t.date);
+                    return txDate.getFullYear() === year && txDate.getMonth() === month;
+                });
+                
+                // Apply filters
+                if (chartFilter === 'user' && currentUser) {
+                    monthTransactions = monthTransactions.filter(t => t.userId === currentUser.uid);
+                }
+                monthTransactions = monthTransactions.filter(t => {
+                    if (t.userId === currentUser?.uid) return true;
+                    if (t.isAnonymous) return false;
+                    return true;
+                });
+                
+                const dailyData = Array(daysInMonth).fill({ income: 0, expense: 0 });
+                monthTransactions.forEach(t => {
+                    const day = new Date(t.date).getDate() - 1;
+                    if (t.type === 'income') {
+                        dailyData[day].income += t.amount;
+                    } else if (t.type === 'expense') {
+                        dailyData[day].expense += t.amount;
+                    }
+                });
+                
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                incomeData = dailyData.map(d => d.income);
+                expenseData = dailyData.map(d => d.expense);
+            }
             
             if (expenseChartInstance) {
                 expenseChartInstance.destroy();
