@@ -431,6 +431,10 @@
                     <span id="householdCodeDisplay" class="text-accent text-xs font-mono font-semibold tracking-wider"></span>
                 </div>
                 <span id="userNameDisplay" class="text-zinc-400 text-xs sm:text-sm font-medium hidden md:inline"></span>
+                <button onclick="openProfileModal()" id="profileBtn" class="btn-icon-only text-zinc-400 hover:text-accent transition-colors flex items-center gap-1 bg-surface border border-white/5 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Meu Perfil">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <span class="hidden sm:inline">Perfil</span>
+                </button>
                 <button onclick="handleLogout()" class="btn-icon-only text-zinc-400 hover:text-danger transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Sair">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     <span class="hidden sm:inline">Sair</span>
@@ -546,9 +550,31 @@
                     </div>
                 </div>
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
                         <h3 class="font-display font-semibold text-base sm:text-lg">Histórico de Transações</h3>
                         <button onclick="clearAllData()" class="text-xs text-zinc-500 hover:text-danger transition-colors">Limpar tudo</button>
+                    </div>
+                    <!-- Filter Bar -->
+                    <div id="historyFilterBar" style="display:none" class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div class="flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Filtros:</span>
+                        </div>
+                        <select id="filterSort" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="date-desc">Mais recente</option>
+                            <option value="date-asc">Mais antigo</option>
+                            <option value="amount-desc">Maior valor</option>
+                            <option value="amount-asc">Menor valor</option>
+                        </select>
+                        <select id="filterUser" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="all">Todos os usuários</option>
+                        </select>
+                        <select id="filterType" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="all">Todos os tipos</option>
+                            <option value="expense">Despesas</option>
+                            <option value="income">Receitas</option>
+                        </select>
+                        <button onclick="resetHistoryFilters()" class="text-[11px] text-zinc-500 hover:text-accent transition-colors ml-auto">Limpar filtros</button>
                     </div>
                     <!-- Desktop Table -->
                     <div class="transaction-table-wrapper overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
@@ -660,6 +686,36 @@
         </div>
     </div>
 
+    <!-- Profile Modal -->
+    <div id="profileModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeProfileModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Meu Perfil</h3>
+                    <button onclick="closeProfileModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="profileForm" onsubmit="handleProfileSubmit(event)" style="padding:16px;">
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Seu Nome</label>
+                        <input type="text" id="profileNameInput" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="Como deseja ser chamado(a)?">
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#71717a;margin-bottom:4px;">E-mail</label>
+                        <div id="profileEmailDisplay" style="padding:8px 12px;border-radius:8px;font-size:13px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);color:#71717a;box-sizing:border-box;"></div>
+                    </div>
+                    <button type="submit" id="saveProfileBtn" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:all 0.2s;">
+                        <span id="saveProfileBtnText">Salvar Nome</span>
+                        <span id="saveProfileSpinner" class="spinner" style="display:none;"></span>
+                    </button>
+                    <p style="font-size:11px;color:#71717a;margin-top:10px;text-align:center;">O nome aparecerá nas transações para toda a casa.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
     </div><!-- end appContent -->
 
     <!-- Firebase SDK -->
@@ -693,6 +749,7 @@
         let currentUser = null;
         let householdCode = null;
         let chartFilter = 'all';
+        let meuNome = ''; // Nome personalizado do usuário atual
 
         const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
 
@@ -742,14 +799,22 @@
         window.showJoinHouseholdForm = showJoinHouseholdForm;
         window.hideJoinHouseholdForm = hideJoinHouseholdForm;
         window.joinExistingHousehold = joinExistingHousehold;
+        window.resetHistoryFilters = resetHistoryFilters;
+        window.openProfileModal = openProfileModal;
+        window.closeProfileModal = closeProfileModal;
+        window.handleProfileSubmit = handleProfileSubmit;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('userNameDisplay').textContent = user.displayName || user.email;
-                
+
+                // Load custom name from Firestore
+                meuNome = await loadUserDisplayName();
+                const displayName = getMyDisplayName();
+                document.getElementById('userNameDisplay').textContent = displayName;
+
                 const hasHousehold = await checkUserHousehold();
                 
                 if (hasHousehold) {
@@ -764,6 +829,7 @@
             } else {
                 currentUser = null;
                 householdCode = null;
+                meuNome = '';
                 document.getElementById('loginScreen').classList.remove('hidden');
                 document.getElementById('setupHouseholdScreen').classList.add('hidden');
                 document.getElementById('appContent').classList.add('hidden');
@@ -1139,23 +1205,54 @@
             const tbody = document.getElementById('transactionsList');
             const mobileList = document.getElementById('transactionsListMobile');
             const emptyState = document.getElementById('emptyState');
+            const filterBar = document.getElementById('historyFilterBar');
             tbody.innerHTML = '';
             mobileList.innerHTML = '';
-            const filtered = getFilteredTransactions();
+
+            const monthFiltered = getFilteredTransactions();
+
+            // Show/hide filter bar when there are transactions
+            if (monthFiltered.length > 0) {
+                filterBar.style.display = 'flex';
+                populateUserFilter(monthFiltered);
+            } else {
+                filterBar.style.display = 'none';
+            }
+
+            // Apply user filter
+            const userFilter = document.getElementById('filterUser')?.value || 'all';
+            let filtered = monthFiltered;
+            if (userFilter !== 'all') filtered = filtered.filter(t => t.userId === userFilter);
+
+            // Apply type filter
+            const typeFilter = document.getElementById('filterType')?.value || 'all';
+            if (typeFilter !== 'all') filtered = filtered.filter(t => t.type === typeFilter);
+
             if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
             emptyState.classList.add('hidden');
-            const sorted = [...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+            // Apply sort
+            const sortVal = document.getElementById('filterSort')?.value || 'date-desc';
+            let sorted;
+            if (sortVal === 'amount-desc') sorted = [...filtered].sort((a,b) => b.amount - a.amount);
+            else if (sortVal === 'amount-asc') sorted = [...filtered].sort((a,b) => a.amount - b.amount);
+            else if (sortVal === 'date-asc') sorted = [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date));
+            else sorted = [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date));
+
             sorted.forEach(t => {
                 const isIncome = t.type === 'income';
                 const userName = t.userName || 'Desconhecido';
                 const isCurrentUser = t.userId === currentUser?.uid;
                 const userBadgeClass = isCurrentUser ? 'bg-accent/20 text-accent border-accent/30' : 'bg-primary/20 text-primary border-primary/30';
+                const groupInfo = t.groupId && t.totalInstallments > 1
+                    ? `<span class="text-[9px] text-zinc-600 ml-1">Parcela ${t.installmentNum||'?'}/${t.totalInstallments||'?'}</span>`
+                    : '';
                 
                 // Desktop table row
                 const tr = document.createElement('tr');
                 tr.className = 'group hover:bg-white/[0.02] transition-colors';
                 tr.innerHTML = `
-                    <td class="py-3.5"><div class="font-medium text-zinc-200">${t.description||t.category}</div>${t.description&&t.description!==t.category?`<div class="text-xs text-zinc-500">${t.category}</div>`:''}</td>
+                    <td class="py-3.5"><div class="font-medium text-zinc-200">${t.description||t.category}${groupInfo}</div>${t.description&&t.description!==t.category?`<div class="text-xs text-zinc-500">${t.category}</div>`:''}</td>
                     <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span></td>
                     <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${userName}</span></td>
                     <td class="py-3.5 text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>
@@ -1172,7 +1269,7 @@
                 card.innerHTML = `
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex-1 min-w-0">
-                            <p class="font-medium text-zinc-200 text-sm truncate">${t.description||t.category}</p>
+                            <p class="font-medium text-zinc-200 text-sm truncate">${t.description||t.category}${groupInfo}</p>
                             ${t.description&&t.description!==t.category?`<p class="text-xs text-zinc-500 mt-0.5">${t.category}</p>`:''}
                         </div>
                         <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
@@ -1190,6 +1287,34 @@
                     </div>`;
                 mobileList.appendChild(card);
             });
+        }
+
+        function populateUserFilter(transactionsList) {
+            const select = document.getElementById('filterUser');
+            if (!select) return;
+            const currentVal = select.value;
+            const users = new Map();
+            transactionsList.forEach(t => {
+                if (t.userId && !users.has(t.userId)) users.set(t.userId, t.userName || 'Desconhecido');
+            });
+            select.innerHTML = '<option value="all">Todos os usuários</option>';
+            users.forEach((name, uid) => {
+                const o = document.createElement('option');
+                o.value = uid;
+                o.textContent = name;
+                if (uid === currentVal) o.selected = true;
+                select.appendChild(o);
+            });
+        }
+
+        function resetHistoryFilters() {
+            const sortEl = document.getElementById('filterSort');
+            const userEl = document.getElementById('filterUser');
+            const typeEl = document.getElementById('filterType');
+            if (sortEl) sortEl.value = 'date-desc';
+            if (userEl) userEl.value = 'all';
+            if (typeEl) typeEl.value = 'all';
+            updateUI();
         }
 
         function setChartFilter(filter) {
@@ -1251,19 +1376,80 @@
                 let instAmt = amountType==='total' ? Math.round((inputAmount/installments)*100)/100 : inputAmount;
 
                 if (editingId) {
-                    const idx=transactions.findIndex(t=>t.id===editingId);
-                    if(idx!==-1){
-                        transactions[idx]={...transactions[idx],type:fd.get('type'),amount:inputAmount,category:fd.get('category'),date:fd.get('date'),description:baseDesc,userId:transactions[idx].userId||currentUser.uid,userName:transactions[idx].userName||currentUser.displayName||currentUser.email};
-                        await saveSingleTransaction(transactions[idx]);
+                    const currentTx = transactions.find(t => t.id === editingId);
+                    if (!currentTx) { editingId=null; throw new Error('Transação não encontrada.'); }
+
+                    const groupId = currentTx.groupId || currentTx.id;
+                    const group = transactions.filter(t => t.groupId === groupId)
+                        .sort((a,b) => (a.installmentNum||1) - (b.installmentNum||1));
+                    const currentIdx = group.findIndex(t => t.id === editingId);
+                    const wasGrouped = group.length > 1;
+
+                    // Find the base date for new installments: the date of the current transaction being edited
+                    const editBaseDate = new Date(currentTx.date + 'T12:00:00');
+
+                    // Step 1: Delete all transactions in the group from currentIdx forward
+                    const toDelete = group.slice(currentIdx);
+                    for (const t of toDelete) {
+                        transactions = transactions.filter(tx => tx.id !== t.id);
+                        await deleteTransactionFromFirestore(t.id);
                     }
-                    editingId=null;
+
+                    // Step 2: Create new installments from the edited transaction's date forward
+                    const newGroupId = wasGrouped ? groupId : Date.now();
+                    const userId = currentTx.userId || currentUser.uid;
+                    const userName = currentTx.userName || getMyDisplayName();
+
+                    // Calculate the total installment number to continue numbering
+                    const startNum = currentIdx + 1; // 1-based installment number of current
+                    const totalFromStart = (wasGrouped ? group.length : 1) - currentIdx + (installments - 1);
+
+                    for (let i = 0; i < installments; i++) {
+                        const cd = new Date(editBaseDate);
+                        cd.setMonth(editBaseDate.getMonth() + i);
+                        const ds = `${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
+                        const instNum = startNum + i;
+                        const totalInst = wasGrouped ? (currentIdx + installments) : installments;
+                        let desc = baseDesc;
+                        if (totalInst > 1) desc = `${baseDesc} (${instNum}/${totalInst})`;
+                        const t = {
+                            id: newGroupId + 10000 + i,
+                            type: fd.get('type'),
+                            amount: instAmt,
+                            category: fd.get('category'),
+                            date: ds,
+                            description: desc,
+                            userId: userId,
+                            userName: userName,
+                            groupId: newGroupId,
+                            installmentNum: instNum,
+                            totalInstallments: totalInst
+                        };
+                        transactions.push(t);
+                        await saveSingleTransaction(t);
+                    }
+
+                    editingId = null;
+
                 } else {
                     const baseId = Date.now();
                     for(let i=0;i<installments;i++){
                         const cd=new Date(baseDate); cd.setMonth(baseDate.getMonth()+i);
                         const ds=`${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
                         let desc=baseDesc; if(installments>1) desc=`${baseDesc} (${i+1}/${installments})`;
-                        const t={id:baseId+i, type:fd.get('type'), amount:instAmt, category:fd.get('category'), date:ds, description:desc, userId:currentUser.uid, userName:currentUser.displayName||currentUser.email};
+                        const t={
+                            id:baseId+i,
+                            type:fd.get('type'),
+                            amount:instAmt,
+                            category:fd.get('category'),
+                            date:ds,
+                            description:desc,
+                            userId:currentUser.uid,
+                            userName:getMyDisplayName(),
+                            groupId: baseId,
+                            installmentNum: i+1,
+                            totalInstallments: installments
+                        };
                         transactions.push(t);
                         await saveSingleTransaction(t);
                     }
@@ -1287,12 +1473,40 @@
         }
 
         async function deleteTransaction(id) {
-            if(!confirm('Deseja excluir esta transação?')) return;
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            const groupId = tx.groupId || tx.id;
+            const group = transactions.filter(t => t.groupId === groupId);
+            const isGrouped = group.length > 1;
+
+            let deleteAll = false;
+            if (isGrouped) {
+                const choice = confirm(
+                    `Esta transação faz parte de ${group.length} parcelas.\n\n` +
+                    `OK = Excluir TODAS as ${group.length} parcelas\n` +
+                    `Cancelar = Excluir SOMENTE esta parcela`
+                );
+                deleteAll = choice;
+            } else {
+                if (!confirm('Deseja excluir esta transação?')) return;
+            }
+
             try {
-                transactions=transactions.filter(t=>t.id!==id);
-                await deleteTransactionFromFirestore(id);
+                if (deleteAll) {
+                    // Delete entire group
+                    for (const t of group) {
+                        transactions = transactions.filter(tx2 => tx2.id !== t.id);
+                        await deleteTransactionFromFirestore(t.id);
+                    }
+                    showToast(`${group.length} parcelas excluídas`);
+                } else {
+                    // Delete only this one
+                    transactions = transactions.filter(t => t.id !== id);
+                    await deleteTransactionFromFirestore(id);
+                    showToast('Transação excluída');
+                }
                 updateUI();
-                showToast('Transação excluída');
             } catch (error) {
                 console.error('Error deleting:', error);
                 showToast(`Erro ao excluir: ${error.message}`, 'error');
@@ -1351,6 +1565,92 @@
             showToast('Categoria excluída');
         }
 
+        // ── Profile / User Name ──
+        function getMyDisplayName() {
+            return meuNome || currentUser?.displayName || currentUser?.email || 'Desconhecido';
+        }
+
+        async function loadUserDisplayName() {
+            if (!currentUser) return '';
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                const userSnap = await withTimeout(getDoc(userRef));
+                if (userSnap.exists() && userSnap.data().name) {
+                    return userSnap.data().name;
+                }
+            } catch (e) {
+                console.warn('Could not load user name:', e);
+            }
+            return '';
+        }
+
+        function openProfileModal() {
+            document.getElementById('profileModal').style.display = 'block';
+            document.getElementById('profileNameInput').value = getMyDisplayName();
+            document.getElementById('profileEmailDisplay').textContent = currentUser?.email || '';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        async function handleProfileSubmit(e) {
+            e.preventDefault();
+            const newName = document.getElementById('profileNameInput').value.trim();
+            if (!newName) { showToast('Por favor, insira um nome.', 'error'); return; }
+
+            const btn = document.getElementById('saveProfileBtn');
+            const btnText = document.getElementById('saveProfileBtnText');
+            const spinner = document.getElementById('saveProfileSpinner');
+
+            btn.disabled = true;
+            btnText.textContent = 'Salvando...';
+            spinner.classList.remove('hidden');
+
+            try {
+                const oldName = meuNome || currentUser.displayName || currentUser.email;
+
+                // Save to Firestore user doc
+                await withTimeout(setDoc(doc(db, 'users', currentUser.uid), {
+                    name: newName,
+                    email: currentUser.email,
+                    householdCode: householdCode || null
+                }, { merge: true }));
+
+                // Update Firebase Auth displayName
+                try { await updateProfile(currentUser, { displayName: newName }); } catch(e) {}
+
+                meuNome = newName;
+
+                // Update current user's existing transactions to reflect new name
+                const updatedIds = [];
+                for (const t of transactions) {
+                    if (t.userId === currentUser.uid && t.userName !== newName) {
+                        t.userName = newName;
+                        await saveSingleTransaction(t);
+                        updatedIds.push(t.id);
+                    }
+                }
+
+                // Update header display
+                document.getElementById('userNameDisplay').textContent = newName;
+
+                updateUI();
+                closeProfileModal();
+                showToast(updatedIds.length > 0
+                    ? `Nome atualizado! ${updatedIds.length} transações atualizadas.`
+                    : 'Nome atualizado com sucesso!');
+
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showToast(`Erro ao salvar: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Salvar Nome';
+                spinner.classList.add('hidden');
+            }
+        }
+
         function openModal(transaction=null){
             const modal=document.getElementById('transactionModal'), form=document.getElementById('transactionForm');
             form.reset();
@@ -1363,9 +1663,33 @@
                 const cs=form.querySelector('select[name="category"]'); cs.value=transaction.category;
                 if(!cs.value){const o=document.createElement('option');o.value=transaction.category;o.textContent=transaction.category+' (Removida)';o.selected=true;cs.appendChild(o);}
                 form.querySelector('input[name="date"]').value=transaction.date;
-                form.querySelector('input[name="description"]').value=(transaction.description===transaction.category)?'':transaction.description;
-                form.querySelector('input[name="installments"]').value=1;
-                modal.querySelector('h3').textContent='Editar Transação';
+
+                // Strip installment suffix from description for clean editing
+                let cleanDesc = (transaction.description === transaction.category) ? '' : transaction.description;
+                cleanDesc = cleanDesc.replace(/\s*\(\d+\/\d+\)\s*$/, '');
+                form.querySelector('input[name="description"]').value = cleanDesc;
+
+                // Show remaining installments if grouped
+                const groupId = transaction.groupId || transaction.id;
+                const group = transactions.filter(t => t.groupId === groupId);
+                if (group.length > 1) {
+                    const remaining = group.filter(t => (t.installmentNum || 1) >= (transaction.installmentNum || 1)).length;
+                    form.querySelector('input[name="installments"]').value = remaining;
+                } else {
+                    form.querySelector('input[name="installments"]').value = 1;
+                }
+
+                // Determine amount type: if it's a grouped tx with totalInstallments, show as installment value
+                // (since amount is already the per-installment value, set amountType to 'installment')
+                if (group.length > 1) {
+                    form.querySelector('input[name="amountType"][value="installment"]').checked = true;
+                } else {
+                    form.querySelector('input[name="amountType"][value="total"]').checked = true;
+                }
+
+                modal.querySelector('h3').textContent = group.length > 1
+                    ? `Editar Transação (Parcela ${transaction.installmentNum||1}/${transaction.totalInstallments||group.length})`
+                    : 'Editar Transação';
                 document.getElementById('saveBtnText').textContent='Atualizar Transação';
             } else {
                 editingId=null;
@@ -1402,5 +1726,6 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
