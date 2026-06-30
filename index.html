@@ -1482,19 +1482,10 @@
         }
 
         function renderCategoriesChart(ctx) {
+            const viewMode = document.getElementById('chartViewMode').value;
             const filtered = getChartTransactions();
             
-            // Group by category and sum amounts
-            const categoryMap = {};
-            filtered.forEach(t => {
-                if (!categoryMap[t.category]) categoryMap[t.category] = 0;
-                categoryMap[t.category] += t.amount;
-            });
-            
-            // Sort by value descending
-            const entries = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
-            
-            if (entries.length === 0) {
+            if (filtered.length === 0) {
                 if (expenseChartInstance) {
                     expenseChartInstance.destroy();
                     expenseChartInstance = null;
@@ -1502,42 +1493,90 @@
                 return;
             }
             
-            const labels = entries.map(([cat]) => cat);
-            const data = entries.map(([, val]) => val);
-            const colors = generateCategoryColors(entries.length);
+            // Build labels and grouping based on view mode
+            let labels = [];
+            let groupingFn; // returns the bucket key for a transaction
+            
+            if (viewMode === 'month') {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                groupingFn = (t) => new Date(t.date).getDate() - 1;
+            } else if (viewMode === 'year') {
+                labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                groupingFn = (t) => new Date(t.date).getMonth();
+            } else { // custom
+                const year = parseInt(document.getElementById('chartCustomYear').value);
+                const month = parseInt(document.getElementById('chartCustomMonth').value);
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                groupingFn = (t) => new Date(t.date).getDate() - 1;
+            }
+            
+            // Group transactions by category and by bucket
+            const categoryBuckets = {}; // { category: array of values indexed by bucket }
+            filtered.forEach(t => {
+                if (!categoryBuckets[t.category]) {
+                    categoryBuckets[t.category] = Array.from({ length: labels.length }, () => 0);
+                }
+                const bucket = groupingFn(t);
+                if (bucket >= 0 && bucket < labels.length) {
+                    categoryBuckets[t.category][bucket] += t.amount;
+                }
+            });
+            
+            // Sort categories by total amount descending
+            const sortedEntries = Object.entries(categoryBuckets).sort((a, b) => {
+                const totalA = a[1].reduce((s, v) => s + v, 0);
+                const totalB = b[1].reduce((s, v) => s + v, 0);
+                return totalB - totalA;
+            });
+            
+            const colors = generateCategoryColors(sortedEntries.length);
             
             if (expenseChartInstance) {
                 expenseChartInstance.destroy();
                 expenseChartInstance = null;
             }
             
+            const datasets = sortedEntries.map(([category, values], i) => ({
+                label: category,
+                data: values,
+                borderColor: colors[i],
+                backgroundColor: colors[i] + '1a',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: false,
+                pointBackgroundColor: colors[i],
+                pointBorderColor: colors[i],
+                pointRadius: 3,
+                pointHoverRadius: 5
+            }));
+            
             expenseChartInstance = new Chart(ctx, {
-                type: 'doughnut',
+                type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderColor: 'rgba(24, 24, 27, 0.9)',
-                        borderWidth: 2,
-                        hoverOffset: 8
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '55%',
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
                     plugins: {
                         legend: {
-                            position: 'right',
+                            position: 'top',
                             labels: {
                                 color: '#a1a1aa',
                                 font: { family: 'Plus Jakarta Sans', size: 11 },
-                                padding: 10,
+                                padding: 16,
                                 usePointStyle: true,
-                                pointStyleWidth: 10,
-                                boxWidth: 10,
-                                boxHeight: 10
+                                pointStyleWidth: 8
                             }
                         },
                         tooltip: {
@@ -1550,13 +1589,26 @@
                             displayColors: true,
                             callbacks: {
                                 label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return `${label}: ${formatCurrency(value)} (${pct}%)`;
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y || 0;
+                                    return `${label}: ${formatCurrency(value)}`;
                                 }
                             }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: { color: '#71717a', font: { family: 'Plus Jakarta Sans', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: {
+                                color: '#71717a',
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                callback: function(value) { return formatCurrency(value); }
+                            },
+                            beginAtZero: true
                         }
                     }
                 }
