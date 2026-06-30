@@ -70,6 +70,15 @@
             border-color: #8b5cf6;
             box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
         }
+        input[type="date"] {
+            color-scheme: dark;
+            text-align: center;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0.5;
+            cursor: pointer;
+            filter: invert(1);
+        }
 
         /* Login screen */
         #loginScreen, #setupHouseholdScreen {
@@ -303,6 +312,46 @@
                 padding-left: 0.5rem;
                 padding-right: 0.5rem;
             }
+        }
+
+        /* Category grouping in history */
+        .cat-group-header {
+            background: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8b5cf6;
+        }
+        .cat-group-header td {
+            padding: 8px 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            color: #a78bfa;
+            letter-spacing: 0.02em;
+        }
+        .cat-sub-row td {
+            padding-left: 28px;
+        }
+        .cat-sub-row .cat-sub-date {
+            font-size: 11px;
+            color: #71717a;
+        }
+        .cat-group-card-header {
+            background: rgba(139, 92, 246, 0.06);
+            border-left: 3px solid #8b5cf6;
+            padding: 8px 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            color: #a78bfa;
+            border-radius: 8px 8px 0 0;
+            letter-spacing: 0.02em;
+        }
+        .cat-sub-card {
+            margin-left: 12px;
+            border-left: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 0 0 8px 8px;
+        }
+        .cat-sub-card:last-child {
+            border-radius: 0 0 8px 8px;
         }
     </style>
 </head>
@@ -680,7 +729,7 @@
                     </div>
                     <div style="margin-bottom:12px;">
                         <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Data 1ª Parcela</label>
-                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;text-align:center;color-scheme:dark;">
                     </div>
                     <div style="margin-bottom:12px;">
                         <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Nº de Parcelas</label>
@@ -846,6 +895,7 @@
         window.hideJoinHouseholdForm = hideJoinHouseholdForm;
         window.joinExistingHousehold = joinExistingHousehold;
         window.resetHistoryFilters = resetHistoryFilters;
+        window.updateUI = updateUI;
         window.openProfileModal = openProfileModal;
         window.closeProfileModal = closeProfileModal;
         window.handleProfileSubmit = handleProfileSubmit;
@@ -1284,7 +1334,7 @@
 
             // Filter out anonymous transactions from other users
             filtered = filtered.filter(t => {
-                if (t.userId === currentUser?.uid) return true; // Own transactions always visible
+                if (t.userId === currentUser?.uid) return true;
                 if (t.isAnonymous) return false;
                 return true;
             });
@@ -1300,53 +1350,94 @@
             else if (sortVal === 'date-asc') sorted = [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date));
             else sorted = [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date));
 
+            // Group by category
+            const catOrder = [];
+            const catMap = {};
             sorted.forEach(t => {
-                const isIncome = t.type === 'income';
-                const userName = t.userName || 'Desconhecido';
-                const isCurrentUser = t.userId === currentUser?.uid;
-                const userBadgeClass = isCurrentUser ? 'bg-accent/20 text-accent border-accent/30' : 'bg-primary/20 text-primary border-primary/30';
-                const groupInfo = t.groupId && t.totalInstallments > 1
-                    ? `<span class="text-[9px] text-zinc-600 ml-1">Parcela ${t.installmentNum||'?'}/${t.totalInstallments||'?'}</span>`
-                    : '';
-                
-                // Desktop table row
-                const tr = document.createElement('tr');
-                tr.className = 'group hover:bg-white/[0.02] transition-colors';
-                tr.innerHTML = `
-                    <td class="py-3.5"><div class="font-medium text-zinc-200">${t.description||t.category}${groupInfo}</div>${t.description&&t.description!==t.category?`<div class="text-xs text-zinc-500">${t.category}</div>`:''}</td>
-                    <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span></td>
-                    <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${userName}</span></td>
-                    <td class="py-3.5 text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>
-                    <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
-                    <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-3">
-                        <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                        <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                    </div></td>`;
-                tbody.appendChild(tr);
-                
-                // Mobile card
-                const card = document.createElement('div');
-                card.className = 'bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors';
-                card.innerHTML = `
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium text-zinc-200 text-sm truncate">${t.description||t.category}${groupInfo}</p>
-                            ${t.description&&t.description!==t.category?`<p class="text-xs text-zinc-500 mt-0.5">${t.category}</p>`:''}
+                if (!catMap[t.category]) { catMap[t.category] = []; catOrder.push(t.category); }
+                catMap[t.category].push(t);
+            });
+
+            catOrder.forEach(category => {
+                const items = catMap[category];
+                const hasGroup = items.length > 1;
+
+                if (hasGroup) {
+                    // Desktop: category header row
+                    const headerTr = document.createElement('tr');
+                    headerTr.className = 'cat-group-header';
+                    const catTotal = items.reduce((s, t) => s + t.amount, 0);
+                    headerTr.innerHTML = `<td colspan="6">
+                        <div class="flex items-center justify-between">
+                            <span>${category}</span>
+                            <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
                         </div>
-                        <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${userName}</span>
-                            <span class="text-[10px] text-zinc-500">${formatDate(t.date)}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                        </div>
+                    </td>`;
+                    tbody.appendChild(headerTr);
+                }
+
+                // Mobile: category header card
+                if (hasGroup) {
+                    const catHeader = document.createElement('div');
+                    catHeader.className = 'cat-group-card-header';
+                    const catTotal = items.reduce((s, t) => s + t.amount, 0);
+                    catHeader.innerHTML = `<div class="flex items-center justify-between">
+                        <span>${category}</span>
+                        <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
                     </div>`;
-                mobileList.appendChild(card);
+                    mobileList.appendChild(catHeader);
+                }
+
+                items.forEach(t => {
+                    const isIncome = t.type === 'income';
+                    const userName = t.userName || 'Desconhecido';
+                    const isCurrentUser = t.userId === currentUser?.uid;
+                    const userBadgeClass = isCurrentUser ? 'bg-accent/20 text-accent border-accent/30' : 'bg-primary/20 text-primary border-primary/30';
+                    const groupInfo = t.groupId && t.totalInstallments > 1
+                        ? `<span class="text-[9px] text-zinc-600 ml-1">Parcela ${t.installmentNum||'?'}/${t.totalInstallments||'?'}</span>`
+                        : '';
+                    const desc = t.description || t.category;
+                    const cleanDesc = hasGroup ? desc : desc;
+                    
+                    // Desktop table row
+                    const tr = document.createElement('tr');
+                    tr.className = `group hover:bg-white/[0.02] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
+                    tr.innerHTML = `
+                        <td class="py-3.5"><div class="font-medium text-zinc-200">${cleanDesc}${groupInfo}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="text-xs text-zinc-500">${t.category}</div>` : ''}</td>
+                        ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span></td>`}
+                        <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${userName}</span></td>
+                        ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>`}
+                        <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
+                        <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-3">
+                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </div></td>`;
+                    tbody.appendChild(tr);
+                    
+                    // Mobile card
+                    const card = document.createElement('div');
+                    card.className = `bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-zinc-200 text-sm truncate">${cleanDesc}${groupInfo}</p>
+                                ${!hasGroup && t.description && t.description !== t.category ? `<p class="text-xs text-zinc-500 mt-0.5">${t.category}</p>` : ''}
+                            </div>
+                            <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                ${!hasGroup ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span>` : ''}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${userName}</span>
+                                <span class="text-[10px] text-zinc-500">${formatDate(t.date)}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            </div>
+                        </div>`;
+                    mobileList.appendChild(card);
+                });
             });
         }
 
@@ -1486,10 +1577,6 @@
             const filtered = getChartTransactions();
             
             if (filtered.length === 0) {
-                if (expenseChartInstance) {
-                    expenseChartInstance.destroy();
-                    expenseChartInstance = null;
-                }
                 return;
             }
             
@@ -1535,11 +1622,6 @@
             });
             
             const colors = generateCategoryColors(sortedEntries.length);
-            
-            if (expenseChartInstance) {
-                expenseChartInstance.destroy();
-                expenseChartInstance = null;
-            }
             
             const datasets = sortedEntries.map(([category, values], i) => ({
                 label: category,
@@ -1683,11 +1765,6 @@
                 expenseData = dailyData.map(d => d.expense);
             }
             
-            if (expenseChartInstance) {
-                expenseChartInstance.destroy();
-                expenseChartInstance = null;
-            }
-            
             const hasData = incomeData.some(v => v > 0) || expenseData.some(v => v > 0);
             if (!hasData) return;
             
@@ -1822,7 +1899,20 @@
             document.getElementById('chartCustomMonth').value = currentMonth;
         }
 
+        function safeDestroyChart() {
+            const canvas = document.getElementById('expenseChart');
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy();
+                expenseChartInstance = null;
+            }
+            const existing = Chart.getChart(canvas);
+            if (existing) existing.destroy();
+            const ctx2 = canvas.getContext('2d');
+            ctx2.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
         function renderChart() {
+            safeDestroyChart();
             const ctx = document.getElementById('expenseChart').getContext('2d');
             const chartTypeMode = document.getElementById('chartTypeMode').value;
             
@@ -1879,7 +1969,7 @@
                     const wasGrouped = group.length > 1;
 
                     // Find the base date for new installments: the date of the current transaction being edited
-                    const editBaseDate = new Date(currentTx.date + 'T12:00:00');
+                    const editBaseDate = new Date(fd.get('date') + 'T12:00:00');
 
                     // Step 1: Delete all transactions in the group from currentIdx forward
                     const toDelete = group.slice(currentIdx);
@@ -2254,6 +2344,7 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
