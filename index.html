@@ -353,6 +353,141 @@
         .cat-sub-card:last-child {
             border-radius: 0 0 8px 8px;
         }
+        .cat-logo-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex: 0 0 auto;
+            border: 1px solid rgba(255,255,255,0.16);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        }
+        .cat-logo-fallback {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            color: white;
+            font-size: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+        }
+        .cat-pill-logo {
+            width: 16px;
+            height: 16px;
+            border-radius: 5px;
+        }
+        .category-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .category-row:hover {
+            border-color: rgba(255,255,255,0.13);
+            background: rgba(255,255,255,0.06);
+        }
+        .category-tools {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .category-color-input {
+            width: 34px;
+            height: 34px;
+            padding: 2px;
+            border-radius: 10px;
+            cursor: pointer;
+            background: rgba(9,9,11,0.85);
+        }
+        .category-chip-btn {
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #d4d4d8;
+            border-radius: 10px;
+            padding: 7px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .category-chip-btn:hover {
+            border-color: rgba(139,92,246,0.45);
+            color: #fafafa;
+            background: rgba(139,92,246,0.14);
+        }
+        @media (max-width: 520px) {
+            .category-row { grid-template-columns: 1fr; }
+            .category-tools { justify-content: flex-start; }
+        }
+
+        .debt-status-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .debt-status-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 10px;
+            line-height: 1;
+            font-weight: 700;
+            cursor: pointer;
+            color: #a1a1aa;
+            background: transparent;
+            transition: all .2s ease;
+            white-space: nowrap;
+        }
+        .debt-status-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .debt-status-btn.paid.active {
+            color: #052e1b;
+            background: #10b981;
+            box-shadow: 0 0 18px rgba(16,185,129,.28);
+        }
+        .debt-status-btn.unpaid.active {
+            color: #fff;
+            background: #f43f5e;
+            box-shadow: 0 0 18px rgba(244,63,94,.28);
+        }
+        .debt-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        .debt-status-pill.paid { color:#10b981; background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.25); }
+        .debt-status-pill.unpaid { color:#f43f5e; background:rgba(244,63,94,.12); border-color:rgba(244,63,94,.25); }
+        .debt-option-card {
+            display: block;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(255,255,255,.035);
+            cursor: pointer;
+            transition: all .2s ease;
+        }
+        .debt-option-card:hover { border-color: rgba(139,92,246,.45); background: rgba(139,92,246,.08); }
+        .debt-option-card input { accent-color: #8b5cf6; }
     </style>
 </head>
 <body class="min-h-screen antialiased selection:bg-accent/30 selection:text-accent">
@@ -764,8 +899,76 @@
                         <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required style="flex:1;padding:8px 12px;border-radius:8px;font-size:14px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
                         <button type="submit" style="background:#8b5cf6;color:white;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;white-space:nowrap;border:none;cursor:pointer;">Adicionar</button>
                     </form>
-                    <div id="categoriesList" style="max-height:50vh;overflow-y:auto;padding-right:4px;"></div>
+                    <p style="font-size:11px;color:#71717a;line-height:1.45;margin:0 0 12px;">Envie uma logo para a categoria. A cor é sugerida automaticamente pela imagem, mas também pode ser ajustada manualmente.</p>
+                    <div id="categoriesList" style="max-height:50vh;overflow-y:auto;padding-right:4px;display:grid;gap:10px;"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debt Rollover Modal -->
+    <div id="debtRolloverModal" style="display:none;position:fixed;inset:0;z-index:10000;">
+        <div onclick="closeDebtRolloverModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.97);backdrop-filter:blur(16px);width:100%;max-height:88vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.35);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <div>
+                        <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Dívida não paga</h3>
+                        <p id="debtRolloverSummary" style="font-size:11px;color:#a1a1aa;margin:3px 0 0;"></p>
+                    </div>
+                    <button onclick="closeDebtRolloverModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="debtRolloverForm" onsubmit="confirmDebtRollover(event)" style="padding:16px;">
+                    <p style="font-size:12px;color:#d4d4d8;line-height:1.45;margin:0 0 12px;">Marcarei esta dívida como <strong style="color:#f43f5e;">não paga</strong>. Escolha se ela deve voltar no próximo mês.</p>
+                    <div style="display:grid;gap:8px;margin-bottom:12px;">
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="mark_only" checked style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Só marcar como não paga</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Não cria nova cobrança automática.</span>
+                        </label>
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="current_next" style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Adicionar só esta parcela no mês seguinte</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Copia o valor desta parcela para o próximo mês.</span>
+                        </label>
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="remaining_next" style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Adicionar dívida restante/inteira no mês seguinte</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Junta as parcelas restantes em uma cobrança no próximo mês.</span>
+                        </label>
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="reparcel" style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Entrada + novo parcelamento</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Abate uma entrada e cria parcelas futuras.</span>
+                        </label>
+                    </div>
+                    <div id="reparcelFields" style="display:none;margin-bottom:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                        <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:6px;">Base do novo parcelamento</label>
+                        <select name="reparcelBase" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;margin-bottom:10px;">
+                            <option value="current">Só a parcela atual</option>
+                            <option value="remaining">Dívida restante/inteira</option>
+                        </select>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                            <div>
+                                <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:4px;">Entrada paga (R$)</label>
+                                <input type="number" name="downPayment" step="0.01" min="0" value="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:4px;">Nº parcelas</label>
+                                <input type="number" name="newInstallments" min="1" value="1" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:4px;">Valor de cada parcela (R$)</label>
+                        <input type="number" name="newInstallmentAmount" step="0.01" min="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="Deixe vazio para calcular automático">
+                        <p style="font-size:10px;color:#71717a;margin:6px 0 0;">A entrada só reduz o saldo levado para frente; as novas parcelas começam no mês seguinte.</p>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <button type="button" onclick="closeDebtRolloverModal()" style="background:rgba(255,255,255,0.05);color:#a1a1aa;font-weight:600;padding:10px;border-radius:8px;font-size:13px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;">Cancelar</button>
+                        <button type="submit" style="background:#f43f5e;color:white;font-weight:700;padding:10px;border-radius:8px;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(244,63,94,0.28);">Confirmar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -835,6 +1038,7 @@
         // ── App State ──
         let transactions = [];
         let categories = [];
+        let categoryMeta = {};
         let currentMonth = new Date().toISOString().slice(0, 7);
         let editingId = null;
         let expenseChartInstance = null;
@@ -843,14 +1047,98 @@
         let chartFilter = 'all';
         let meuNome = ''; // Nome personalizado do usuário atual
         let isAnonymous = false; // Modo anônimo
+        let currentDebtRolloverId = null;
 
         const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
+        const CATEGORY_COLOR_PALETTE = [
+            '#10b981', '#8b5cf6', '#f59e0b', '#f43f5e',
+            '#3b82f6', '#ec4899', '#14b8a6', '#f97316',
+            '#6366f1', '#ef4444', '#06b6d4', '#84cc16',
+            '#a855f7', '#22d3ee', '#e879f9', '#fb923c',
+            '#4ade80', '#fbbf24', '#60a5fa', '#c084fc'
+        ];
 
         const formatCurrency = (v) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
         const formatDate = (d) => {
             const [y, m, day] = d.split('-');
             return `${day}/${m}/${y}`;
         };
+        const dateToString = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const addMonthsToDate = (dateStr, months) => {
+            const d = new Date(dateStr + 'T12:00:00');
+            d.setMonth(d.getMonth() + months);
+            return dateToString(d);
+        };
+        const stripInstallmentSuffix = (text = '') => String(text).replace(/\s*\(\d+\/\d+\)\s*$/, '');
+        const baseDescriptionOf = (t) => stripInstallmentSuffix(t.description || t.category || 'Dívida');
+
+        function getDefaultCategoryColor(category = '') {
+            let hash = 0;
+            const key = String(category || 'Outros');
+            for (let i = 0; i < key.length; i++) hash = ((hash << 5) - hash) + key.charCodeAt(i);
+            return CATEGORY_COLOR_PALETTE[Math.abs(hash) % CATEGORY_COLOR_PALETTE.length];
+        }
+
+        function isValidHexColor(value) {
+            return /^#[0-9a-f]{6}$/i.test(String(value || ''));
+        }
+
+        function getCategoryMeta(category = '') {
+            const key = String(category || 'Outros');
+            return categoryMeta[key] || {};
+        }
+
+        function getCategoryColor(category = '') {
+            const color = getCategoryMeta(category).color;
+            return isValidHexColor(color) ? color : getDefaultCategoryColor(category);
+        }
+
+        function getCategoryLogo(category = '') {
+            const logo = getCategoryMeta(category).logo;
+            return typeof logo === 'string' && logo.startsWith('data:image/') ? logo : '';
+        }
+
+        function escapeHtml(value = '') {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function categoryAvatarHtml(category = '', extraClass = '') {
+            const color = getCategoryColor(category);
+            const logo = getCategoryLogo(category);
+            const initial = escapeHtml(String(category || 'O').trim().charAt(0).toUpperCase() || 'O');
+            const cls = extraClass ? ` ${extraClass}` : '';
+            if (logo) return `<img src="${logo}" alt="" class="cat-logo-thumb${cls}">`;
+            return `<span class="cat-logo-fallback${cls}" style="background:${color};">${initial}</span>`;
+        }
+
+        function categoryLabelHtml(category = '', extraClass = '') {
+            const color = getCategoryColor(category);
+            return `<span class="inline-flex items-center gap-2 ${extraClass}" style="color:${color};">${categoryAvatarHtml(category)}<span>${escapeHtml(category)}</span></span>`;
+        }
+
+        function categoryPillHtml(category = '') {
+            return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${categoryAvatarHtml(category, 'cat-pill-logo')}<span>${escapeHtml(category)}</span></span>`;
+        }
+
+        function hexToRgba(hex, alpha = 1) {
+            const h = String(hex).replace('#', '');
+            const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function getTransactionAccentColor(t) {
+            if (t.paymentStatus === 'paid') return '#10b981';
+            if (t.paymentStatus === 'unpaid') return '#f43f5e';
+            return getCategoryColor(t.category);
+        }
 
         function generateHouseholdCode() {
             const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -884,6 +1172,10 @@
         window.closeCategoryModal = closeCategoryModal;
         window.addCategory = addCategory;
         window.deleteCategory = deleteCategory;
+        window.updateCategoryColor = updateCategoryColor;
+        window.handleCategoryLogoUpload = handleCategoryLogoUpload;
+        window.removeCategoryLogo = removeCategoryLogo;
+        window.autoColorFromLogo = autoColorFromLogo;
         window.handleTransactionSubmit = handleTransactionSubmit;
         window.setChartFilter = setChartFilter;
         window.onChartViewModeChange = onChartViewModeChange;
@@ -899,6 +1191,9 @@
         window.openProfileModal = openProfileModal;
         window.closeProfileModal = closeProfileModal;
         window.handleProfileSubmit = handleProfileSubmit;
+        window.markDebtStatus = markDebtStatus;
+        window.closeDebtRolloverModal = closeDebtRolloverModal;
+        window.confirmDebtRollover = confirmDebtRollover;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
@@ -969,7 +1264,8 @@
                 }));
                 
                 await withTimeout(setDoc(doc(db, 'households', code, 'settings', 'main'), {
-                    categories: DEFAULT_CATEGORIES
+                    categories: DEFAULT_CATEGORIES,
+                    categoryMeta: {}
                 }));
                 
                 await withTimeout(setDoc(doc(db, 'users', currentUser.uid), {
@@ -1107,7 +1403,8 @@
                             members: [cred.user.uid]
                         });
                         await setDoc(doc(householdRef, 'settings', 'main'), {
-                            categories: DEFAULT_CATEGORIES
+                            categories: DEFAULT_CATEGORIES,
+                            categoryMeta: {}
                         });
                     } else {
                         const hhData = hhSnap.data();
@@ -1131,7 +1428,8 @@
                         members: [cred.user.uid]
                     });
                     await setDoc(doc(db, 'households', code, 'settings', 'main'), {
-                        categories: DEFAULT_CATEGORIES
+                        categories: DEFAULT_CATEGORIES,
+                        categoryMeta: {}
                     });
                 }
 
@@ -1179,10 +1477,12 @@
                 const settingsSnap = await withTimeout(getDoc(settingsRef));
                 if (settingsSnap.exists()) {
                     const data = settingsSnap.data();
-                    categories = data.categories || DEFAULT_CATEGORIES;
+                    categories = Array.isArray(data.categories) ? [...data.categories] : [...DEFAULT_CATEGORIES];
+                    categoryMeta = normalizeCategoryMeta(data.categoryMeta || {});
                 } else {
                     categories = [...DEFAULT_CATEGORIES];
-                    await withTimeout(setDoc(settingsRef, { categories }));
+                    categoryMeta = normalizeCategoryMeta({});
+                    await withTimeout(setDoc(settingsRef, { categories, categoryMeta }));
                 }
 
                 const txSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'transactions')));
@@ -1217,6 +1517,18 @@
             ]);
         }
 
+        function normalizeCategoryMeta(meta = {}) {
+            const normalized = {};
+            categories.forEach(cat => {
+                const item = meta?.[cat] || {};
+                normalized[cat] = {
+                    color: isValidHexColor(item.color) ? item.color : getDefaultCategoryColor(cat),
+                    logo: typeof item.logo === 'string' && item.logo.startsWith('data:image/') ? item.logo : ''
+                };
+            });
+            return normalized;
+        }
+
         async function saveSingleTransaction(t) {
             if (!currentUser || !householdCode) {
                 throw new Error('Usuário ou casa não configurados');
@@ -1232,7 +1544,8 @@
 
         async function saveSettingsToFirestore() {
             if (!currentUser || !householdCode) return;
-            await withTimeout(setDoc(doc(db, 'households', householdCode, 'settings', 'main'), { categories }));
+            categoryMeta = normalizeCategoryMeta(categoryMeta);
+            await withTimeout(setDoc(doc(db, 'households', householdCode, 'settings', 'main'), { categories, categoryMeta }));
         }
 
         async function clearAllTransactionsInFirestore() {
@@ -1251,12 +1564,25 @@
             populateCategorySelects();
             onChartViewModeChange();
             setChartFilter('all');
+            setupDebtRolloverControls();
             updateUI();
         }
 
         function getFilteredTransactions() { return transactions.filter(t => t.date.startsWith(currentMonth)); }
 
         function updateUI() { updateSummary(); renderTransactions(); renderChart(); }
+
+        function setupDebtRolloverControls() {
+            const form = document.getElementById('debtRolloverForm');
+            if (!form || form.dataset.ready === '1') return;
+            form.dataset.ready = '1';
+            form.querySelectorAll('input[name="rolloverAction"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    const fields = document.getElementById('reparcelFields');
+                    if (fields) fields.style.display = form.rolloverAction.value === 'reparcel' ? 'block' : 'none';
+                });
+            });
+        }
 
         function updateSummary() {
             let f = getFilteredTransactions();
@@ -1366,10 +1692,13 @@
                     // Desktop: category header row
                     const headerTr = document.createElement('tr');
                     headerTr.className = 'cat-group-header';
+                    const categoryColor = getCategoryColor(category);
+                    headerTr.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
+                    headerTr.style.borderLeftColor = categoryColor;
                     const catTotal = items.reduce((s, t) => s + t.amount, 0);
                     headerTr.innerHTML = `<td colspan="6">
                         <div class="flex items-center justify-between">
-                            <span>${category}</span>
+                            ${categoryLabelHtml(category)}
                             <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
                         </div>
                     </td>`;
@@ -1380,9 +1709,12 @@
                 if (hasGroup) {
                     const catHeader = document.createElement('div');
                     catHeader.className = 'cat-group-card-header';
+                    const categoryColor = getCategoryColor(category);
+                    catHeader.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
+                    catHeader.style.borderLeftColor = categoryColor;
                     const catTotal = items.reduce((s, t) => s + t.amount, 0);
                     catHeader.innerHTML = `<div class="flex items-center justify-between">
-                        <span>${category}</span>
+                        ${categoryLabelHtml(category)}
                         <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
                     </div>`;
                     mobileList.appendChild(catHeader);
@@ -1398,17 +1730,32 @@
                         : '';
                     const desc = t.description || t.category;
                     const cleanDesc = hasGroup ? desc : desc;
+                    const safeDesc = escapeHtml(cleanDesc);
+                    const safeUserName = escapeHtml(userName);
+                    const accentColor = getTransactionAccentColor(t);
+                    const rowBg = `linear-gradient(90deg, ${hexToRgba(accentColor, 0.16)}, ${hexToRgba(accentColor, 0.035)})`;
+                    const statusPill = t.paymentStatus === 'paid'
+                        ? '<span class="debt-status-pill paid">Pago</span>'
+                        : (t.paymentStatus === 'unpaid' ? '<span class="debt-status-pill unpaid">Não pago</span>' : '');
+                    const debtButtons = !isIncome ? `
+                            <span class="debt-status-actions">
+                                <button onclick="markDebtStatus(${t.id}, 'paid')" class="debt-status-btn paid ${t.paymentStatus === 'paid' ? 'active' : ''}" title="Marcar como pago">Pago</button>
+                                <button onclick="markDebtStatus(${t.id}, 'unpaid')" class="debt-status-btn unpaid ${t.paymentStatus === 'unpaid' ? 'active' : ''}" title="Marcar como não pago">Não pago</button>
+                            </span>` : '';
                     
                     // Desktop table row
                     const tr = document.createElement('tr');
                     tr.className = `group hover:bg-white/[0.02] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
+                    tr.style.background = rowBg;
+                    tr.style.borderLeft = `3px solid ${accentColor}`;
                     tr.innerHTML = `
-                        <td class="py-3.5"><div class="font-medium text-zinc-200">${cleanDesc}${groupInfo}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="text-xs text-zinc-500">${t.category}</div>` : ''}</td>
-                        ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span></td>`}
-                        <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${userName}</span></td>
+                        <td class="py-3.5"><div class="font-medium text-zinc-200">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}</td>
+                        ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
+                        <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${safeUserName}</span></td>
                         ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>`}
                         <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
-                        <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-3">
+                        <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-2 flex-wrap">
+                            ${debtButtons}
                             <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
                             <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div></td>`;
@@ -1417,21 +1764,25 @@
                     // Mobile card
                     const card = document.createElement('div');
                     card.className = `bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
+                    card.style.background = rowBg;
+                    card.style.borderColor = hexToRgba(accentColor, 0.30);
+                    card.style.borderLeft = `3px solid ${accentColor}`;
                     card.innerHTML = `
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1 min-w-0">
-                                <p class="font-medium text-zinc-200 text-sm truncate">${cleanDesc}${groupInfo}</p>
-                                ${!hasGroup && t.description && t.description !== t.category ? `<p class="text-xs text-zinc-500 mt-0.5">${t.category}</p>` : ''}
+                                <p class="font-medium text-zinc-200 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
+                                ${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}
                             </div>
                             <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 flex-wrap">
-                                ${!hasGroup ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-white/5 text-zinc-300 border border-white/5">${t.category}</span>` : ''}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${userName}</span>
+                                ${!hasGroup ? categoryPillHtml(t.category) : ''}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
                                 <span class="text-[10px] text-zinc-500">${formatDate(t.date)}</span>
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                ${debtButtons}
                                 <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
                                 <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                             </div>
@@ -1511,21 +1862,11 @@
             renderChart();
         }
 
-        // Color palette for categories chart
+        // Deterministic colors for categories chart/history
         function generateCategoryColors(count) {
-            const palette = [
-                '#10b981', '#8b5cf6', '#f59e0b', '#f43f5e',
-                '#3b82f6', '#ec4899', '#14b8a6', '#f97316',
-                '#6366f1', '#ef4444', '#06b6d4', '#84cc16',
-                '#a855f7', '#22d3ee', '#e879f9', '#fb923c',
-                '#4ade80', '#fbbf24', '#60a5fa', '#c084fc'
-            ];
             const colors = [];
-            const used = new Set();
-            // Shuffle palette for random selection
-            const shuffled = [...palette].sort(() => Math.random() - 0.5);
             for (let i = 0; i < count; i++) {
-                colors.push(shuffled[i % shuffled.length]);
+                colors.push(CATEGORY_COLOR_PALETTE[i % CATEGORY_COLOR_PALETTE.length]);
             }
             return colors;
         }
@@ -1621,7 +1962,7 @@
                 return totalB - totalA;
             });
             
-            const colors = generateCategoryColors(sortedEntries.length);
+            const colors = sortedEntries.map(([category]) => getCategoryColor(category));
             
             const datasets = sortedEntries.map(([category, values], i) => ({
                 label: category,
@@ -2057,6 +2398,195 @@
             }
         }
 
+        function getDebtGroup(tx) {
+            if (!tx) return [];
+            const groupId = tx.groupId || tx.id;
+            const group = transactions
+                .filter(item => (item.groupId || item.id) === groupId)
+                .sort((a, b) => {
+                    const an = a.installmentNum || 1;
+                    const bn = b.installmentNum || 1;
+                    if (an !== bn) return an - bn;
+                    return new Date(a.date) - new Date(b.date);
+                });
+            return group.length ? group : [tx];
+        }
+
+        function getRemainingDebtItems(tx) {
+            const group = getDebtGroup(tx);
+            const currentNum = tx.installmentNum || 1;
+            return group.filter(item => {
+                if ((item.installmentNum || 1) >= currentNum) return true;
+                return new Date(item.date) >= new Date(tx.date);
+            });
+        }
+
+        function getRemainingDebtAmount(tx) {
+            return getRemainingDebtItems(tx).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        }
+
+        async function removeFutureDebtInstallments(tx) {
+            const currentNum = tx.installmentNum || 1;
+            const currentDate = new Date(tx.date);
+            const toRemove = getDebtGroup(tx).filter(item => {
+                if (item.id === tx.id) return false;
+                if ((item.installmentNum || 1) > currentNum) return true;
+                return new Date(item.date) > currentDate;
+            });
+            for (const item of toRemove) {
+                transactions = transactions.filter(t => t.id !== item.id);
+                await deleteTransactionFromFirestore(item.id);
+            }
+            return toRemove.length;
+        }
+
+        function buildDebtTransaction(original, overrides = {}) {
+            return {
+                id: overrides.id || Date.now(),
+                type: 'expense',
+                amount: overrides.amount,
+                category: original.category,
+                date: overrides.date,
+                description: overrides.description,
+                userId: original.userId || currentUser.uid,
+                userName: original.userName || getMyDisplayName(),
+                isAnonymous: original.isAnonymous || false,
+                groupId: overrides.groupId || overrides.id || Date.now(),
+                installmentNum: overrides.installmentNum || 1,
+                totalInstallments: overrides.totalInstallments || 1,
+                paymentStatus: overrides.paymentStatus || 'pending',
+                debtOriginId: original.id,
+                createdFromUnpaidDebt: true
+            };
+        }
+
+        async function markDebtStatus(id, status) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx || tx.type !== 'expense') return;
+
+            if (status === 'paid') {
+                tx.paymentStatus = 'paid';
+                tx.paidAt = new Date().toISOString();
+                tx.unpaidAt = null;
+                await saveSingleTransaction(tx);
+                updateUI();
+                showToast('Dívida marcada como paga');
+                return;
+            }
+
+            currentDebtRolloverId = id;
+            setupDebtRolloverControls();
+            const modal = document.getElementById('debtRolloverModal');
+            const form = document.getElementById('debtRolloverForm');
+            const summary = document.getElementById('debtRolloverSummary');
+            if (form) {
+                form.reset();
+                form.rolloverAction.value = 'mark_only';
+                document.getElementById('reparcelFields').style.display = 'none';
+            }
+            const remaining = getRemainingDebtAmount(tx);
+            summary.textContent = `${baseDescriptionOf(tx)} · parcela atual ${formatCurrency(tx.amount)} · restante ${formatCurrency(remaining)}`;
+            modal.style.display = 'block';
+        }
+
+        function closeDebtRolloverModal() {
+            document.getElementById('debtRolloverModal').style.display = 'none';
+            currentDebtRolloverId = null;
+        }
+
+        async function confirmDebtRollover(e) {
+            e.preventDefault();
+            const tx = transactions.find(t => t.id === currentDebtRolloverId);
+            if (!tx) { closeDebtRolloverModal(); return; }
+
+            const fd = new FormData(e.target);
+            const action = fd.get('rolloverAction');
+            const baseDesc = baseDescriptionOf(tx);
+            const nextDate = addMonthsToDate(tx.date, 1);
+            let created = 0;
+            let removedFuture = 0;
+
+            try {
+                tx.paymentStatus = 'unpaid';
+                tx.unpaidAt = new Date().toISOString();
+                tx.paidAt = null;
+                await saveSingleTransaction(tx);
+
+                if (action === 'current_next') {
+                    const id = Date.now();
+                    const newTx = buildDebtTransaction(tx, {
+                        id,
+                        groupId: id,
+                        amount: Number(tx.amount || 0),
+                        date: nextDate,
+                        description: `${baseDesc} - parcela pendente`
+                    });
+                    transactions.push(newTx);
+                    await saveSingleTransaction(newTx);
+                    created = 1;
+                } else if (action === 'remaining_next') {
+                    const amount = getRemainingDebtAmount(tx);
+                    removedFuture = await removeFutureDebtInstallments(tx);
+                    const id = Date.now();
+                    const newTx = buildDebtTransaction(tx, {
+                        id,
+                        groupId: id,
+                        amount,
+                        date: nextDate,
+                        description: `${baseDesc} - dívida reprogramada`
+                    });
+                    transactions.push(newTx);
+                    await saveSingleTransaction(newTx);
+                    created = 1;
+                } else if (action === 'reparcel') {
+                    const baseMode = fd.get('reparcelBase');
+                    const baseAmount = baseMode === 'remaining' ? getRemainingDebtAmount(tx) : Number(tx.amount || 0);
+                    const downPayment = Math.max(0, parseFloat(String(fd.get('downPayment') || '0').replace(',', '.')) || 0);
+                    const installments = Math.max(1, parseInt(fd.get('newInstallments')) || 1);
+                    const typedInstallmentAmount = parseFloat(String(fd.get('newInstallmentAmount') || '').replace(',', '.'));
+                    const remainder = Math.max(0, Math.round((baseAmount - downPayment) * 100) / 100);
+
+                    if (baseMode === 'remaining') removedFuture = await removeFutureDebtInstallments(tx);
+
+                    if (remainder <= 0) {
+                        tx.paymentStatus = 'paid';
+                        tx.paidAt = new Date().toISOString();
+                        tx.unpaidAt = null;
+                        await saveSingleTransaction(tx);
+                    } else {
+                        const installmentAmount = !isNaN(typedInstallmentAmount) && typedInstallmentAmount > 0
+                            ? Math.round(typedInstallmentAmount * 100) / 100
+                            : Math.round((remainder / installments) * 100) / 100;
+                        const groupId = Date.now();
+                        for (let i = 0; i < installments; i++) {
+                            const newTx = buildDebtTransaction(tx, {
+                                id: groupId + i,
+                                groupId,
+                                amount: installmentAmount,
+                                date: addMonthsToDate(tx.date, i + 1),
+                                description: `${baseDesc} - reparcelado (${i + 1}/${installments})`,
+                                installmentNum: i + 1,
+                                totalInstallments: installments
+                            });
+                            transactions.push(newTx);
+                            await saveSingleTransaction(newTx);
+                            created++;
+                        }
+                    }
+                }
+
+                closeDebtRolloverModal();
+                updateUI();
+                const parts = ['Dívida marcada como não paga'];
+                if (removedFuture) parts.push(`${removedFuture} parcelas futuras substituídas`);
+                if (created) parts.push(`${created} cobrança(s) criada(s)`);
+                showToast(parts.join('. '));
+            } catch (error) {
+                console.error('Error updating debt status:', error);
+                showToast(`Erro ao atualizar dívida: ${error.message}`, 'error');
+            }
+        }
+
         async function deleteTransaction(id) {
             const tx = transactions.find(t => t.id === id);
             if (!tx) return;
@@ -2122,11 +2652,87 @@
         function closeCategoryModal(){document.getElementById('categoryModal').style.display='none';}
 
         function renderCategoriesList(){
-            const c=document.getElementById('categoriesList'); c.innerHTML='';
+            const c=document.getElementById('categoriesList');
+            c.innerHTML='';
+            categoryMeta = normalizeCategoryMeta(categoryMeta);
             categories.forEach(cat=>{
+                const color = getCategoryColor(cat);
                 const d=document.createElement('div');
-                d.className='flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 group hover:border-white/10 transition-colors';
-                d.innerHTML=`<span class="text-sm font-medium text-zinc-200">${cat}</span><button onclick="deleteCategory('${cat}')" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100 p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>`;
+                d.className='category-row';
+                d.style.borderLeft = `3px solid ${color}`;
+                d.style.background = `linear-gradient(90deg, ${hexToRgba(color, 0.12)}, rgba(255,255,255,0.04))`;
+
+                const left=document.createElement('div');
+                left.className='flex items-center gap-3 min-w-0';
+                const avatar=document.createElement('div');
+                avatar.innerHTML=categoryAvatarHtml(cat);
+                const copy=document.createElement('div');
+                copy.className='min-w-0';
+                const name=document.createElement('div');
+                name.className='text-sm font-semibold truncate';
+                name.style.color=color;
+                name.textContent=cat;
+                const helper=document.createElement('div');
+                helper.className='text-[11px] text-zinc-500 truncate';
+                helper.textContent=getCategoryLogo(cat) ? 'Logo ativa · cor sincronizada' : 'Sem logo · cor manual';
+                copy.appendChild(name);
+                copy.appendChild(helper);
+                left.appendChild(avatar);
+                left.appendChild(copy);
+
+                const tools=document.createElement('div');
+                tools.className='category-tools';
+
+                const colorInput=document.createElement('input');
+                colorInput.type='color';
+                colorInput.value=color;
+                colorInput.className='category-color-input';
+                colorInput.title='Alterar cor da categoria';
+                colorInput.addEventListener('change', (e)=>updateCategoryColor(cat, e.target.value));
+
+                const fileInput=document.createElement('input');
+                fileInput.type='file';
+                fileInput.accept='image/*';
+                fileInput.style.display='none';
+                fileInput.addEventListener('change', (e)=>handleCategoryLogoUpload(e, cat));
+
+                const uploadBtn=document.createElement('button');
+                uploadBtn.type='button';
+                uploadBtn.className='category-chip-btn';
+                uploadBtn.textContent=getCategoryLogo(cat) ? 'Trocar logo' : 'Adicionar logo';
+                uploadBtn.addEventListener('click', ()=>fileInput.click());
+
+                const autoBtn=document.createElement('button');
+                autoBtn.type='button';
+                autoBtn.className='category-chip-btn';
+                autoBtn.textContent='Cor da logo';
+                autoBtn.disabled=!getCategoryLogo(cat);
+                autoBtn.style.opacity=getCategoryLogo(cat) ? '1' : '0.45';
+                autoBtn.style.cursor=getCategoryLogo(cat) ? 'pointer' : 'not-allowed';
+                autoBtn.addEventListener('click', ()=>autoColorFromLogo(cat));
+
+                const removeLogoBtn=document.createElement('button');
+                removeLogoBtn.type='button';
+                removeLogoBtn.className='category-chip-btn';
+                removeLogoBtn.textContent='Remover logo';
+                removeLogoBtn.style.display=getCategoryLogo(cat) ? 'inline-flex' : 'none';
+                removeLogoBtn.addEventListener('click', ()=>removeCategoryLogo(cat));
+
+                const deleteBtn=document.createElement('button');
+                deleteBtn.type='button';
+                deleteBtn.className='text-zinc-500 hover:text-danger transition-colors p-1';
+                deleteBtn.title='Excluir';
+                deleteBtn.innerHTML='<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+                deleteBtn.addEventListener('click', ()=>deleteCategory(cat));
+
+                tools.appendChild(colorInput);
+                tools.appendChild(uploadBtn);
+                tools.appendChild(autoBtn);
+                tools.appendChild(removeLogoBtn);
+                tools.appendChild(deleteBtn);
+                tools.appendChild(fileInput);
+                d.appendChild(left);
+                d.appendChild(tools);
                 c.appendChild(d);
             });
         }
@@ -2136,6 +2742,7 @@
             const name=input.value.trim(); if(!name) return;
             if(categories.includes(name)){alert('Esta categoria já existe.');return;}
             categories.push(name);
+            categoryMeta[name] = { color: getDefaultCategoryColor(name), logo: '' };
             await saveSettingsToFirestore();
             input.value=''; renderCategoriesList(); populateCategorySelects();
             showToast('Categoria adicionada');
@@ -2145,9 +2752,134 @@
             if(categories.length<=1){alert('Você deve ter pelo menos uma categoria.');return;}
             if(!confirm(`Deseja excluir a categoria "${name}"?`)) return;
             categories=categories.filter(c=>c!==name);
+            delete categoryMeta[name];
             await saveSettingsToFirestore();
             renderCategoriesList(); populateCategorySelects(); updateUI();
             showToast('Categoria excluída');
+        }
+
+        async function updateCategoryColor(name, color) {
+            if (!isValidHexColor(color)) return;
+            categoryMeta[name] = { ...getCategoryMeta(name), color };
+            await saveSettingsToFirestore();
+            renderCategoriesList();
+            updateUI();
+            showToast('Cor da categoria atualizada');
+        }
+
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function loadImageFromDataUrl(dataUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Imagem inválida.'));
+                img.src = dataUrl;
+            });
+        }
+
+        async function resizeLogoToDataUrl(file) {
+            const original = await fileToDataUrl(file);
+            const img = await loadImageFromDataUrl(original);
+            const maxSize = 96;
+            const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+            const width = Math.max(1, Math.round(img.width * scale));
+            const height = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            return canvas.toDataURL('image/webp', 0.86);
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+        }
+
+        async function extractDominantColorFromLogo(dataUrl) {
+            const img = await loadImageFromDataUrl(dataUrl);
+            const size = 36;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(img, 0, 0, size, size);
+            const data = ctx.getImageData(0, 0, size, size).data;
+            const buckets = new Map();
+            for (let i = 0; i < data.length; i += 4) {
+                const a = data[i + 3];
+                if (a < 80) continue;
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                const saturation = max === 0 ? 0 : (max - min) / max;
+                const brightness = max / 255;
+                if (brightness < 0.12 || brightness > 0.96 || saturation < 0.10) continue;
+                const key = `${Math.round(r / 24) * 24},${Math.round(g / 24) * 24},${Math.round(b / 24) * 24}`;
+                const current = buckets.get(key) || { weight: 0, r: 0, g: 0, b: 0 };
+                const weight = 1 + saturation * 2;
+                current.weight += weight;
+                current.r += r * weight;
+                current.g += g * weight;
+                current.b += b * weight;
+                buckets.set(key, current);
+            }
+            if (!buckets.size) return '#8b5cf6';
+            const dominant = [...buckets.values()].sort((a, b) => b.weight - a.weight)[0];
+            return rgbToHex(dominant.r / dominant.weight, dominant.g / dominant.weight, dominant.b / dominant.weight);
+        }
+
+        async function handleCategoryLogoUpload(event, name) {
+            const file = event?.target?.files?.[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                alert('Envie um arquivo de imagem.');
+                return;
+            }
+            try {
+                const logo = await resizeLogoToDataUrl(file);
+                const color = await extractDominantColorFromLogo(logo);
+                categoryMeta[name] = { ...getCategoryMeta(name), logo, color };
+                await saveSettingsToFirestore();
+                renderCategoriesList();
+                updateUI();
+                showToast('Logo adicionada e cor ajustada automaticamente');
+            } catch (error) {
+                console.error('Erro ao processar logo:', error);
+                showToast(`Erro ao processar logo: ${error.message}`, 'error');
+            } finally {
+                if (event?.target) event.target.value = '';
+            }
+        }
+
+        async function autoColorFromLogo(name) {
+            const logo = getCategoryLogo(name);
+            if (!logo) {
+                alert('Adicione uma logo antes de gerar a cor automática.');
+                return;
+            }
+            const color = await extractDominantColorFromLogo(logo);
+            categoryMeta[name] = { ...getCategoryMeta(name), color };
+            await saveSettingsToFirestore();
+            renderCategoriesList();
+            updateUI();
+            showToast('Cor recalculada pela logo');
+        }
+
+        async function removeCategoryLogo(name) {
+            categoryMeta[name] = { ...getCategoryMeta(name), logo: '' };
+            await saveSettingsToFirestore();
+            renderCategoriesList();
+            updateUI();
+            showToast('Logo removida');
         }
 
         // ── Profile / User Name ──
@@ -2320,7 +3052,7 @@
         function editTransaction(id){const t=transactions.find(i=>i.id===id);if(t)openModal(t);}
         function closeModal(){document.getElementById('transactionModal').style.display='none';editingId=null;}
 
-        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();closeCategoryModal();}});
+        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();closeCategoryModal();closeDebtRolloverModal();}});
 
         function showLoginLoading(on){
             document.getElementById('loginBtnText').textContent=on?'Entrando...':'Entrar';
@@ -2344,6 +3076,8 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
