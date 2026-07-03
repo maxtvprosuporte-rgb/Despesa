@@ -1,0 +1,3161 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FinControl - Controle Financeiro do Casal</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Outfit"', 'sans-serif'],
+                    },
+                    colors: {
+                        background: '#09090b',
+                        surface: '#18181b',
+                        surfaceHighlight: '#27272a',
+                        primary: '#10b981',
+                        danger: '#f43f5e',
+                        accent: '#8b5cf6',
+                        warning: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #09090b; color: #fafafa; }
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; transform: translateY(12px);
+        }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        
+        .glow-primary { box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); }
+        .glow-danger { box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); }
+        
+        input, select {
+            background: #09090b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fafafa;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+        input[type="date"] {
+            color-scheme: dark;
+            text-align: center;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0.5;
+            cursor: pointer;
+            filter: invert(1);
+        }
+
+        /* Login screen */
+        #loginScreen, #setupHouseholdScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        #loginScreen.hidden, #setupHouseholdScreen.hidden { display: none; }
+        #appContent.hidden { display: none; }
+
+        .login-card {
+            background: rgba(24, 24, 27, 0.85);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 40px -4px rgba(0, 0, 0, 0.4);
+        }
+
+        .login-input {
+            background: #09090b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fafafa;
+            transition: all 0.2s;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        }
+
+        .spinner {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Chart filter buttons */
+        .chart-filter-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a1a1aa;
+        }
+        .chart-filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fafafa;
+        }
+        .chart-filter-btn.active {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.5);
+            color: #8b5cf6;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 9999;
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: calc(100vw - 40px);
+            text-align: center;
+        }
+        .toast.success {
+            background: rgba(16, 185, 129, 0.9);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: white;
+        }
+        .toast.error {
+            background: rgba(244, 63, 94, 0.9);
+            border: 1px solid rgba(244, 63, 94, 0.5);
+            color: white;
+        }
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        /* Safe area padding for notched devices */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            header { padding-top: env(safe-area-inset-top); }
+            main { padding-bottom: env(safe-area-inset-bottom); }
+        }
+
+        /* Mobile transaction cards */
+        .transaction-card {
+            display: none;
+        }
+        @media (max-width: 639px) {
+            .transaction-table-wrapper { display: none; }
+            .transaction-card { display: block; }
+        }
+        @media (min-width: 640px) {
+            .transaction-table-wrapper { display: block; }
+            .transaction-card { display: none; }
+        }
+
+        /* Modal responsive */
+        @media (max-width: 639px) {
+            .modal-panel {
+                border-radius: 12px !important;
+                max-width: 90vw !important;
+            }
+        }
+        @media (min-width: 640px) {
+            .modal-container {
+                align-items: center !important;
+                padding: 16px !important;
+            }
+            .modal-panel {
+                border-radius: 12px !important;
+                max-width: 400px !important;
+            }
+        }
+
+        /* Radio button styling */
+        input[type="radio"]:checked + .type-btn-expense {
+            background: rgba(244, 63, 94, 0.2);
+            border-color: #f43f5e;
+            color: #f43f5e;
+        }
+        input[type="radio"]:checked + .type-btn-income {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: #10b981;
+            color: #10b981;
+        }
+        input[type="radio"]:checked + .amount-type-total {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+        input[type="radio"]:checked + .amount-type-installment {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+
+        /* Save transaction button */
+        #saveTransactionBtn {
+            cursor: pointer;
+        }
+        #saveTransactionBtn:hover:not(:disabled) {
+            background: #7c3aed !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4) !important;
+        }
+        #saveTransactionBtn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        #saveTransactionBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #transactionModal,
+        #categoryModal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        #transactionModal .modal-backdrop,
+        #categoryModal .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+        }
+
+        #transactionModal .modal-content,
+        #categoryModal .modal-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 639px) {
+            #transactionModal .modal-content,
+            #categoryModal .modal-content {
+                border-radius: 16px 16px 0 0;
+            }
+        }
+
+        @media (min-width: 640px) {
+            #transactionModal,
+            #categoryModal {
+                align-items: center;
+                padding: 1rem;
+            }
+            #transactionModal .modal-content,
+            #categoryModal .modal-content {
+                max-width: 28rem;
+                max-height: 90vh;
+                border-radius: 1rem;
+            }
+        }
+
+        /* Header mobile menu */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+        @media (max-width: 639px) {
+            .header-actions {
+                gap: 0.25rem;
+            }
+            .header-actions .btn-icon-only {
+                width: 2rem;
+                height: 2rem;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .header-actions button:last-child {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+        }
+
+        /* Category grouping in history */
+        .cat-group-header {
+            background: rgba(139, 92, 246, 0.08);
+            border-left: 3px solid #8b5cf6;
+        }
+        .cat-group-header td {
+            padding: 8px 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            color: #a78bfa;
+            letter-spacing: 0.02em;
+        }
+        .cat-sub-row td {
+            padding-left: 28px;
+        }
+        .cat-sub-row .cat-sub-date {
+            font-size: 11px;
+            color: #71717a;
+        }
+        .cat-group-card-header {
+            background: rgba(139, 92, 246, 0.06);
+            border-left: 3px solid #8b5cf6;
+            padding: 8px 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            color: #a78bfa;
+            border-radius: 8px 8px 0 0;
+            letter-spacing: 0.02em;
+        }
+        .cat-sub-card {
+            margin-left: 12px;
+            border-left: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 0 0 8px 8px;
+        }
+        .cat-sub-card:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+        .cat-logo-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex: 0 0 auto;
+            border: 1px solid rgba(255,255,255,0.16);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        }
+        .cat-logo-fallback {
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            color: white;
+            font-size: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+        }
+        .cat-pill-logo {
+            width: 16px;
+            height: 16px;
+            border-radius: 5px;
+        }
+        .category-row {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) auto;
+            gap: 16px;
+            align-items: center;
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .category-row:hover {
+            border-color: rgba(255,255,255,0.13);
+            background: rgba(255,255,255,0.06);
+        }
+        .category-tools {
+            display: grid;
+            grid-template-columns: 42px repeat(3, max-content) 32px;
+            align-items: center;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .category-color-input {
+            width: 42px;
+            height: 38px;
+            padding: 2px;
+            border-radius: 10px;
+            cursor: pointer;
+            background: rgba(9,9,11,0.85);
+        }
+        .category-chip-btn {
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #d4d4d8;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .category-chip-btn:hover {
+            border-color: rgba(139,92,246,0.45);
+            color: #fafafa;
+            background: rgba(139,92,246,0.14);
+        }
+        #categoryModal .modal-panel {
+            max-width: 680px !important;
+            max-height: 88vh !important;
+        }
+        #categoryModal .modal-panel > div:nth-child(2) {
+            padding: 18px !important;
+        }
+        #categoryModal #categoriesList {
+            max-height: 58vh !important;
+            gap: 12px !important;
+            padding-right: 6px !important;
+        }
+        .category-row .cat-logo-thumb,
+        .category-row .cat-logo-fallback {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        @media (max-width: 640px) {
+            #categoryModal .modal-container {
+                padding: 10px !important;
+                align-items: flex-end !important;
+            }
+            #categoryModal .modal-panel {
+                max-width: calc(100vw - 20px) !important;
+                max-height: 92vh !important;
+                border-radius: 18px 18px 12px 12px !important;
+            }
+            #categoryModal .modal-panel > div:first-child {
+                padding: 14px 16px !important;
+            }
+            #categoryModal .modal-panel > div:nth-child(2) {
+                padding: 16px !important;
+            }
+            #categoryModal form {
+                flex-wrap: wrap;
+                gap: 10px !important;
+                margin-bottom: 16px !important;
+            }
+            #categoryModal form input {
+                min-width: 0;
+                flex-basis: 100%;
+            }
+            #categoryModal form button {
+                width: 100%;
+                padding: 10px 12px !important;
+            }
+            .category-row {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                padding: 14px;
+            }
+            .category-tools {
+                width: 100%;
+                grid-template-columns: 48px 1fr 1fr;
+                justify-content: stretch;
+                gap: 9px;
+            }
+            .category-color-input {
+                width: 48px;
+                height: 40px;
+            }
+            .category-chip-btn {
+                width: 100%;
+                min-height: 40px;
+                padding: 9px 10px;
+            }
+            .category-tools > button:last-of-type {
+                min-height: 40px;
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 10px;
+                background: rgba(255,255,255,0.04);
+            }
+        }
+
+        .debt-status-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .debt-status-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 10px;
+            line-height: 1;
+            font-weight: 700;
+            cursor: pointer;
+            color: #a1a1aa;
+            background: transparent;
+            transition: all .2s ease;
+            white-space: nowrap;
+        }
+        .debt-status-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .debt-status-btn.paid.active {
+            color: #052e1b;
+            background: #10b981;
+            box-shadow: 0 0 18px rgba(16,185,129,.28);
+        }
+        .debt-status-btn.unpaid.active {
+            color: #fff;
+            background: #f43f5e;
+            box-shadow: 0 0 18px rgba(244,63,94,.28);
+        }
+        .debt-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        .debt-status-pill.paid { color:#10b981; background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.25); }
+        .debt-status-pill.unpaid { color:#f43f5e; background:rgba(244,63,94,.12); border-color:rgba(244,63,94,.25); }
+        .debt-option-card {
+            display: block;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(255,255,255,.035);
+            cursor: pointer;
+            transition: all .2s ease;
+        }
+        .debt-option-card:hover { border-color: rgba(139,92,246,.45); background: rgba(139,92,246,.08); }
+        .debt-option-card input { accent-color: #8b5cf6; }
+    </style>
+</head>
+<body class="min-h-screen antialiased selection:bg-accent/30 selection:text-accent">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen">
+        <div class="w-full max-w-sm mx-4">
+            <div class="login-card rounded-2xl p-8 animate-fade-in">
+                <div class="flex flex-col items-center mb-8">
+                    <img src="favicon.png" alt="FinControl" class="w-16 h-16 rounded-xl object-cover mb-4">
+                    <h1 class="font-display font-semibold text-2xl tracking-tight">FinControl</h1>
+                    <p class="text-zinc-500 text-sm mt-1">Controle financeiro do casal</p>
+                </div>
+
+                <div id="loginError" class="hidden mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm text-center"></div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">E-mail</label>
+                        <input type="email" id="loginEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Senha</label>
+                        <input type="password" id="loginPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
+                    </div>
+                    <button type="submit" id="loginBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
+                        <span id="loginBtnText">Entrar</span>
+                        <span id="loginSpinner" class="spinner hidden"></span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-zinc-500 text-xs">Não tem conta?</p>
+                    <button onclick="toggleRegister()" id="toggleRegBtn" class="text-accent hover:text-accent/80 text-sm font-medium mt-1 transition-colors">Criar conta</button>
+                </div>
+
+                <form id="registerForm" onsubmit="handleRegister(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-white/5">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Nome</label>
+                        <input type="text" id="regName" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="Seu nome">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">E-mail</label>
+                        <input type="email" id="regEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Senha (min. 6 caracteres)</label>
+                        <input type="password" id="regPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Código da Casa <span class="text-zinc-600">(opcional)</span></label>
+                        <input type="text" id="regHouseholdCode" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Deixe vazio para criar nova" maxlength="6">
+                        <p class="text-[11px] text-zinc-600 mt-1.5 leading-relaxed">Seu parceiro(a) já criou uma casa? Digite o código aqui para entrar. Se deixar vazio, uma nova casa será criada e você receberá um código para compartilhar.</p>
+                    </div>
+                    <button type="submit" id="regBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                        <span id="regBtnText">Criar Conta</span>
+                        <span id="regSpinner" class="spinner hidden"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETUP HOUSEHOLD SCREEN -->
+    <div id="setupHouseholdScreen" class="hidden">
+        <div class="w-full max-w-sm mx-4">
+            <div class="login-card rounded-2xl p-8 animate-fade-in">
+                <div class="flex flex-col items-center mb-8">
+                    <img src="favicon.png" alt="FinControl" class="w-16 h-16 rounded-xl object-cover mb-4">
+                    <h1 class="font-display font-semibold text-2xl tracking-tight">Configurar Casa</h1>
+                    <p class="text-zinc-500 text-sm mt-1 text-center">Sua conta não está vinculada a nenhuma casa ainda.</p>
+                </div>
+
+                <div id="setupError" class="hidden mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm text-center"></div>
+
+                <div id="setupOptions" class="space-y-4">
+                    <button onclick="createNewHousehold()" id="createHouseBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <span id="createHouseBtnText">Criar Nova Casa</span>
+                        <span id="createHouseSpinner" class="spinner hidden"></span>
+                    </button>
+
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-white/10"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-surface text-zinc-500">ou</span>
+                        </div>
+                    </div>
+
+                    <button onclick="showJoinHouseholdForm()" class="w-full bg-surface hover:bg-surfaceHighlight text-white font-medium py-3 rounded-lg transition-all border border-white/10 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        Entrar com Código da Casa
+                    </button>
+                </div>
+
+                <form id="joinHouseForm" onsubmit="joinExistingHousehold(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-white/5">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Código da Casa</label>
+                        <input type="text" id="joinHouseCode" required maxlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Ex: A7K3NP">
+                        <p class="text-[11px] text-zinc-600 mt-1.5 leading-relaxed">Peça o código para seu parceiro(a). Ele aparece no header do app após o login.</p>
+                    </div>
+                    <button type="submit" id="joinHouseBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
+                        <span id="joinHouseBtnText">Entrar na Casa</span>
+                        <span id="joinHouseSpinner" class="spinner hidden"></span>
+                    </button>
+                    <button type="button" onclick="hideJoinHouseholdForm()" class="w-full text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Voltar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP CONTENT -->
+    <div id="appContent" class="hidden">
+
+    <!-- Header -->
+    <header class="border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                <img src="favicon.png" alt="FinControl" class="w-8 h-8 rounded-lg object-cover">
+                <h1 class="font-display font-semibold text-lg sm:text-xl tracking-tight hidden sm:block">FinControl</h1>
+            </div>
+            <div class="header-actions flex-shrink-0">
+                <div id="householdBadge" class="hidden sm:flex items-center gap-1.5 bg-accent/10 border border-accent/20 rounded-lg px-2.5 py-1.5" title="Código da casa - compartilhe com seu parceiro(a)">
+                    <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <span id="householdCodeDisplay" class="text-accent text-xs font-mono font-semibold tracking-wider"></span>
+                </div>
+                <span id="userNameDisplay" class="text-zinc-400 text-xs sm:text-sm font-medium hidden md:inline"></span>
+                <button onclick="openProfileModal()" id="profileBtn" class="btn-icon-only text-zinc-400 hover:text-accent transition-colors flex items-center gap-1 bg-surface border border-white/5 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Meu Perfil">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <span class="hidden sm:inline">Perfil</span>
+                </button>
+                <button onclick="handleLogout()" class="btn-icon-only text-zinc-400 hover:text-danger transition-colors flex items-center gap-1.5 bg-surface border border-white/5 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Sair">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span class="hidden sm:inline">Sair</span>
+                </button>
+                <button onclick="openCategoryModal()" class="btn-icon-only bg-surface hover:bg-surfaceHighlight text-zinc-300 hover:text-white border border-white/10 px-2 sm:px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Categorias">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span class="hidden sm:inline">Categorias</span>
+                </button>
+                <button onclick="openModal()" class="bg-accent hover:bg-accent/90 text-white px-2.5 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-accent/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span class="hidden sm:inline">Nova Transação</span>
+                    <span class="sm:hidden text-xs">Nova</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-8 space-y-3 sm:space-y-6">
+        
+        <!-- Month Filter & Export/Import -->
+        <div class="filter-bar flex items-center justify-between animate-fade-in flex-wrap gap-3">
+            <div class="flex items-center gap-2 sm:gap-3 bg-surface border border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <label class="text-zinc-400 text-xs sm:text-sm font-medium">Período:</label>
+                <input type="month" id="monthFilter" class="bg-transparent text-white text-xs sm:text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
+            </div>
+
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-100 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <p class="text-zinc-400 text-xs sm:text-sm font-medium">Despesa da Casa</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold text-danger break-all" id="houseExpense">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                    <svg class="w-3 h-3 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Todos os membros
+                </div>
+            </div>
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-200 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    <p class="text-zinc-400 text-xs sm:text-sm font-medium">Receita da Casa</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold text-primary break-all" id="houseIncome">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                    <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Todos os membros
+                </div>
+            </div>
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <p class="text-zinc-400 text-xs sm:text-sm font-medium">Minha Despesa</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold text-danger break-all" id="userExpense">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                    <span class="w-2 h-2 rounded-full bg-accent"></span>
+                    <span id="userExpenseName">Somente suas saídas</span>
+                </div>
+            </div>
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <p class="text-zinc-400 text-xs sm:text-sm font-medium">Minha Receita</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold text-primary break-all" id="userIncome">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                    <span class="w-2 h-2 rounded-full bg-accent"></span>
+                    <span id="userIncomeName">Somente suas entradas</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5th Box: Saldo do Usuário -->
+        <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-accent/10 transition-all"></div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-zinc-400 text-xs sm:text-sm font-medium">Meu Saldo do Mês</p>
+                    <p class="text-zinc-600 text-xs">Receitas - Despesas do período</p>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-3 flex-wrap">
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold break-all" id="userBalance">R$ 0,00</h2>
+                <span id="balanceStatus" class="text-xs font-medium px-2 py-1 rounded-lg"></span>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 gap-4 sm:gap-6">
+            <div class="space-y-4 sm:space-y-6">
+                <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-300">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+                        <h3 class="font-display font-semibold text-lg">Evolução Financeira</h3>
+                    </div>
+                    <!-- Chart Filter Bar -->
+                    <div class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div class="flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Filtros:</span>
+                        </div>
+                        <select id="chartTypeMode" onchange="onChartTypeModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="evolution">Evolução</option>
+                            <option value="categories">Categorias</option>
+                        </select>
+                        <div id="chartViewModeWrapper">
+                            <select id="chartViewMode" onchange="onChartViewModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                                <option value="month">Mês Atual</option>
+                                <option value="year">Ano Inteiro</option>
+                                <option value="custom">Período Personalizado</option>
+                            </select>
+                        </div>
+                        <button onclick="setChartFilter('all')" id="chartFilterAll" class="chart-filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Casa</button>
+                        <button onclick="setChartFilter('user')" id="chartFilterUser" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Minhas</button>
+                        <div id="customDateSelectors" style="display:none" class="flex items-center gap-2">
+                            <select id="chartCustomMonth" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                                <option value="0">Janeiro</option>
+                                <option value="1">Fevereiro</option>
+                                <option value="2">Março</option>
+                                <option value="3">Abril</option>
+                                <option value="4">Maio</option>
+                                <option value="5">Junho</option>
+                                <option value="6">Julho</option>
+                                <option value="7">Agosto</option>
+                                <option value="8">Setembro</option>
+                                <option value="9">Outubro</option>
+                                <option value="10">Novembro</option>
+                                <option value="11">Dezembro</option>
+                            </select>
+                            <select id="chartCustomYear" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors"></select>
+                        </div>
+                    </div>
+                    <div class="h-64 sm:h-80 w-full flex items-center justify-center">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                        <h3 class="font-display font-semibold text-base sm:text-lg">Histórico de Transações</h3>
+                        <button onclick="clearAllData()" class="text-xs text-zinc-500 hover:text-danger transition-colors">Limpar tudo</button>
+                    </div>
+                    <!-- Filter Bar -->
+                    <div id="historyFilterBar" style="display:none" class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div class="flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Filtros:</span>
+                        </div>
+                        <select id="filterSort" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="date-desc">Mais recente</option>
+                            <option value="date-asc">Mais antigo</option>
+                            <option value="amount-desc">Maior valor</option>
+                            <option value="amount-asc">Menor valor</option>
+                        </select>
+                        <select id="filterUser" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="all">Todos os usuários</option>
+                        </select>
+                        <select id="filterType" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-white/10 text-zinc-200 cursor-pointer hover:border-white/20 transition-colors">
+                            <option value="all">Todos os tipos</option>
+                            <option value="expense">Despesas</option>
+                            <option value="income">Receitas</option>
+                        </select>
+                        <button onclick="resetHistoryFilters()" class="text-[11px] text-zinc-500 hover:text-accent transition-colors ml-auto">Limpar filtros</button>
+                    </div>
+                    <!-- Desktop Table -->
+                    <div class="transaction-table-wrapper overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <table class="w-full text-left text-xs sm:text-sm min-w-[700px]">
+                            <thead>
+                                <tr class="text-zinc-500 border-b border-white/5">
+                                    <th class="pb-3 font-medium">Descrição</th>
+                                    <th class="pb-3 font-medium">Categoria</th>
+                                    <th class="pb-3 font-medium">Usuário</th>
+                                    <th class="pb-3 font-medium hidden md:table-cell">Data</th>
+                                    <th class="pb-3 font-medium text-right">Valor</th>
+                                    <th class="pb-3 font-medium text-center">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsList" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                    <!-- Mobile Cards -->
+                    <div id="transactionsListMobile" class="transaction-card space-y-3"></div>
+                    <div id="emptyState" class="hidden py-12 text-center text-zinc-500">
+                        <p>Nenhuma transação registrada ainda.</p>
+                        <button onclick="openModal()" class="mt-2 text-accent hover:underline text-sm">Adicionar primeira transação</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Transaction Modal -->
+    <div id="transactionModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Nova Transação</h3>
+                    <button onclick="closeModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" style="padding:16px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="type" value="expense" style="display:none;" checked>
+                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:12px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="type-btn-expense">Despesa</div>
+                        </label>
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="type" value="income" style="display:none;">
+                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:12px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="type-btn-income">Receita</div>
+                        </label>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Valor (R$)</label>
+                        <input type="number" name="amount" step="0.01" min="0.01" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:600;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="0,00">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <label style="cursor:pointer;">
+                                <input type="radio" name="amountType" value="total" style="display:none;" checked>
+                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:10px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="amount-type-total">Valor Total<span style="display:block;font-size:9px;font-weight:400;color:#71717a;margin-top:2px;">Divide pelas parcelas</span></div>
+                            </label>
+                            <label style="cursor:pointer;">
+                                <input type="radio" name="amountType" value="installment" style="display:none;">
+                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);font-size:10px;font-weight:500;color:#a1a1aa;transition:all 0.2s;" class="amount-type-installment">Valor da Parcela<span style="display:block;font-size:9px;font-weight:400;color:#71717a;margin-top:2px;">Repete o valor</span></div>
+                            </label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Categoria</label>
+                        <select name="category" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;"></select>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Data 1ª Parcela</label>
+                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;text-align:center;color-scheme:dark;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Nº de Parcelas</label>
+                        <input type="number" name="installments" min="1" value="1" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Descrição (opcional)</label>
+                        <input type="text" name="description" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="Ex: Supermercado, Salário...">
+                    </div>
+                    <button type="button" id="saveTransactionBtn" onclick="document.getElementById('transactionForm').requestSubmit()" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:all 0.2s;">
+                        <span id="saveBtnText">Salvar Transação</span>
+                        <span id="saveBtnSpinner" class="spinner" style="display:none;"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeCategoryModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Gerenciar Categorias</h3>
+                    <button onclick="closeCategoryModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div style="padding:16px;">
+                    <form onsubmit="event.preventDefault(); addCategory();" style="display:flex;gap:8px;margin-bottom:12px;">
+                        <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required style="flex:1;padding:8px 12px;border-radius:8px;font-size:14px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                        <button type="submit" style="background:#8b5cf6;color:white;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;white-space:nowrap;border:none;cursor:pointer;">Adicionar</button>
+                    </form>
+                    <p style="font-size:11px;color:#71717a;line-height:1.45;margin:0 0 12px;">Envie uma logo para a categoria. A cor é sugerida automaticamente pela imagem, mas também pode ser ajustada manualmente.</p>
+                    <div id="categoriesList" style="max-height:50vh;overflow-y:auto;padding-right:4px;display:grid;gap:10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debt Rollover Modal -->
+    <div id="debtRolloverModal" style="display:none;position:fixed;inset:0;z-index:10000;">
+        <div onclick="closeDebtRolloverModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.97);backdrop-filter:blur(16px);width:100%;max-height:88vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.35);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <div>
+                        <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Dívida não paga</h3>
+                        <p id="debtRolloverSummary" style="font-size:11px;color:#a1a1aa;margin:3px 0 0;"></p>
+                    </div>
+                    <button onclick="closeDebtRolloverModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="debtRolloverForm" onsubmit="confirmDebtRollover(event)" style="padding:16px;">
+                    <p style="font-size:12px;color:#d4d4d8;line-height:1.45;margin:0 0 12px;">Marcarei esta dívida como <strong style="color:#f43f5e;">não paga</strong>. Escolha se ela deve voltar no próximo mês.</p>
+                    <div style="display:grid;gap:8px;margin-bottom:12px;">
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="mark_only" checked style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Só marcar como não paga</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Não cria nova cobrança automática.</span>
+                        </label>
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="current_next" style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Adicionar só esta parcela no mês seguinte</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Copia o valor desta parcela para o próximo mês.</span>
+                        </label>
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="remaining_next" style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Adicionar dívida restante/inteira no mês seguinte</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Junta as parcelas restantes em uma cobrança no próximo mês.</span>
+                        </label>
+                        <label class="debt-option-card">
+                            <input type="radio" name="rolloverAction" value="reparcel" style="margin-right:8px;">
+                            <span style="font-size:13px;font-weight:700;color:#fafafa;">Entrada + novo parcelamento</span>
+                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Abate uma entrada e cria parcelas futuras.</span>
+                        </label>
+                    </div>
+                    <div id="reparcelFields" style="display:none;margin-bottom:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                        <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:6px;">Base do novo parcelamento</label>
+                        <select name="reparcelBase" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;margin-bottom:10px;">
+                            <option value="current">Só a parcela atual</option>
+                            <option value="remaining">Dívida restante/inteira</option>
+                        </select>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                            <div>
+                                <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:4px;">Entrada paga (R$)</label>
+                                <input type="number" name="downPayment" step="0.01" min="0" value="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:4px;">Nº parcelas</label>
+                                <input type="number" name="newInstallments" min="1" value="1" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <label style="display:block;font-size:11px;font-weight:600;color:#a1a1aa;margin-bottom:4px;">Valor de cada parcela (R$)</label>
+                        <input type="number" name="newInstallmentAmount" step="0.01" min="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="Deixe vazio para calcular automático">
+                        <p style="font-size:10px;color:#71717a;margin:6px 0 0;">A entrada só reduz o saldo levado para frente; as novas parcelas começam no mês seguinte.</p>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <button type="button" onclick="closeDebtRolloverModal()" style="background:rgba(255,255,255,0.05);color:#a1a1aa;font-weight:600;padding:10px;border-radius:8px;font-size:13px;border:1px solid rgba(255,255,255,0.08);cursor:pointer;">Cancelar</button>
+                        <button type="submit" style="background:#f43f5e;color:white;font-weight:700;padding:10px;border-radius:8px;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(244,63,94,0.28);">Confirmar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeProfileModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgba(24,24,27,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgba(24,24,27,0.98);padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#fafafa;margin:0;">Meu Perfil</h3>
+                    <button onclick="closeProfileModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="profileForm" onsubmit="handleProfileSubmit(event)" style="padding:16px;">
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#a1a1aa;margin-bottom:4px;">Seu Nome</label>
+                        <input type="text" id="profileNameInput" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;background:#09090b;border:1px solid rgba(255,255,255,0.1);color:#fafafa;box-sizing:border-box;" placeholder="Como deseja ser chamado(a)?">
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:#71717a;margin-bottom:4px;">E-mail</label>
+                        <div id="profileEmailDisplay" style="padding:8px 12px;border-radius:8px;font-size:13px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);color:#71717a;box-sizing:border-box;"></div>
+                    </div>
+                    <div style="margin-bottom:16px;padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;">
+                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                            <input type="checkbox" id="profileAnonymousToggle" style="width:18px;height:18px;accent-color:#8b5cf6;cursor:pointer;">
+                            <div style="flex:1;">
+                                <div style="font-size:13px;color:#fafafa;font-weight:500;">Transações Anônimas</div>
+                                <div style="font-size:11px;color:#71717a;margin-top:2px;">Outros membros da casa não verão suas transações no histórico</div>
+                            </div>
+                        </label>
+                    </div>
+                    <button type="submit" id="saveProfileBtn" style="width:100%;background:#8b5cf6;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.3);transition:all 0.2s;">
+                        <span id="saveProfileBtnText">Salvar Configurações</span>
+                        <span id="saveProfileSpinner" class="spinner" style="display:none;"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- end appContent -->
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc as fsDeleteDoc } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA91xQGPS55qp8ckpnDaVa2d9vA4ztg9Hk",
+            authDomain: "sorteioavilar.firebaseapp.com",
+            projectId: "sorteioavilar",
+            storageBucket: "sorteioavilar.firebasestorage.app",
+            messagingSenderId: "716396310401",
+            appId: "1:716396310401:web:e17ce4f61e425d1c458280",
+            measurementId: "G-CNMH0N1C5L"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // ── App State ──
+        let transactions = [];
+        let categories = [];
+        let categoryMeta = {};
+        let currentMonth = new Date().toISOString().slice(0, 7);
+        let editingId = null;
+        let expenseChartInstance = null;
+        let currentUser = null;
+        let householdCode = null;
+        let chartFilter = 'all';
+        let meuNome = ''; // Nome personalizado do usuário atual
+        let isAnonymous = false; // Modo anônimo
+        let currentDebtRolloverId = null;
+
+        const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
+        const CATEGORY_COLOR_PALETTE = [
+            '#10b981', '#8b5cf6', '#f59e0b', '#f43f5e',
+            '#3b82f6', '#ec4899', '#14b8a6', '#f97316',
+            '#6366f1', '#ef4444', '#06b6d4', '#84cc16',
+            '#a855f7', '#22d3ee', '#e879f9', '#fb923c',
+            '#4ade80', '#fbbf24', '#60a5fa', '#c084fc'
+        ];
+
+        const formatCurrency = (v) => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+        const formatDate = (d) => {
+            const [y, m, day] = d.split('-');
+            return `${day}/${m}/${y}`;
+        };
+        const dateToString = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const addMonthsToDate = (dateStr, months) => {
+            const d = new Date(dateStr + 'T12:00:00');
+            d.setMonth(d.getMonth() + months);
+            return dateToString(d);
+        };
+        const stripInstallmentSuffix = (text = '') => String(text).replace(/\s*\(\d+\/\d+\)\s*$/, '');
+        const baseDescriptionOf = (t) => stripInstallmentSuffix(t.description || t.category || 'Dívida');
+
+        function getDefaultCategoryColor(category = '') {
+            let hash = 0;
+            const key = String(category || 'Outros');
+            for (let i = 0; i < key.length; i++) hash = ((hash << 5) - hash) + key.charCodeAt(i);
+            return CATEGORY_COLOR_PALETTE[Math.abs(hash) % CATEGORY_COLOR_PALETTE.length];
+        }
+
+        function isValidHexColor(value) {
+            return /^#[0-9a-f]{6}$/i.test(String(value || ''));
+        }
+
+        function getCategoryMeta(category = '') {
+            const key = String(category || 'Outros');
+            return categoryMeta[key] || {};
+        }
+
+        function getCategoryColor(category = '') {
+            const color = getCategoryMeta(category).color;
+            return isValidHexColor(color) ? color : getDefaultCategoryColor(category);
+        }
+
+        function getCategoryLogo(category = '') {
+            const logo = getCategoryMeta(category).logo;
+            return typeof logo === 'string' && logo.startsWith('data:image/') ? logo : '';
+        }
+
+        function escapeHtml(value = '') {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function categoryAvatarHtml(category = '', extraClass = '') {
+            const color = getCategoryColor(category);
+            const logo = getCategoryLogo(category);
+            const initial = escapeHtml(String(category || 'O').trim().charAt(0).toUpperCase() || 'O');
+            const cls = extraClass ? ` ${extraClass}` : '';
+            if (logo) return `<img src="${logo}" alt="" class="cat-logo-thumb${cls}">`;
+            return `<span class="cat-logo-fallback${cls}" style="background:${color};">${initial}</span>`;
+        }
+
+        function categoryLabelHtml(category = '', extraClass = '') {
+            const color = getCategoryColor(category);
+            return `<span class="inline-flex items-center gap-2 ${extraClass}" style="color:${color};">${categoryAvatarHtml(category)}<span>${escapeHtml(category)}</span></span>`;
+        }
+
+        function categoryPillHtml(category = '') {
+            return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-white/5 text-zinc-300 border border-white/5">${categoryAvatarHtml(category, 'cat-pill-logo')}<span>${escapeHtml(category)}</span></span>`;
+        }
+
+        function hexToRgba(hex, alpha = 1) {
+            const h = String(hex).replace('#', '');
+            const bigint = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function getTransactionAccentColor(t) {
+            if (t.paymentStatus === 'paid') return '#10b981';
+            if (t.paymentStatus === 'unpaid') return '#f43f5e';
+            return getCategoryColor(t.category);
+        }
+
+        function generateHouseholdCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            return code;
+        }
+
+        // ── Toast Notifications ──
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ── Expose functions ──
+        window.handleLogin = handleLogin;
+        window.handleRegister = handleRegister;
+        window.toggleRegister = toggleRegister;
+        window.handleLogout = handleLogout;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.editTransaction = editTransaction;
+        window.deleteTransaction = deleteTransaction;
+        window.openCategoryModal = openCategoryModal;
+        window.closeCategoryModal = closeCategoryModal;
+        window.addCategory = addCategory;
+        window.deleteCategory = deleteCategory;
+        window.updateCategoryColor = updateCategoryColor;
+        window.handleCategoryLogoUpload = handleCategoryLogoUpload;
+        window.removeCategoryLogo = removeCategoryLogo;
+        window.autoColorFromLogo = autoColorFromLogo;
+        window.handleTransactionSubmit = handleTransactionSubmit;
+        window.setChartFilter = setChartFilter;
+        window.onChartViewModeChange = onChartViewModeChange;
+        window.onChartTypeModeChange = onChartTypeModeChange;
+        window.clearAllData = clearAllData;
+        window.copyHouseholdCode = copyHouseholdCode;
+        window.createNewHousehold = createNewHousehold;
+        window.showJoinHouseholdForm = showJoinHouseholdForm;
+        window.hideJoinHouseholdForm = hideJoinHouseholdForm;
+        window.joinExistingHousehold = joinExistingHousehold;
+        window.resetHistoryFilters = resetHistoryFilters;
+        window.updateUI = updateUI;
+        window.openProfileModal = openProfileModal;
+        window.closeProfileModal = closeProfileModal;
+        window.handleProfileSubmit = handleProfileSubmit;
+        window.markDebtStatus = markDebtStatus;
+        window.closeDebtRolloverModal = closeDebtRolloverModal;
+        window.confirmDebtRollover = confirmDebtRollover;
+
+        // ── Auth State Observer ──
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').classList.add('hidden');
+
+                // Load custom name from Firestore
+                meuNome = await loadUserDisplayName();
+                const displayName = getMyDisplayName();
+                document.getElementById('userNameDisplay').textContent = displayName;
+
+                const hasHousehold = await checkUserHousehold();
+                
+                if (hasHousehold) {
+                    document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                    document.getElementById('appContent').classList.remove('hidden');
+                    await loadHouseholdData();
+                    initApp();
+                } else {
+                    document.getElementById('appContent').classList.add('hidden');
+                    document.getElementById('setupHouseholdScreen').classList.remove('hidden');
+                }
+            } else {
+                currentUser = null;
+                householdCode = null;
+                meuNome = '';
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.add('hidden');
+            }
+        });
+
+        async function checkUserHousehold() {
+            if (!currentUser) return false;
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists() && userSnap.data().householdCode) {
+                    householdCode = userSnap.data().householdCode;
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Error checking household:', error);
+                return false;
+            }
+        }
+
+        async function createNewHousehold() {
+            if (!currentUser) return;
+            
+            const btn = document.getElementById('createHouseBtn');
+            const btnText = document.getElementById('createHouseBtnText');
+            const spinner = document.getElementById('createHouseSpinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Criando...';
+            spinner.classList.remove('hidden');
+            
+            try {
+                const code = generateHouseholdCode();
+                
+                await withTimeout(setDoc(doc(db, 'households', code), {
+                    createdAt: new Date().toISOString(),
+                    createdBy: currentUser.uid,
+                    members: [currentUser.uid]
+                }));
+                
+                await withTimeout(setDoc(doc(db, 'households', code, 'settings', 'main'), {
+                    categories: DEFAULT_CATEGORIES,
+                    categoryMeta: {}
+                }));
+                
+                await withTimeout(setDoc(doc(db, 'users', currentUser.uid), {
+                    name: currentUser.displayName || currentUser.email,
+                    email: currentUser.email,
+                    householdCode: code,
+                    createdAt: new Date().toISOString()
+                }, { merge: true }));
+                
+                householdCode = code;
+                
+                document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+                
+                await loadHouseholdData();
+                initApp();
+                
+                showToast('Casa criada com sucesso! Código: ' + code);
+                
+            } catch (error) {
+                console.error('Error creating household:', error);
+                document.getElementById('setupError').textContent = `Erro ao criar casa: ${error.message}`;
+                document.getElementById('setupError').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Criar Nova Casa';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function showJoinHouseholdForm() {
+            document.getElementById('setupOptions').classList.add('hidden');
+            document.getElementById('joinHouseForm').classList.remove('hidden');
+        }
+
+        function hideJoinHouseholdForm() {
+            document.getElementById('setupOptions').classList.remove('hidden');
+            document.getElementById('joinHouseForm').classList.add('hidden');
+            document.getElementById('setupError').classList.add('hidden');
+        }
+
+        async function joinExistingHousehold(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            
+            const code = document.getElementById('joinHouseCode').value.trim().toUpperCase();
+            
+            const btn = document.getElementById('joinHouseBtn');
+            const btnText = document.getElementById('joinHouseBtnText');
+            const spinner = document.getElementById('joinHouseSpinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Entrando...';
+            spinner.classList.remove('hidden');
+            document.getElementById('setupError').classList.add('hidden');
+            
+            try {
+                const householdRef = doc(db, 'households', code);
+                const hhSnap = await getDoc(householdRef);
+                
+                if (!hhSnap.exists()) {
+                    throw new Error('Código da casa não encontrado.');
+                }
+                
+                const hhData = hhSnap.data();
+                const members = hhData.members || [];
+                if (!members.includes(currentUser.uid)) {
+                    members.push(currentUser.uid);
+                    await setDoc(householdRef, { ...hhData, members }, { merge: true });
+                }
+                
+                await setDoc(doc(db, 'users', currentUser.uid), {
+                    name: currentUser.displayName || currentUser.email,
+                    email: currentUser.email,
+                    householdCode: code,
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+                
+                householdCode = code;
+                
+                document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+                
+                await loadHouseholdData();
+                initApp();
+                
+                showToast('Entrou na casa com sucesso!');
+                
+            } catch (error) {
+                console.error('Error joining household:', error);
+                document.getElementById('setupError').textContent = error.message;
+                document.getElementById('setupError').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Entrar na Casa';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            showLoginLoading(true);
+            hideLoginError();
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (err) {
+                showLoginError(getPtBrError(err.code));
+            }
+            showLoginLoading(false);
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const inputCode = document.getElementById('regHouseholdCode').value.trim().toUpperCase();
+            showRegLoading(true);
+            hideLoginError();
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(cred.user, { displayName: name });
+
+                let code;
+                if (inputCode) {
+                    code = inputCode;
+                    const householdRef = doc(db, 'households', code);
+                    const hhSnap = await getDoc(householdRef);
+                    if (!hhSnap.exists()) {
+                        await setDoc(householdRef, {
+                            createdAt: new Date().toISOString(),
+                            createdBy: cred.user.uid,
+                            members: [cred.user.uid]
+                        });
+                        await setDoc(doc(householdRef, 'settings', 'main'), {
+                            categories: DEFAULT_CATEGORIES,
+                            categoryMeta: {}
+                        });
+                    } else {
+                        const hhData = hhSnap.data();
+                        const members = hhData.members || [];
+                        if (!members.includes(cred.user.uid)) {
+                            members.push(cred.user.uid);
+                            await setDoc(householdRef, { ...hhData, members }, { merge: true });
+                        }
+                    }
+                } else {
+                    code = generateHouseholdCode();
+                    let exists = true;
+                    while (exists) {
+                        const check = await getDoc(doc(db, 'households', code));
+                        if (!check.exists()) exists = false;
+                        else code = generateHouseholdCode();
+                    }
+                    await setDoc(doc(db, 'households', code), {
+                        createdAt: new Date().toISOString(),
+                        createdBy: cred.user.uid,
+                        members: [cred.user.uid]
+                    });
+                    await setDoc(doc(db, 'households', code, 'settings', 'main'), {
+                        categories: DEFAULT_CATEGORIES,
+                        categoryMeta: {}
+                    });
+                }
+
+                await setDoc(doc(db, 'users', cred.user.uid), {
+                    name,
+                    email,
+                    householdCode: code,
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+
+                householdCode = code;
+                showHouseholdBadge(code);
+            } catch (err) {
+                showLoginError(getPtBrError(err.code));
+            }
+            showRegLoading(false);
+        }
+
+        async function handleLogout() {
+            await signOut(auth);
+        }
+
+        function toggleRegister() {
+            const form = document.getElementById('registerForm');
+            const btn = document.getElementById('toggleRegBtn');
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                btn.textContent = 'Já tenho conta';
+            } else {
+                form.classList.add('hidden');
+                btn.textContent = 'Criar conta';
+            }
+        }
+
+        async function loadHouseholdData() {
+            if (!currentUser || !householdCode) {
+                console.error('Cannot load: currentUser or householdCode is null');
+                return;
+            }
+
+            try {
+                showHouseholdBadge(householdCode);
+
+                const settingsRef = doc(db, 'households', householdCode, 'settings', 'main');
+                const settingsSnap = await withTimeout(getDoc(settingsRef));
+                if (settingsSnap.exists()) {
+                    const data = settingsSnap.data();
+                    categories = Array.isArray(data.categories) ? [...data.categories] : [...DEFAULT_CATEGORIES];
+                    categoryMeta = normalizeCategoryMeta(data.categoryMeta || {});
+                } else {
+                    categories = [...DEFAULT_CATEGORIES];
+                    categoryMeta = normalizeCategoryMeta({});
+                    await withTimeout(setDoc(settingsRef, { categories, categoryMeta }));
+                }
+
+                const txSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'transactions')));
+                transactions = txSnap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                showToast(`Erro ao carregar: ${error.message}`, 'error');
+            }
+        }
+
+        function showHouseholdBadge(code) {
+            document.getElementById('householdCodeDisplay').textContent = code;
+            document.getElementById('householdBadge').classList.remove('hidden');
+            document.getElementById('householdBadge').style.display = 'flex';
+        }
+
+        function copyHouseholdCode() {
+            if (!householdCode) return;
+            navigator.clipboard.writeText(householdCode).then(() => {
+                const el = document.getElementById('householdCodeDisplay');
+                const original = el.textContent;
+                el.textContent = 'Copiado!';
+                setTimeout(() => { el.textContent = original; }, 1500);
+            });
+        }
+
+        function withTimeout(promise, ms = 10000) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo limite excedido. Verifique sua conexão.')), ms))
+            ]);
+        }
+
+        function normalizeCategoryMeta(meta = {}) {
+            const normalized = {};
+            categories.forEach(cat => {
+                const item = meta?.[cat] || {};
+                normalized[cat] = {
+                    color: isValidHexColor(item.color) ? item.color : getDefaultCategoryColor(cat),
+                    logo: typeof item.logo === 'string' && item.logo.startsWith('data:image/') ? item.logo : ''
+                };
+            });
+            return normalized;
+        }
+
+        async function saveSingleTransaction(t) {
+            if (!currentUser || !householdCode) {
+                throw new Error('Usuário ou casa não configurados');
+            }
+            const { id, ...data } = t;
+            await withTimeout(setDoc(doc(db, 'households', householdCode, 'transactions', String(id)), data));
+        }
+
+        async function deleteTransactionFromFirestore(id) {
+            if (!currentUser || !householdCode) return;
+            await withTimeout(fsDeleteDoc(doc(db, 'households', householdCode, 'transactions', String(id))));
+        }
+
+        async function saveSettingsToFirestore() {
+            if (!currentUser || !householdCode) return;
+            categoryMeta = normalizeCategoryMeta(categoryMeta);
+            await withTimeout(setDoc(doc(db, 'households', householdCode, 'settings', 'main'), { categories, categoryMeta }));
+        }
+
+        async function clearAllTransactionsInFirestore() {
+            if (!currentUser || !householdCode) return;
+            const snap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'transactions')));
+            const promises = snap.docs.map(d => withTimeout(fsDeleteDoc(d.ref)));
+            await Promise.all(promises);
+        }
+
+        function initApp() {
+            const monthInput = document.getElementById('monthFilter');
+            monthInput.value = currentMonth;
+            monthInput.onchange = (e) => { currentMonth = e.target.value; updateUI(); };
+            const dateInput = document.querySelector('#transactionForm input[name="date"]');
+            if (dateInput) dateInput.valueAsDate = new Date();
+            populateCategorySelects();
+            onChartViewModeChange();
+            setChartFilter('all');
+            setupDebtRolloverControls();
+            updateUI();
+        }
+
+        function getFilteredTransactions() { return transactions.filter(t => t.date.startsWith(currentMonth)); }
+
+        function updateUI() { updateSummary(); renderTransactions(); renderChart(); }
+
+        function setupDebtRolloverControls() {
+            const form = document.getElementById('debtRolloverForm');
+            if (!form || form.dataset.ready === '1') return;
+            form.dataset.ready = '1';
+            form.querySelectorAll('input[name="rolloverAction"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    const fields = document.getElementById('reparcelFields');
+                    if (fields) fields.style.display = form.rolloverAction.value === 'reparcel' ? 'block' : 'none';
+                });
+            });
+        }
+
+        function updateSummary() {
+            let f = getFilteredTransactions();
+            const uid = currentUser?.uid;
+
+            // Filter out anonymous transactions from other users for house totals
+            f = f.filter(t => {
+                if (t.userId === uid) return true; // Own transactions always visible
+                if (t.isAnonymous) return false;
+                return true;
+            });
+
+            // House totals (all members, excluding anonymous from others)
+            const houseIncome = f.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const houseExpense = f.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+            // User totals (only current user)
+            const userTransactions = f.filter(t => t.userId === uid);
+            const userIncome = userTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const userExpense = userTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+            document.getElementById('houseIncome').textContent = formatCurrency(houseIncome);
+            document.getElementById('houseExpense').textContent = formatCurrency(houseExpense);
+            document.getElementById('userIncome').textContent = formatCurrency(userIncome);
+            document.getElementById('userExpense').textContent = formatCurrency(userExpense);
+
+            // User balance
+            const userBalance = userIncome - userExpense;
+            const balanceEl = document.getElementById('userBalance');
+            const statusEl = document.getElementById('balanceStatus');
+            
+            balanceEl.textContent = formatCurrency(userBalance);
+            
+            if (userBalance > 0) {
+                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-primary break-all';
+                statusEl.textContent = 'Sobrando';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20';
+            } else if (userBalance < 0) {
+                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-danger break-all';
+                statusEl.textContent = 'No negativo';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-danger/10 text-danger border border-danger/20';
+            } else {
+                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-white break-all';
+                statusEl.textContent = 'Equilibrado';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-white/5 text-zinc-400 border border-white/10';
+            }
+        }
+
+        function renderTransactions() {
+            const tbody = document.getElementById('transactionsList');
+            const mobileList = document.getElementById('transactionsListMobile');
+            const emptyState = document.getElementById('emptyState');
+            const filterBar = document.getElementById('historyFilterBar');
+            tbody.innerHTML = '';
+            mobileList.innerHTML = '';
+
+            const monthFiltered = getFilteredTransactions();
+
+            // Show/hide filter bar when there are transactions
+            if (monthFiltered.length > 0) {
+                filterBar.style.display = 'flex';
+                populateUserFilter(monthFiltered);
+            } else {
+                filterBar.style.display = 'none';
+            }
+
+            // Apply user filter
+            const userFilter = document.getElementById('filterUser')?.value || 'all';
+            let filtered = monthFiltered;
+            if (userFilter !== 'all') filtered = filtered.filter(t => t.userId === userFilter);
+
+            // Apply type filter
+            const typeFilter = document.getElementById('filterType')?.value || 'all';
+            if (typeFilter !== 'all') filtered = filtered.filter(t => t.type === typeFilter);
+
+            // Filter out anonymous transactions from other users
+            filtered = filtered.filter(t => {
+                if (t.userId === currentUser?.uid) return true;
+                if (t.isAnonymous) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
+            emptyState.classList.add('hidden');
+
+            // Apply sort
+            const sortVal = document.getElementById('filterSort')?.value || 'date-desc';
+            let sorted;
+            if (sortVal === 'amount-desc') sorted = [...filtered].sort((a,b) => b.amount - a.amount);
+            else if (sortVal === 'amount-asc') sorted = [...filtered].sort((a,b) => a.amount - b.amount);
+            else if (sortVal === 'date-asc') sorted = [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date));
+            else sorted = [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            // Group by category
+            const catOrder = [];
+            const catMap = {};
+            sorted.forEach(t => {
+                if (!catMap[t.category]) { catMap[t.category] = []; catOrder.push(t.category); }
+                catMap[t.category].push(t);
+            });
+
+            catOrder.forEach(category => {
+                const items = catMap[category];
+                const hasGroup = items.length > 1;
+
+                if (hasGroup) {
+                    // Desktop: category header row
+                    const headerTr = document.createElement('tr');
+                    headerTr.className = 'cat-group-header';
+                    const categoryColor = getCategoryColor(category);
+                    headerTr.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
+                    headerTr.style.borderLeftColor = categoryColor;
+                    const catTotal = items.reduce((s, t) => s + t.amount, 0);
+                    headerTr.innerHTML = `<td colspan="6">
+                        <div class="flex items-center justify-between">
+                            ${categoryLabelHtml(category)}
+                            <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
+                        </div>
+                    </td>`;
+                    tbody.appendChild(headerTr);
+                }
+
+                // Mobile: category header card
+                if (hasGroup) {
+                    const catHeader = document.createElement('div');
+                    catHeader.className = 'cat-group-card-header';
+                    const categoryColor = getCategoryColor(category);
+                    catHeader.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
+                    catHeader.style.borderLeftColor = categoryColor;
+                    const catTotal = items.reduce((s, t) => s + t.amount, 0);
+                    catHeader.innerHTML = `<div class="flex items-center justify-between">
+                        ${categoryLabelHtml(category)}
+                        <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
+                    </div>`;
+                    mobileList.appendChild(catHeader);
+                }
+
+                items.forEach(t => {
+                    const isIncome = t.type === 'income';
+                    const userName = t.userName || 'Desconhecido';
+                    const isCurrentUser = t.userId === currentUser?.uid;
+                    const userBadgeClass = isCurrentUser ? 'bg-accent/20 text-accent border-accent/30' : 'bg-primary/20 text-primary border-primary/30';
+                    const groupInfo = t.groupId && t.totalInstallments > 1
+                        ? `<span class="text-[9px] text-zinc-600 ml-1">Parcela ${t.installmentNum||'?'}/${t.totalInstallments||'?'}</span>`
+                        : '';
+                    const desc = t.description || t.category;
+                    const cleanDesc = hasGroup ? desc : desc;
+                    const safeDesc = escapeHtml(cleanDesc);
+                    const safeUserName = escapeHtml(userName);
+                    const accentColor = getTransactionAccentColor(t);
+                    const rowBg = `linear-gradient(90deg, ${hexToRgba(accentColor, 0.16)}, ${hexToRgba(accentColor, 0.035)})`;
+                    const statusPill = t.paymentStatus === 'paid'
+                        ? '<span class="debt-status-pill paid">Pago</span>'
+                        : (t.paymentStatus === 'unpaid' ? '<span class="debt-status-pill unpaid">Não pago</span>' : '');
+                    const debtButtons = !isIncome ? `
+                            <span class="debt-status-actions">
+                                <button onclick="markDebtStatus(${t.id}, 'paid')" class="debt-status-btn paid ${t.paymentStatus === 'paid' ? 'active' : ''}" title="Marcar como pago">Pago</button>
+                                <button onclick="markDebtStatus(${t.id}, 'unpaid')" class="debt-status-btn unpaid ${t.paymentStatus === 'unpaid' ? 'active' : ''}" title="Marcar como não pago">Não pago</button>
+                            </span>` : '';
+                    
+                    // Desktop table row
+                    const tr = document.createElement('tr');
+                    tr.className = `group hover:bg-white/[0.02] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
+                    tr.style.background = rowBg;
+                    tr.style.borderLeft = `3px solid ${accentColor}`;
+                    tr.innerHTML = `
+                        <td class="py-3.5"><div class="font-medium text-zinc-200">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}</td>
+                        ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
+                        <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${safeUserName}</span></td>
+                        ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>`}
+                        <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
+                        <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-2 flex-wrap">
+                            ${debtButtons}
+                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </div></td>`;
+                    tbody.appendChild(tr);
+                    
+                    // Mobile card
+                    const card = document.createElement('div');
+                    card.className = `bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
+                    card.style.background = rowBg;
+                    card.style.borderColor = hexToRgba(accentColor, 0.30);
+                    card.style.borderLeft = `3px solid ${accentColor}`;
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-zinc-200 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
+                                ${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}
+                            </div>
+                            <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                ${!hasGroup ? categoryPillHtml(t.category) : ''}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
+                                <span class="text-[10px] text-zinc-500">${formatDate(t.date)}</span>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                ${debtButtons}
+                                <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            </div>
+                        </div>`;
+                    mobileList.appendChild(card);
+                });
+            });
+        }
+
+        function populateUserFilter(transactionsList) {
+            const select = document.getElementById('filterUser');
+            if (!select) return;
+            const currentVal = select.value;
+            const users = new Map();
+            transactionsList.forEach(t => {
+                if (t.userId && !users.has(t.userId)) users.set(t.userId, t.userName || 'Desconhecido');
+            });
+            select.innerHTML = '<option value="all">Todos os usuários</option>';
+            users.forEach((name, uid) => {
+                const o = document.createElement('option');
+                o.value = uid;
+                o.textContent = name;
+                if (uid === currentVal) o.selected = true;
+                select.appendChild(o);
+            });
+        }
+
+        function resetHistoryFilters() {
+            const sortEl = document.getElementById('filterSort');
+            const userEl = document.getElementById('filterUser');
+            const typeEl = document.getElementById('filterType');
+            if (sortEl) sortEl.value = 'date-desc';
+            if (userEl) userEl.value = 'all';
+            if (typeEl) typeEl.value = 'all';
+            updateUI();
+        }
+
+        function setChartFilter(filter) {
+            chartFilter = filter;
+            document.getElementById('chartFilterAll').classList.toggle('active', filter === 'all');
+            document.getElementById('chartFilterUser').classList.toggle('active', filter === 'user');
+            renderChart();
+        }
+
+        function onChartViewModeChange() {
+            const viewMode = document.getElementById('chartViewMode').value;
+            const customSelectors = document.getElementById('customDateSelectors');
+            
+            // Show/hide custom date selectors
+            if (viewMode === 'custom') {
+                customSelectors.style.display = 'flex';
+                populateCustomYearSelector();
+            } else {
+                customSelectors.style.display = 'none';
+            }
+            
+            renderChart();
+        }
+
+        function onChartTypeModeChange() {
+            const chartTypeMode = document.getElementById('chartTypeMode').value;
+            const viewModeWrapper = document.getElementById('chartViewModeWrapper');
+            const customSelectors = document.getElementById('customDateSelectors');
+            
+            if (chartTypeMode === 'categories') {
+                // In categories mode, still show viewMode so user can pick period
+                viewModeWrapper.style.display = '';
+                customSelectors.style.display = 'none';
+                const viewMode = document.getElementById('chartViewMode').value;
+                if (viewMode === 'custom') customSelectors.style.display = 'flex';
+            } else {
+                viewModeWrapper.style.display = '';
+                const viewMode = document.getElementById('chartViewMode').value;
+                customSelectors.style.display = (viewMode === 'custom') ? 'flex' : 'none';
+            }
+            
+            renderChart();
+        }
+
+        // Deterministic colors for categories chart/history
+        function generateCategoryColors(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                colors.push(CATEGORY_COLOR_PALETTE[i % CATEGORY_COLOR_PALETTE.length]);
+            }
+            return colors;
+        }
+
+        // Get filtered transactions based on current view mode and chart filter
+        function getChartTransactions() {
+            const viewMode = document.getElementById('chartViewMode').value;
+            let filtered;
+            
+            if (viewMode === 'month') {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                filtered = transactions.filter(t => {
+                    const txDate = new Date(t.date);
+                    return txDate.getFullYear() === year && txDate.getMonth() === month;
+                });
+            } else if (viewMode === 'year') {
+                const year = new Date().getFullYear();
+                filtered = transactions.filter(t => {
+                    const txDate = new Date(t.date);
+                    return txDate.getFullYear() === year;
+                });
+            } else { // custom
+                const year = parseInt(document.getElementById('chartCustomYear').value);
+                const month = parseInt(document.getElementById('chartCustomMonth').value);
+                filtered = transactions.filter(t => {
+                    const txDate = new Date(t.date);
+                    return txDate.getFullYear() === year && txDate.getMonth() === month;
+                });
+            }
+            
+            // Apply user filter
+            if (chartFilter === 'user' && currentUser) {
+                filtered = filtered.filter(t => t.userId === currentUser.uid);
+            }
+            // Apply anonymous filter
+            filtered = filtered.filter(t => {
+                if (t.userId === currentUser?.uid) return true;
+                if (t.isAnonymous) return false;
+                return true;
+            });
+            
+            return filtered;
+        }
+
+        function renderCategoriesChart(ctx) {
+            const viewMode = document.getElementById('chartViewMode').value;
+            const filtered = getChartTransactions();
+            
+            if (filtered.length === 0) {
+                return;
+            }
+            
+            // Build labels and grouping based on view mode
+            let labels = [];
+            let groupingFn; // returns the bucket key for a transaction
+            
+            if (viewMode === 'month') {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                groupingFn = (t) => new Date(t.date).getDate() - 1;
+            } else if (viewMode === 'year') {
+                labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                groupingFn = (t) => new Date(t.date).getMonth();
+            } else { // custom
+                const year = parseInt(document.getElementById('chartCustomYear').value);
+                const month = parseInt(document.getElementById('chartCustomMonth').value);
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                groupingFn = (t) => new Date(t.date).getDate() - 1;
+            }
+            
+            // Group transactions by category and by bucket
+            const categoryBuckets = {}; // { category: array of values indexed by bucket }
+            filtered.forEach(t => {
+                if (!categoryBuckets[t.category]) {
+                    categoryBuckets[t.category] = Array.from({ length: labels.length }, () => 0);
+                }
+                const bucket = groupingFn(t);
+                if (bucket >= 0 && bucket < labels.length) {
+                    categoryBuckets[t.category][bucket] += t.amount;
+                }
+            });
+            
+            // Sort categories by total amount descending
+            const sortedEntries = Object.entries(categoryBuckets).sort((a, b) => {
+                const totalA = a[1].reduce((s, v) => s + v, 0);
+                const totalB = b[1].reduce((s, v) => s + v, 0);
+                return totalB - totalA;
+            });
+            
+            const colors = sortedEntries.map(([category]) => getCategoryColor(category));
+            
+            const datasets = sortedEntries.map(([category, values], i) => ({
+                label: category,
+                data: values,
+                borderColor: colors[i],
+                backgroundColor: colors[i] + '1a',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: false,
+                pointBackgroundColor: colors[i],
+                pointBorderColor: colors[i],
+                pointRadius: 3,
+                pointHoverRadius: 5
+            }));
+            
+            expenseChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#a1a1aa',
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyleWidth: 8
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(24, 24, 27, 0.95)',
+                            titleColor: '#fafafa',
+                            bodyColor: '#a1a1aa',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y || 0;
+                                    return `${label}: ${formatCurrency(value)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: { color: '#71717a', font: { family: 'Plus Jakarta Sans', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                            ticks: {
+                                color: '#71717a',
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                callback: function(value) { return formatCurrency(value); }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderEvolutionChart(ctx) {
+            const viewMode = document.getElementById('chartViewMode').value;
+            
+            let labels = [];
+            let incomeData = [];
+            let expenseData = [];
+            
+            if (viewMode === 'month') {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                let monthTransactions = getChartTransactions();
+                
+                const dailyData = Array.from({ length: daysInMonth }, () => ({ income: 0, expense: 0 }));
+                monthTransactions.forEach(t => {
+                    const day = new Date(t.date).getDate() - 1;
+                    if (t.type === 'income') {
+                        dailyData[day].income += t.amount;
+                    } else if (t.type === 'expense') {
+                        dailyData[day].expense += t.amount;
+                    }
+                });
+                
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                incomeData = dailyData.map(d => d.income);
+                expenseData = dailyData.map(d => d.expense);
+                
+            } else if (viewMode === 'year') {
+                let yearTransactions = getChartTransactions();
+                
+                const monthlyData = Array.from({ length: 12 }, () => ({ income: 0, expense: 0 }));
+                yearTransactions.forEach(t => {
+                    const month = new Date(t.date).getMonth();
+                    if (t.type === 'income') {
+                        monthlyData[month].income += t.amount;
+                    } else if (t.type === 'expense') {
+                        monthlyData[month].expense += t.amount;
+                    }
+                });
+                
+                labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                incomeData = monthlyData.map(d => d.income);
+                expenseData = monthlyData.map(d => d.expense);
+                
+            } else if (viewMode === 'custom') {
+                const year = parseInt(document.getElementById('chartCustomYear').value);
+                const month = parseInt(document.getElementById('chartCustomMonth').value);
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                
+                let monthTransactions = getChartTransactions();
+                
+                const dailyData = Array.from({ length: daysInMonth }, () => ({ income: 0, expense: 0 }));
+                monthTransactions.forEach(t => {
+                    const day = new Date(t.date).getDate() - 1;
+                    if (t.type === 'income') {
+                        dailyData[day].income += t.amount;
+                    } else if (t.type === 'expense') {
+                        dailyData[day].expense += t.amount;
+                    }
+                });
+                
+                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+                incomeData = dailyData.map(d => d.income);
+                expenseData = dailyData.map(d => d.expense);
+            }
+            
+            const hasData = incomeData.some(v => v > 0) || expenseData.some(v => v > 0);
+            if (!hasData) return;
+            
+            expenseChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Receitas',
+                            data: incomeData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#10b981',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Despesas',
+                            data: expenseData,
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#f43f5e',
+                            pointBorderColor: '#f43f5e',
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#a1a1aa',
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    size: 11
+                                },
+                                padding: 16,
+                                usePointStyle: true,
+                                pointStyleWidth: 8
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(24, 24, 27, 0.95)',
+                            titleColor: '#fafafa',
+                            bodyColor: '#a1a1aa',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y || 0;
+                                    return `${label}: ${formatCurrency(value)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#71717a',
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#71717a',
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function populateCustomYearSelector() {
+            const select = document.getElementById('chartCustomYear');
+            if (!select) return;
+            
+            const currentYear = new Date().getFullYear();
+            const years = new Set();
+            years.add(currentYear);
+            
+            // Get years from transactions
+            transactions.forEach(t => {
+                if (t.date) {
+                    const year = new Date(t.date).getFullYear();
+                    years.add(year);
+                }
+            });
+            
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            select.innerHTML = sortedYears.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
+            
+            // Set default month to current month
+            const currentMonth = new Date().getMonth();
+            document.getElementById('chartCustomMonth').value = currentMonth;
+        }
+
+        function safeDestroyChart() {
+            const canvas = document.getElementById('expenseChart');
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy();
+                expenseChartInstance = null;
+            }
+            const existing = Chart.getChart(canvas);
+            if (existing) existing.destroy();
+            const ctx2 = canvas.getContext('2d');
+            ctx2.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function renderChart() {
+            safeDestroyChart();
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const chartTypeMode = document.getElementById('chartTypeMode').value;
+            
+            if (chartTypeMode === 'categories') {
+                renderCategoriesChart(ctx);
+            } else {
+                renderEvolutionChart(ctx);
+            }
+        }
+
+        async function handleTransactionSubmit(e) {
+            e.preventDefault();
+            
+            // Validate BEFORE disabling the button
+            const fd=new FormData(e.target);
+            const amountStr=fd.get('amount').replace(',','.');
+            const inputAmount=parseFloat(amountStr);
+            const installments=parseInt(fd.get('installments'))||1;
+            const amountType=fd.get('amountType');
+            if(isNaN(inputAmount)||inputAmount<=0){showToast('Por favor, insira um valor válido maior que zero.', 'error');return;}
+            if(installments<1){showToast('O número de parcelas deve ser pelo menos 1.', 'error');return;}
+
+            // Check prerequisites before disabling button
+            if (!currentUser) {
+                showToast('Sessão expirada. Faça login novamente.', 'error');
+                return;
+            }
+            if (!householdCode) {
+                showToast('Casa não configurada. Faça login novamente.', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('saveTransactionBtn');
+            const btnText = document.getElementById('saveBtnText');
+            const spinner = document.getElementById('saveBtnSpinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Salvando...';
+            spinner.classList.remove('hidden');
+            
+            try {
+                const baseDate=new Date(fd.get('date')+'T12:00:00');
+                const baseDesc=fd.get('description')||fd.get('category');
+                let instAmt = amountType==='total' ? Math.round((inputAmount/installments)*100)/100 : inputAmount;
+
+                if (editingId) {
+                    const currentTx = transactions.find(t => t.id === editingId);
+                    if (!currentTx) { editingId=null; throw new Error('Transação não encontrada.'); }
+
+                    const groupId = currentTx.groupId || currentTx.id;
+                    const group = transactions.filter(t => t.groupId === groupId)
+                        .sort((a,b) => (a.installmentNum||1) - (b.installmentNum||1));
+                    const currentIdx = group.findIndex(t => t.id === editingId);
+                    const wasGrouped = group.length > 1;
+
+                    // Find the base date for new installments: the date of the current transaction being edited
+                    const editBaseDate = new Date(fd.get('date') + 'T12:00:00');
+
+                    // Step 1: Delete all transactions in the group from currentIdx forward
+                    const toDelete = group.slice(currentIdx);
+                    for (const t of toDelete) {
+                        transactions = transactions.filter(tx => tx.id !== t.id);
+                        await deleteTransactionFromFirestore(t.id);
+                    }
+
+                    // Step 2: Create new installments from the edited transaction's date forward
+                    const newGroupId = wasGrouped ? groupId : Date.now();
+                    const userId = currentTx.userId || currentUser.uid;
+                    const userName = currentTx.userName || getMyDisplayName();
+
+                    // Calculate the total installment number to continue numbering
+                    const startNum = currentIdx + 1; // 1-based installment number of current
+                    const totalFromStart = (wasGrouped ? group.length : 1) - currentIdx + (installments - 1);
+
+                    for (let i = 0; i < installments; i++) {
+                        const cd = new Date(editBaseDate);
+                        cd.setMonth(editBaseDate.getMonth() + i);
+                        const ds = `${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
+                        const instNum = startNum + i;
+                        const totalInst = wasGrouped ? (currentIdx + installments) : installments;
+                        let desc = baseDesc;
+                        if (totalInst > 1) desc = `${baseDesc} (${instNum}/${totalInst})`;
+                        const t = {
+                            id: newGroupId + 10000 + i,
+                            type: fd.get('type'),
+                            amount: instAmt,
+                            category: fd.get('category'),
+                            date: ds,
+                            description: desc,
+                            userId: userId,
+                            userName: userName,
+                            isAnonymous: isAnonymous,
+                            groupId: newGroupId,
+                            installmentNum: instNum,
+                            totalInstallments: totalInst
+                        };
+                        transactions.push(t);
+                        await saveSingleTransaction(t);
+                    }
+
+                    editingId = null;
+
+                } else {
+                    const baseId = Date.now();
+                    for(let i=0;i<installments;i++){
+                        const cd=new Date(baseDate); cd.setMonth(baseDate.getMonth()+i);
+                        const ds=`${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
+                        let desc=baseDesc; if(installments>1) desc=`${baseDesc} (${i+1}/${installments})`;
+                        const t={
+                            id:baseId+i,
+                            type:fd.get('type'),
+                            amount:instAmt,
+                            category:fd.get('category'),
+                            date:ds,
+                            description:desc,
+                            userId:currentUser.uid,
+                            userName:getMyDisplayName(),
+                            isAnonymous:isAnonymous,
+                            groupId: baseId,
+                            installmentNum: i+1,
+                            totalInstallments: installments
+                        };
+                        transactions.push(t);
+                        await saveSingleTransaction(t);
+                    }
+                }
+                
+                updateUI();
+                closeModal();
+                e.target.reset();
+                const di=e.target.querySelector('input[name="date"]'); if(di)di.valueAsDate=new Date();
+                
+                showToast('Transação salva com sucesso!');
+                
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                showToast(`Erro ao salvar: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Salvar Transação';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function getDebtGroup(tx) {
+            if (!tx) return [];
+            const groupId = tx.groupId || tx.id;
+            const group = transactions
+                .filter(item => (item.groupId || item.id) === groupId)
+                .sort((a, b) => {
+                    const an = a.installmentNum || 1;
+                    const bn = b.installmentNum || 1;
+                    if (an !== bn) return an - bn;
+                    return new Date(a.date) - new Date(b.date);
+                });
+            return group.length ? group : [tx];
+        }
+
+        function getRemainingDebtItems(tx) {
+            const group = getDebtGroup(tx);
+            const currentNum = tx.installmentNum || 1;
+            return group.filter(item => {
+                if ((item.installmentNum || 1) >= currentNum) return true;
+                return new Date(item.date) >= new Date(tx.date);
+            });
+        }
+
+        function getRemainingDebtAmount(tx) {
+            return getRemainingDebtItems(tx).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        }
+
+        async function removeFutureDebtInstallments(tx) {
+            const currentNum = tx.installmentNum || 1;
+            const currentDate = new Date(tx.date);
+            const toRemove = getDebtGroup(tx).filter(item => {
+                if (item.id === tx.id) return false;
+                if ((item.installmentNum || 1) > currentNum) return true;
+                return new Date(item.date) > currentDate;
+            });
+            for (const item of toRemove) {
+                transactions = transactions.filter(t => t.id !== item.id);
+                await deleteTransactionFromFirestore(item.id);
+            }
+            return toRemove.length;
+        }
+
+        function buildDebtTransaction(original, overrides = {}) {
+            return {
+                id: overrides.id || Date.now(),
+                type: 'expense',
+                amount: overrides.amount,
+                category: original.category,
+                date: overrides.date,
+                description: overrides.description,
+                userId: original.userId || currentUser.uid,
+                userName: original.userName || getMyDisplayName(),
+                isAnonymous: original.isAnonymous || false,
+                groupId: overrides.groupId || overrides.id || Date.now(),
+                installmentNum: overrides.installmentNum || 1,
+                totalInstallments: overrides.totalInstallments || 1,
+                paymentStatus: overrides.paymentStatus || 'pending',
+                debtOriginId: original.id,
+                createdFromUnpaidDebt: true
+            };
+        }
+
+        async function markDebtStatus(id, status) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx || tx.type !== 'expense') return;
+
+            if (status === 'paid') {
+                tx.paymentStatus = 'paid';
+                tx.paidAt = new Date().toISOString();
+                tx.unpaidAt = null;
+                await saveSingleTransaction(tx);
+                updateUI();
+                showToast('Dívida marcada como paga');
+                return;
+            }
+
+            currentDebtRolloverId = id;
+            setupDebtRolloverControls();
+            const modal = document.getElementById('debtRolloverModal');
+            const form = document.getElementById('debtRolloverForm');
+            const summary = document.getElementById('debtRolloverSummary');
+            if (form) {
+                form.reset();
+                form.rolloverAction.value = 'mark_only';
+                document.getElementById('reparcelFields').style.display = 'none';
+            }
+            const remaining = getRemainingDebtAmount(tx);
+            summary.textContent = `${baseDescriptionOf(tx)} · parcela atual ${formatCurrency(tx.amount)} · restante ${formatCurrency(remaining)}`;
+            modal.style.display = 'block';
+        }
+
+        function closeDebtRolloverModal() {
+            document.getElementById('debtRolloverModal').style.display = 'none';
+            currentDebtRolloverId = null;
+        }
+
+        async function confirmDebtRollover(e) {
+            e.preventDefault();
+            const tx = transactions.find(t => t.id === currentDebtRolloverId);
+            if (!tx) { closeDebtRolloverModal(); return; }
+
+            const fd = new FormData(e.target);
+            const action = fd.get('rolloverAction');
+            const baseDesc = baseDescriptionOf(tx);
+            const nextDate = addMonthsToDate(tx.date, 1);
+            let created = 0;
+            let removedFuture = 0;
+
+            try {
+                tx.paymentStatus = 'unpaid';
+                tx.unpaidAt = new Date().toISOString();
+                tx.paidAt = null;
+                await saveSingleTransaction(tx);
+
+                if (action === 'current_next') {
+                    const id = Date.now();
+                    const newTx = buildDebtTransaction(tx, {
+                        id,
+                        groupId: id,
+                        amount: Number(tx.amount || 0),
+                        date: nextDate,
+                        description: `${baseDesc} - parcela pendente`
+                    });
+                    transactions.push(newTx);
+                    await saveSingleTransaction(newTx);
+                    created = 1;
+                } else if (action === 'remaining_next') {
+                    const amount = getRemainingDebtAmount(tx);
+                    removedFuture = await removeFutureDebtInstallments(tx);
+                    const id = Date.now();
+                    const newTx = buildDebtTransaction(tx, {
+                        id,
+                        groupId: id,
+                        amount,
+                        date: nextDate,
+                        description: `${baseDesc} - dívida reprogramada`
+                    });
+                    transactions.push(newTx);
+                    await saveSingleTransaction(newTx);
+                    created = 1;
+                } else if (action === 'reparcel') {
+                    const baseMode = fd.get('reparcelBase');
+                    const baseAmount = baseMode === 'remaining' ? getRemainingDebtAmount(tx) : Number(tx.amount || 0);
+                    const downPayment = Math.max(0, parseFloat(String(fd.get('downPayment') || '0').replace(',', '.')) || 0);
+                    const installments = Math.max(1, parseInt(fd.get('newInstallments')) || 1);
+                    const typedInstallmentAmount = parseFloat(String(fd.get('newInstallmentAmount') || '').replace(',', '.'));
+                    const remainder = Math.max(0, Math.round((baseAmount - downPayment) * 100) / 100);
+
+                    if (baseMode === 'remaining') removedFuture = await removeFutureDebtInstallments(tx);
+
+                    if (remainder <= 0) {
+                        tx.paymentStatus = 'paid';
+                        tx.paidAt = new Date().toISOString();
+                        tx.unpaidAt = null;
+                        await saveSingleTransaction(tx);
+                    } else {
+                        const installmentAmount = !isNaN(typedInstallmentAmount) && typedInstallmentAmount > 0
+                            ? Math.round(typedInstallmentAmount * 100) / 100
+                            : Math.round((remainder / installments) * 100) / 100;
+                        const groupId = Date.now();
+                        for (let i = 0; i < installments; i++) {
+                            const newTx = buildDebtTransaction(tx, {
+                                id: groupId + i,
+                                groupId,
+                                amount: installmentAmount,
+                                date: addMonthsToDate(tx.date, i + 1),
+                                description: `${baseDesc} - reparcelado (${i + 1}/${installments})`,
+                                installmentNum: i + 1,
+                                totalInstallments: installments
+                            });
+                            transactions.push(newTx);
+                            await saveSingleTransaction(newTx);
+                            created++;
+                        }
+                    }
+                }
+
+                closeDebtRolloverModal();
+                updateUI();
+                const parts = ['Dívida marcada como não paga'];
+                if (removedFuture) parts.push(`${removedFuture} parcelas futuras substituídas`);
+                if (created) parts.push(`${created} cobrança(s) criada(s)`);
+                showToast(parts.join('. '));
+            } catch (error) {
+                console.error('Error updating debt status:', error);
+                showToast(`Erro ao atualizar dívida: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteTransaction(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            const groupId = tx.groupId || tx.id;
+            const group = transactions.filter(t => t.groupId === groupId);
+            const isGrouped = group.length > 1;
+
+            let deleteAll = false;
+            if (isGrouped) {
+                const choice = confirm(
+                    `Esta transação faz parte de ${group.length} parcelas.\n\n` +
+                    `OK = Excluir TODAS as ${group.length} parcelas\n` +
+                    `Cancelar = Excluir SOMENTE esta parcela`
+                );
+                deleteAll = choice;
+            } else {
+                if (!confirm('Deseja excluir esta transação?')) return;
+            }
+
+            try {
+                if (deleteAll) {
+                    // Delete entire group
+                    for (const t of group) {
+                        transactions = transactions.filter(tx2 => tx2.id !== t.id);
+                        await deleteTransactionFromFirestore(t.id);
+                    }
+                    showToast(`${group.length} parcelas excluídas`);
+                } else {
+                    // Delete only this one
+                    transactions = transactions.filter(t => t.id !== id);
+                    await deleteTransactionFromFirestore(id);
+                    showToast('Transação excluída');
+                }
+                updateUI();
+            } catch (error) {
+                console.error('Error deleting:', error);
+                showToast(`Erro ao excluir: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearAllData() {
+            if(!confirm('ATENÇÃO: Isso apagará TODAS as transações para ambos. Tem certeza?')) return;
+            try {
+                transactions=[];
+                await clearAllTransactionsInFirestore();
+                updateUI();
+                showToast('Todas as transações foram excluídas');
+            } catch (error) {
+                console.error('Error clearing:', error);
+                showToast(`Erro ao limpar: ${error.message}`, 'error');
+            }
+        }
+
+        function populateCategorySelects() {
+            document.querySelectorAll('select[name="category"]').forEach(sel=>{
+                const cv=sel.value; sel.innerHTML='';
+                categories.forEach(cat=>{const o=document.createElement('option');o.value=cat;o.textContent=cat;if(cat===cv)o.selected=true;sel.appendChild(o);});
+            });
+        }
+
+        function openCategoryModal(){renderCategoriesList();document.getElementById('categoryModal').style.display='block';}
+        function closeCategoryModal(){document.getElementById('categoryModal').style.display='none';}
+
+        function renderCategoriesList(){
+            const c=document.getElementById('categoriesList');
+            c.innerHTML='';
+            categoryMeta = normalizeCategoryMeta(categoryMeta);
+            categories.forEach(cat=>{
+                const color = getCategoryColor(cat);
+                const d=document.createElement('div');
+                d.className='category-row';
+                d.style.borderLeft = `3px solid ${color}`;
+                d.style.background = `linear-gradient(90deg, ${hexToRgba(color, 0.12)}, rgba(255,255,255,0.04))`;
+
+                const left=document.createElement('div');
+                left.className='flex items-center gap-3 min-w-0';
+                const avatar=document.createElement('div');
+                avatar.innerHTML=categoryAvatarHtml(cat);
+                const copy=document.createElement('div');
+                copy.className='min-w-0';
+                const name=document.createElement('div');
+                name.className='text-sm font-semibold truncate';
+                name.style.color=color;
+                name.textContent=cat;
+                const helper=document.createElement('div');
+                helper.className='text-[11px] text-zinc-500 truncate';
+                helper.textContent=getCategoryLogo(cat) ? 'Logo ativa · cor sincronizada' : 'Sem logo · cor manual';
+                copy.appendChild(name);
+                copy.appendChild(helper);
+                left.appendChild(avatar);
+                left.appendChild(copy);
+
+                const tools=document.createElement('div');
+                tools.className='category-tools';
+
+                const colorInput=document.createElement('input');
+                colorInput.type='color';
+                colorInput.value=color;
+                colorInput.className='category-color-input';
+                colorInput.title='Alterar cor da categoria';
+                colorInput.addEventListener('change', (e)=>updateCategoryColor(cat, e.target.value));
+
+                const fileInput=document.createElement('input');
+                fileInput.type='file';
+                fileInput.accept='image/*';
+                fileInput.style.display='none';
+                fileInput.addEventListener('change', (e)=>handleCategoryLogoUpload(e, cat));
+
+                const uploadBtn=document.createElement('button');
+                uploadBtn.type='button';
+                uploadBtn.className='category-chip-btn';
+                uploadBtn.textContent=getCategoryLogo(cat) ? 'Trocar logo' : 'Adicionar logo';
+                uploadBtn.addEventListener('click', ()=>fileInput.click());
+
+                const autoBtn=document.createElement('button');
+                autoBtn.type='button';
+                autoBtn.className='category-chip-btn';
+                autoBtn.textContent='Cor da logo';
+                autoBtn.disabled=!getCategoryLogo(cat);
+                autoBtn.style.opacity=getCategoryLogo(cat) ? '1' : '0.45';
+                autoBtn.style.cursor=getCategoryLogo(cat) ? 'pointer' : 'not-allowed';
+                autoBtn.addEventListener('click', ()=>autoColorFromLogo(cat));
+
+                const removeLogoBtn=document.createElement('button');
+                removeLogoBtn.type='button';
+                removeLogoBtn.className='category-chip-btn';
+                removeLogoBtn.textContent='Remover logo';
+                removeLogoBtn.style.display=getCategoryLogo(cat) ? 'inline-flex' : 'none';
+                removeLogoBtn.addEventListener('click', ()=>removeCategoryLogo(cat));
+
+                const deleteBtn=document.createElement('button');
+                deleteBtn.type='button';
+                deleteBtn.className='text-zinc-500 hover:text-danger transition-colors p-1';
+                deleteBtn.title='Excluir';
+                deleteBtn.innerHTML='<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+                deleteBtn.addEventListener('click', ()=>deleteCategory(cat));
+
+                tools.appendChild(colorInput);
+                tools.appendChild(uploadBtn);
+                tools.appendChild(autoBtn);
+                tools.appendChild(removeLogoBtn);
+                tools.appendChild(deleteBtn);
+                tools.appendChild(fileInput);
+                d.appendChild(left);
+                d.appendChild(tools);
+                c.appendChild(d);
+            });
+        }
+
+        async function addCategory(){
+            const input=document.getElementById('newCategoryInput');
+            const name=input.value.trim(); if(!name) return;
+            if(categories.includes(name)){alert('Esta categoria já existe.');return;}
+            categories.push(name);
+            categoryMeta[name] = { color: getDefaultCategoryColor(name), logo: '' };
+            await saveSettingsToFirestore();
+            input.value=''; renderCategoriesList(); populateCategorySelects();
+            showToast('Categoria adicionada');
+        }
+
+        async function deleteCategory(name){
+            if(categories.length<=1){alert('Você deve ter pelo menos uma categoria.');return;}
+            if(!confirm(`Deseja excluir a categoria "${name}"?`)) return;
+            categories=categories.filter(c=>c!==name);
+            delete categoryMeta[name];
+            await saveSettingsToFirestore();
+            renderCategoriesList(); populateCategorySelects(); updateUI();
+            showToast('Categoria excluída');
+        }
+
+        async function updateCategoryColor(name, color) {
+            if (!isValidHexColor(color)) return;
+            categoryMeta[name] = { ...getCategoryMeta(name), color };
+            await saveSettingsToFirestore();
+            renderCategoriesList();
+            updateUI();
+            showToast('Cor da categoria atualizada');
+        }
+
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('Não foi possível ler a imagem.'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function loadImageFromDataUrl(dataUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Imagem inválida.'));
+                img.src = dataUrl;
+            });
+        }
+
+        async function resizeLogoToDataUrl(file) {
+            const original = await fileToDataUrl(file);
+            const img = await loadImageFromDataUrl(original);
+            const maxSize = 96;
+            const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+            const width = Math.max(1, Math.round(img.width * scale));
+            const height = Math.max(1, Math.round(img.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            return canvas.toDataURL('image/webp', 0.86);
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+        }
+
+        async function extractDominantColorFromLogo(dataUrl) {
+            const img = await loadImageFromDataUrl(dataUrl);
+            const size = 36;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(img, 0, 0, size, size);
+            const data = ctx.getImageData(0, 0, size, size).data;
+            const buckets = new Map();
+            for (let i = 0; i < data.length; i += 4) {
+                const a = data[i + 3];
+                if (a < 80) continue;
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                const saturation = max === 0 ? 0 : (max - min) / max;
+                const brightness = max / 255;
+                if (brightness < 0.12 || brightness > 0.96 || saturation < 0.10) continue;
+                const key = `${Math.round(r / 24) * 24},${Math.round(g / 24) * 24},${Math.round(b / 24) * 24}`;
+                const current = buckets.get(key) || { weight: 0, r: 0, g: 0, b: 0 };
+                const weight = 1 + saturation * 2;
+                current.weight += weight;
+                current.r += r * weight;
+                current.g += g * weight;
+                current.b += b * weight;
+                buckets.set(key, current);
+            }
+            if (!buckets.size) return '#8b5cf6';
+            const dominant = [...buckets.values()].sort((a, b) => b.weight - a.weight)[0];
+            return rgbToHex(dominant.r / dominant.weight, dominant.g / dominant.weight, dominant.b / dominant.weight);
+        }
+
+        async function handleCategoryLogoUpload(event, name) {
+            const file = event?.target?.files?.[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                alert('Envie um arquivo de imagem.');
+                return;
+            }
+            try {
+                const logo = await resizeLogoToDataUrl(file);
+                const color = await extractDominantColorFromLogo(logo);
+                categoryMeta[name] = { ...getCategoryMeta(name), logo, color };
+                await saveSettingsToFirestore();
+                renderCategoriesList();
+                updateUI();
+                showToast('Logo adicionada e cor ajustada automaticamente');
+            } catch (error) {
+                console.error('Erro ao processar logo:', error);
+                showToast(`Erro ao processar logo: ${error.message}`, 'error');
+            } finally {
+                if (event?.target) event.target.value = '';
+            }
+        }
+
+        async function autoColorFromLogo(name) {
+            const logo = getCategoryLogo(name);
+            if (!logo) {
+                alert('Adicione uma logo antes de gerar a cor automática.');
+                return;
+            }
+            const color = await extractDominantColorFromLogo(logo);
+            categoryMeta[name] = { ...getCategoryMeta(name), color };
+            await saveSettingsToFirestore();
+            renderCategoriesList();
+            updateUI();
+            showToast('Cor recalculada pela logo');
+        }
+
+        async function removeCategoryLogo(name) {
+            categoryMeta[name] = { ...getCategoryMeta(name), logo: '' };
+            await saveSettingsToFirestore();
+            renderCategoriesList();
+            updateUI();
+            showToast('Logo removida');
+        }
+
+        // ── Profile / User Name ──
+        function getMyDisplayName() {
+            return meuNome || currentUser?.displayName || currentUser?.email || 'Desconhecido';
+        }
+
+        async function loadUserDisplayName() {
+            if (!currentUser) return '';
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                const userSnap = await withTimeout(getDoc(userRef));
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    isAnonymous = data.isAnonymous || false;
+                    return data.name || '';
+                }
+            } catch (e) {
+                console.warn('Could not load user name:', e);
+            }
+            return '';
+        }
+
+        function openProfileModal() {
+            document.getElementById('profileModal').style.display = 'block';
+            document.getElementById('profileNameInput').value = getMyDisplayName();
+            document.getElementById('profileEmailDisplay').textContent = currentUser?.email || '';
+            document.getElementById('profileAnonymousToggle').checked = isAnonymous;
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        async function handleProfileSubmit(e) {
+            e.preventDefault();
+            const newName = document.getElementById('profileNameInput').value.trim();
+            const newAnonymous = document.getElementById('profileAnonymousToggle').checked;
+            if (!newName) { showToast('Por favor, insira um nome.', 'error'); return; }
+
+            const btn = document.getElementById('saveProfileBtn');
+            const btnText = document.getElementById('saveProfileBtnText');
+            const spinner = document.getElementById('saveProfileSpinner');
+
+            btn.disabled = true;
+            btnText.textContent = 'Salvando...';
+            spinner.classList.remove('hidden');
+
+            try {
+                const oldName = meuNome || currentUser.displayName || currentUser.email;
+
+                // Save to Firestore user doc
+                await withTimeout(setDoc(doc(db, 'users', currentUser.uid), {
+                    name: newName,
+                    email: currentUser.email,
+                    householdCode: householdCode || null,
+                    isAnonymous: newAnonymous
+                }, { merge: true }));
+
+                // Update Firebase Auth displayName
+                try { await updateProfile(currentUser, { displayName: newName }); } catch(e) {}
+
+                meuNome = newName;
+                isAnonymous = newAnonymous;
+
+                // Update current user's existing transactions to reflect new name and anonymous status
+                const updatedIds = [];
+                for (const t of transactions) {
+                    if (t.userId === currentUser.uid) {
+                        let needsUpdate = false;
+                        if (t.userName !== newName) {
+                            t.userName = newName;
+                            needsUpdate = true;
+                        }
+                        if (t.isAnonymous !== newAnonymous) {
+                            t.isAnonymous = newAnonymous;
+                            needsUpdate = true;
+                        }
+                        if (needsUpdate) {
+                            await saveSingleTransaction(t);
+                            updatedIds.push(t.id);
+                        }
+                    }
+                }
+
+                // Update header display
+                document.getElementById('userNameDisplay').textContent = newName;
+
+                updateUI();
+                closeProfileModal();
+                const msg = [];
+                if (updatedIds.length > 0) msg.push(`${updatedIds.length} transações atualizadas`);
+                msg.push(newAnonymous ? 'Modo anônimo ativado' : 'Modo anônimo desativado');
+                showToast(msg.join('. ') + '!');
+
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showToast(`Erro ao salvar: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Salvar Configurações';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function openModal(transaction=null){
+            const modal=document.getElementById('transactionModal'), form=document.getElementById('transactionForm');
+            form.reset();
+            const di=form.querySelector('input[name="date"]'); if(di)di.valueAsDate=new Date();
+            populateCategorySelects();
+
+            // Track category changes to update description
+            const categorySelect = form.querySelector('select[name="category"]');
+            const descriptionInput = form.querySelector('input[name="description"]');
+            let categoryChanged = false;
+
+            categorySelect.addEventListener('change', () => {
+                categoryChanged = true;
+                // Auto-update description to match new category (only if empty or was auto-set)
+                if (!descriptionInput.value || descriptionInput.value === categorySelect.options[0]?.text || descriptionInput.dataset.autoCategory === descriptionInput.value) {
+                    descriptionInput.value = categorySelect.value;
+                    descriptionInput.dataset.autoCategory = categorySelect.value;
+                }
+            });
+
+            if(transaction){
+                editingId=transaction.id;
+                form.querySelector(`input[name="type"][value="${transaction.type}"]`).checked=true;
+                form.querySelector('input[name="amount"]').value=transaction.amount;
+                categorySelect.value=transaction.category;
+                if(!categorySelect.value){const o=document.createElement('option');o.value=transaction.category;o.textContent=transaction.category+' (Removida)';o.selected=true;categorySelect.appendChild(o);}
+                form.querySelector('input[name="date"]').value=transaction.date;
+
+                // Strip installment suffix from description for clean editing
+                let cleanDesc = (transaction.description === transaction.category) ? '' : transaction.description;
+                cleanDesc = cleanDesc.replace(/\s*\(\d+\/\d+\)\s*$/, '');
+                descriptionInput.value = cleanDesc;
+                descriptionInput.dataset.autoCategory = cleanDesc; // Mark as auto-set
+
+                // Show remaining installments if grouped
+                const groupId = transaction.groupId || transaction.id;
+                const group = transactions.filter(t => t.groupId === groupId);
+                if (group.length > 1) {
+                    const remaining = group.filter(t => (t.installmentNum || 1) >= (transaction.installmentNum || 1)).length;
+                    form.querySelector('input[name="installments"]').value = remaining;
+                } else {
+                    form.querySelector('input[name="installments"]').value = 1;
+                }
+
+                // Determine amount type: if it's a grouped tx with totalInstallments, show as installment value
+                // (since amount is already the per-installment value, set amountType to 'installment')
+                if (group.length > 1) {
+                    form.querySelector('input[name="amountType"][value="installment"]').checked = true;
+                } else {
+                    form.querySelector('input[name="amountType"][value="total"]').checked = true;
+                }
+
+                modal.querySelector('h3').textContent = group.length > 1
+                    ? `Editar Transação (Parcela ${transaction.installmentNum||1}/${transaction.totalInstallments||group.length})`
+                    : 'Editar Transação';
+                document.getElementById('saveBtnText').textContent='Atualizar Transação';
+            } else {
+                editingId=null;
+                modal.querySelector('h3').textContent='Nova Transação';
+                document.getElementById('saveBtnText').textContent='Salvar Transação';
+            }
+            modal.style.display='block';
+        }
+
+        function editTransaction(id){const t=transactions.find(i=>i.id===id);if(t)openModal(t);}
+        function closeModal(){document.getElementById('transactionModal').style.display='none';editingId=null;}
+
+        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();closeCategoryModal();closeDebtRolloverModal();}});
+
+        function showLoginLoading(on){
+            document.getElementById('loginBtnText').textContent=on?'Entrando...':'Entrar';
+            document.getElementById('loginSpinner').classList.toggle('hidden',!on);
+        }
+        function showRegLoading(on){
+            document.getElementById('regBtnText').textContent=on?'Criando...':'Criar Conta';
+            document.getElementById('regSpinner').classList.toggle('hidden',!on);
+        }
+        function showLoginError(msg){const el=document.getElementById('loginError');el.textContent=msg;el.classList.remove('hidden');}
+        function hideLoginError(){document.getElementById('loginError').classList.add('hidden');}
+        function getPtBrError(code){
+            const map={'auth/invalid-email':'E-mail inválido.','auth/user-not-found':'Usuário não encontrado.','auth/wrong-password':'Senha incorreta.','auth/invalid-credential':'E-mail ou senha incorretos.','auth/email-already-in-use':'Este e-mail já está cadastrado.','auth/weak-password':'A senha deve ter pelo menos 6 caracteres.','auth/network-request-failed':'Erro de conexão. Verifique sua internet.'};
+            return map[code]||'Ocorreu um erro. Tente novamente.';
+        }
+    </script>
+
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
