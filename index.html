@@ -384,11 +384,11 @@
         }
         .category-row {
             display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 12px;
+            grid-template-columns: minmax(180px, 1fr) auto;
+            gap: 16px;
             align-items: center;
-            padding: 12px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 16px;
             background: rgba(255,255,255,0.045);
             border: 1px solid rgba(255,255,255,0.07);
         }
@@ -397,39 +397,115 @@
             background: rgba(255,255,255,0.06);
         }
         .category-tools {
-            display: flex;
+            display: grid;
+            grid-template-columns: 42px repeat(3, max-content) 32px;
             align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 10px;
             justify-content: flex-end;
         }
         .category-color-input {
-            width: 34px;
-            height: 34px;
+            width: 42px;
+            height: 38px;
             padding: 2px;
             border-radius: 10px;
             cursor: pointer;
             background: rgba(9,9,11,0.85);
         }
         .category-chip-btn {
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border: 1px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.05);
             color: #d4d4d8;
             border-radius: 10px;
-            padding: 7px 9px;
+            padding: 8px 12px;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .category-chip-btn:hover {
             border-color: rgba(139,92,246,0.45);
             color: #fafafa;
             background: rgba(139,92,246,0.14);
         }
-        @media (max-width: 520px) {
-            .category-row { grid-template-columns: 1fr; }
-            .category-tools { justify-content: flex-start; }
+        #categoryModal .modal-panel {
+            max-width: 680px !important;
+            max-height: 88vh !important;
+        }
+        #categoryModal .modal-panel > div:nth-child(2) {
+            padding: 18px !important;
+        }
+        #categoryModal #categoriesList {
+            max-height: 58vh !important;
+            gap: 12px !important;
+            padding-right: 6px !important;
+        }
+        .category-row .cat-logo-thumb,
+        .category-row .cat-logo-fallback {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        @media (max-width: 640px) {
+            #categoryModal .modal-container {
+                padding: 10px !important;
+                align-items: flex-end !important;
+            }
+            #categoryModal .modal-panel {
+                max-width: calc(100vw - 20px) !important;
+                max-height: 92vh !important;
+                border-radius: 18px 18px 12px 12px !important;
+            }
+            #categoryModal .modal-panel > div:first-child {
+                padding: 14px 16px !important;
+            }
+            #categoryModal .modal-panel > div:nth-child(2) {
+                padding: 16px !important;
+            }
+            #categoryModal form {
+                flex-wrap: wrap;
+                gap: 10px !important;
+                margin-bottom: 16px !important;
+            }
+            #categoryModal form input {
+                min-width: 0;
+                flex-basis: 100%;
+            }
+            #categoryModal form button {
+                width: 100%;
+                padding: 10px 12px !important;
+            }
+            .category-row {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                padding: 14px;
+            }
+            .category-tools {
+                width: 100%;
+                grid-template-columns: 48px 1fr 1fr;
+                justify-content: stretch;
+                gap: 9px;
+            }
+            .category-color-input {
+                width: 48px;
+                height: 40px;
+            }
+            .category-chip-btn {
+                width: 100%;
+                min-height: 40px;
+                padding: 9px 10px;
+            }
+            .category-tools > button:last-of-type {
+                min-height: 40px;
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 10px;
+                background: rgba(255,255,255,0.04);
+            }
         }
 
         .debt-status-actions {
