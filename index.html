@@ -17,6 +17,7 @@
          por isso fica inline aqui (é só o mapeamento de cores/fontes, não é "lógica" do app) -->
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -24,17 +25,26 @@
                         display: ['"Outfit"', 'sans-serif'],
                     },
                     colors: {
-                        background: '#F3F4F6',
-                        surface: '#FFFFFF',
-                        surfaceHighlight: '#EEF0F3',
-                        primary: '#059669',
-                        danger: '#e11d48',
-                        accent: '#7c3aed',
-                        warning: '#b45309'
+                        background: 'rgb(var(--c-background) / <alpha-value>)',
+                        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+                        surfaceHighlight: 'rgb(var(--c-surface-highlight) / <alpha-value>)',
+                        primary: 'rgb(var(--c-primary) / <alpha-value>)',
+                        danger: 'rgb(var(--c-danger) / <alpha-value>)',
+                        accent: 'rgb(var(--c-accent) / <alpha-value>)',
+                        warning: 'rgb(var(--c-warning) / <alpha-value>)'
                     }
                 }
             }
         }
+    </script>
+    <!-- Aplica o tema salvo o quanto antes, pra nao "piscar" claro antes do escuro -->
+    <script>
+        (function(){
+            try {
+                var t = localStorage.getItem('fincontrol_theme');
+                if (t === 'dark') document.documentElement.classList.add('dark');
+            } catch(e) {}
+        })();
     </script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -47,18 +57,18 @@
                 <div class="flex flex-col items-center mb-8">
                     <img src="favicon.png" alt="FinControl" class="w-16 h-16 rounded-xl object-cover mb-4">
                     <h1 class="font-display font-semibold text-2xl tracking-tight">FinControl</h1>
-                    <p class="text-zinc-500 text-sm mt-1">Controle financeiro do casal</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Controle financeiro do casal</p>
                 </div>
 
                 <div id="loginError" class="hidden mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm text-center"></div>
 
                 <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-1.5">E-mail</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">E-mail</label>
                         <input type="email" id="loginEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-1.5">Senha</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Senha</label>
                         <input type="password" id="loginPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
                     </div>
                     <button type="submit" id="loginBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
@@ -68,27 +78,27 @@
                 </form>
 
                 <div class="mt-6 text-center">
-                    <p class="text-zinc-500 text-xs">Não tem conta?</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs">Não tem conta?</p>
                     <button onclick="toggleRegister()" id="toggleRegBtn" class="text-accent hover:text-accent/80 text-sm font-medium mt-1 transition-colors">Criar conta</button>
                 </div>
 
-                <form id="registerForm" onsubmit="handleRegister(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-zinc-900/8">
+                <form id="registerForm" onsubmit="handleRegister(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-zinc-900/8 dark:border-white/5">
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-1.5">Nome</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Nome</label>
                         <input type="text" id="regName" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="Seu nome">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-1.5">E-mail</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">E-mail</label>
                         <input type="email" id="regEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-1.5">Senha (min. 6 caracteres)</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Senha (min. 6 caracteres)</label>
                         <input type="password" id="regPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-1.5">Código da Casa <span class="text-zinc-600">(opcional)</span></label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Código da Casa <span class="text-zinc-600 dark:text-zinc-300">(opcional)</span></label>
                         <input type="text" id="regHouseholdCode" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Deixe vazio para criar nova" maxlength="6">
-                        <p class="text-[11px] text-zinc-600 mt-1.5 leading-relaxed">Seu parceiro(a) já criou uma casa? Digite o código aqui para entrar. Se deixar vazio, uma nova casa será criada e você receberá um código para compartilhar.</p>
+                        <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Seu parceiro(a) já criou uma casa? Digite o código aqui para entrar. Se deixar vazio, uma nova casa será criada e você receberá um código para compartilhar.</p>
                     </div>
                     <button type="submit" id="regBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
                         <span id="regBtnText">Criar Conta</span>
@@ -106,7 +116,7 @@
                 <div class="flex flex-col items-center mb-8">
                     <img src="favicon.png" alt="FinControl" class="w-16 h-16 rounded-xl object-cover mb-4">
                     <h1 class="font-display font-semibold text-2xl tracking-tight">Configurar Casa</h1>
-                    <p class="text-zinc-500 text-sm mt-1 text-center">Sua conta não está vinculada a nenhuma casa ainda.</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-sm mt-1 text-center">Sua conta não está vinculada a nenhuma casa ainda.</p>
                 </div>
 
                 <div id="setupError" class="hidden mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm text-center"></div>
@@ -120,30 +130,30 @@
 
                     <div class="relative">
                         <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-zinc-900/10"></div>
+                            <div class="w-full border-t border-zinc-900/10 dark:border-white/10"></div>
                         </div>
                         <div class="relative flex justify-center text-sm">
-                            <span class="px-2 bg-surface text-zinc-500">ou</span>
+                            <span class="px-2 bg-surface text-zinc-500 dark:text-zinc-400">ou</span>
                         </div>
                     </div>
 
-                    <button onclick="showJoinHouseholdForm()" class="w-full bg-surface hover:bg-surfaceHighlight text-zinc-900 font-medium py-3 rounded-lg transition-all border border-zinc-900/10 flex items-center justify-center gap-2">
+                    <button onclick="showJoinHouseholdForm()" class="w-full bg-surface hover:bg-surfaceHighlight text-zinc-900 dark:text-zinc-50 font-medium py-3 rounded-lg transition-all border border-zinc-900/10 dark:border-white/10 flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         Entrar com Código da Casa
                     </button>
                 </div>
 
-                <form id="joinHouseForm" onsubmit="joinExistingHousehold(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-zinc-900/8">
+                <form id="joinHouseForm" onsubmit="joinExistingHousehold(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-zinc-900/8 dark:border-white/5">
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 mb-1.5">Código da Casa</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Código da Casa</label>
                         <input type="text" id="joinHouseCode" required maxlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Ex: A7K3NP">
-                        <p class="text-[11px] text-zinc-600 mt-1.5 leading-relaxed">Peça o código para seu parceiro(a). Ele aparece no header do app após o login.</p>
+                        <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Peça o código para seu parceiro(a). Ele aparece no header do app após o login.</p>
                     </div>
                     <button type="submit" id="joinHouseBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
                         <span id="joinHouseBtnText">Entrar na Casa</span>
                         <span id="joinHouseSpinner" class="spinner hidden"></span>
                     </button>
-                    <button type="button" onclick="hideJoinHouseholdForm()" class="w-full text-zinc-500 hover:text-zinc-600 text-sm transition-colors">Voltar</button>
+                    <button type="button" onclick="hideJoinHouseholdForm()" class="w-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-sm transition-colors">Voltar</button>
                 </form>
             </div>
         </div>
@@ -153,7 +163,7 @@
     <div id="appContent" class="hidden">
 
     <!-- Header -->
-    <header class="border-b border-zinc-900/8 bg-background/80 backdrop-blur-md sticky top-0 z-40">
+    <header class="border-b border-zinc-900/8 dark:border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 <img src="favicon.png" alt="FinControl" class="w-8 h-8 rounded-lg object-cover">
@@ -164,18 +174,14 @@
                     <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     <span id="householdCodeDisplay" class="text-accent text-xs font-mono font-semibold tracking-wider"></span>
                 </div>
-                <span id="userNameDisplay" class="text-zinc-500 text-xs sm:text-sm font-medium hidden md:inline"></span>
-                <button onclick="openProfileModal()" id="profileBtn" class="btn-icon-only text-zinc-500 hover:text-accent transition-colors flex items-center gap-1 bg-surface border border-zinc-900/8 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Meu Perfil">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <span class="hidden sm:inline">Perfil</span>
-                </button>
-                <button onclick="handleLogout()" class="btn-icon-only text-zinc-500 hover:text-danger transition-colors flex items-center gap-1.5 bg-surface border border-zinc-900/8 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Sair">
+                <span id="userNameDisplay" class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium hidden md:inline"></span>
+                <button onclick="handleLogout()" class="btn-icon-only text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors flex items-center gap-1.5 bg-surface border border-zinc-900/8 dark:border-white/5 rounded-lg px-2 sm:px-3 py-2 text-sm" title="Sair">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     <span class="hidden sm:inline">Sair</span>
                 </button>
-                <button onclick="openCategoryModal()" class="btn-icon-only bg-surface hover:bg-surfaceHighlight text-zinc-600 hover:text-zinc-900 border border-zinc-900/10 px-2 sm:px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Categorias">
+                <button onclick="openSettingsModal()" class="btn-icon-only bg-surface hover:bg-surfaceHighlight text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-50 border border-zinc-900/10 dark:border-white/10 px-2 sm:px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Configurações">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    <span class="hidden sm:inline">Categorias</span>
+                    <span class="hidden sm:inline">Configurações</span>
                 </button>
                 <button onclick="openModal()" class="bg-accent hover:bg-accent/90 text-white px-2.5 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-accent/20">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -190,10 +196,10 @@
         
         <!-- Month Filter & Export/Import -->
         <div class="filter-bar flex items-center justify-between animate-fade-in flex-wrap gap-3">
-            <div class="flex items-center gap-2 sm:gap-3 bg-surface border border-zinc-900/8 rounded-xl px-3 sm:px-4 py-2.5">
-                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <label class="text-zinc-500 text-xs sm:text-sm font-medium">Período:</label>
-                <input type="month" id="monthFilter" class="bg-transparent text-zinc-900 text-xs sm:text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
+            <div class="flex items-center gap-2 sm:gap-3 bg-surface border border-zinc-900/8 dark:border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-500 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <label class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Período:</label>
+                <input type="month" id="monthFilter" class="bg-transparent text-zinc-900 dark:text-zinc-50 text-xs sm:text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
             </div>
 
         </div>
@@ -204,10 +210,10 @@
                 <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    <p class="text-zinc-500 text-xs sm:text-sm font-medium">Despesa da Casa</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Despesa da Casa</p>
                 </div>
                 <h2 class="font-display text-lg sm:text-2xl font-semibold text-danger break-all" id="houseExpense">R$ 0,00</h2>
-                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                     <svg class="w-3 h-3 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     Todos os membros
                 </div>
@@ -216,10 +222,10 @@
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    <p class="text-zinc-500 text-xs sm:text-sm font-medium">Receita da Casa</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Receita da Casa</p>
                 </div>
                 <h2 class="font-display text-lg sm:text-2xl font-semibold text-primary break-all" id="houseIncome">R$ 0,00</h2>
-                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                     <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     Todos os membros
                 </div>
@@ -228,10 +234,10 @@
                 <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <p class="text-zinc-500 text-xs sm:text-sm font-medium">Minha Despesa</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Minha Despesa</p>
                 </div>
                 <h2 class="font-display text-lg sm:text-2xl font-semibold text-danger break-all" id="userExpense">R$ 0,00</h2>
-                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                     <span class="w-2 h-2 rounded-full bg-accent"></span>
                     <span id="userExpenseName">Somente suas saídas</span>
                 </div>
@@ -240,10 +246,10 @@
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <p class="text-zinc-500 text-xs sm:text-sm font-medium">Minha Receita</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Minha Receita</p>
                 </div>
                 <h2 class="font-display text-lg sm:text-2xl font-semibold text-primary break-all" id="userIncome">R$ 0,00</h2>
-                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
                     <span class="w-2 h-2 rounded-full bg-accent"></span>
                     <span id="userIncomeName">Somente suas entradas</span>
                 </div>
@@ -258,8 +264,8 @@
                     <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"></path></svg>
                 </div>
                 <div>
-                    <p class="text-zinc-500 text-xs sm:text-sm font-medium">Meu Saldo do Mês</p>
-                    <p class="text-zinc-600 text-xs">Receitas - Despesas do período</p>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Meu Saldo do Mês</p>
+                    <p class="text-zinc-600 dark:text-zinc-300 text-xs">Receitas - Despesas do período</p>
                 </div>
             </div>
             <div class="flex items-baseline gap-3 flex-wrap">
@@ -276,17 +282,17 @@
                         <h3 class="font-display font-semibold text-lg">Evolução Financeira</h3>
                     </div>
                     <!-- Chart Filter Bar -->
-                    <div class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-zinc-900/[0.025] border border-zinc-900/8">
+                    <div class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-zinc-900/[0.025] dark:bg-white/[0.03] border border-zinc-900/8 dark:border-white/5">
                         <div class="flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Filtros:</span>
+                            <svg class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                            <span class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Filtros:</span>
                         </div>
-                        <select id="chartTypeMode" onchange="onChartTypeModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-zinc-900/10 text-zinc-800 cursor-pointer hover:border-zinc-900/15 transition-colors">
+                        <select id="chartTypeMode" onchange="onChartTypeModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                             <option value="evolution">Evolução</option>
                             <option value="categories">Categorias</option>
                         </select>
                         <div id="chartViewModeWrapper">
-                            <select id="chartViewMode" onchange="onChartViewModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-zinc-900/10 text-zinc-800 cursor-pointer hover:border-zinc-900/15 transition-colors">
+                            <select id="chartViewMode" onchange="onChartViewModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                                 <option value="month">Mês Atual</option>
                                 <option value="year">Ano Inteiro</option>
                                 <option value="custom">Período Personalizado</option>
@@ -295,7 +301,7 @@
                         <button onclick="setChartFilter('all')" id="chartFilterAll" class="chart-filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Casa</button>
                         <button onclick="setChartFilter('user')" id="chartFilterUser" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Minhas</button>
                         <div id="customDateSelectors" style="display:none" class="flex items-center gap-2">
-                            <select id="chartCustomMonth" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-zinc-900/10 text-zinc-800 cursor-pointer hover:border-zinc-900/15 transition-colors">
+                            <select id="chartCustomMonth" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                                 <option value="0">Janeiro</option>
                                 <option value="1">Fevereiro</option>
                                 <option value="2">Março</option>
@@ -309,7 +315,7 @@
                                 <option value="10">Novembro</option>
                                 <option value="11">Dezembro</option>
                             </select>
-                            <select id="chartCustomYear" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-zinc-900/10 text-zinc-800 cursor-pointer hover:border-zinc-900/15 transition-colors"></select>
+                            <select id="chartCustomYear" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors"></select>
                         </div>
                     </div>
                     <div class="h-64 sm:h-80 w-full flex items-center justify-center">
@@ -319,35 +325,35 @@
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
                     <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
                         <h3 class="font-display font-semibold text-base sm:text-lg">Histórico de Transações</h3>
-                        <button onclick="clearAllData()" class="text-xs text-zinc-500 hover:text-danger transition-colors">Limpar tudo</button>
+                        <button onclick="clearAllData()" class="text-xs text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors">Limpar tudo</button>
                     </div>
                     <!-- Filter Bar -->
-                    <div id="historyFilterBar" style="display:none" class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-zinc-900/[0.025] border border-zinc-900/8">
+                    <div id="historyFilterBar" style="display:none" class="flex flex-wrap items-center gap-2 mb-4 p-3 rounded-xl bg-zinc-900/[0.025] dark:bg-white/[0.03] border border-zinc-900/8 dark:border-white/5">
                         <div class="flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Filtros:</span>
+                            <svg class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                            <span class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Filtros:</span>
                         </div>
-                        <select id="filterSort" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-zinc-900/10 text-zinc-800 cursor-pointer hover:border-zinc-900/15 transition-colors">
+                        <select id="filterSort" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                             <option value="date-desc">Mais recente</option>
                             <option value="date-asc">Mais antigo</option>
                             <option value="amount-desc">Maior valor</option>
                             <option value="amount-asc">Menor valor</option>
                         </select>
-                        <select id="filterUser" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-zinc-900/10 text-zinc-800 cursor-pointer hover:border-zinc-900/15 transition-colors">
+                        <select id="filterUser" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                             <option value="all">Todos os usuários</option>
                         </select>
-                        <select id="filterType" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-white border border-zinc-900/10 text-zinc-800 cursor-pointer hover:border-zinc-900/15 transition-colors">
+                        <select id="filterType" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                             <option value="all">Todos os tipos</option>
                             <option value="expense">Despesas</option>
                             <option value="income">Receitas</option>
                         </select>
-                        <button onclick="resetHistoryFilters()" class="text-[11px] text-zinc-500 hover:text-accent transition-colors ml-auto">Limpar filtros</button>
+                        <button onclick="resetHistoryFilters()" class="text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors ml-auto">Limpar filtros</button>
                     </div>
                     <!-- Desktop Table -->
                     <div class="transaction-table-wrapper overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                         <table class="w-full text-left text-xs sm:text-sm min-w-[700px]">
                             <thead>
-                                <tr class="text-zinc-500 border-b border-zinc-900/8">
+                                <tr class="text-zinc-500 dark:text-zinc-400 border-b border-zinc-900/8 dark:border-white/5">
                                     <th class="pb-3 font-medium">Descrição</th>
                                     <th class="pb-3 font-medium">Categoria</th>
                                     <th class="pb-3 font-medium">Usuário</th>
@@ -356,12 +362,12 @@
                                     <th class="pb-3 font-medium text-center">Ação</th>
                                 </tr>
                             </thead>
-                            <tbody id="transactionsList" class="divide-y divide-zinc-900/8"></tbody>
+                            <tbody id="transactionsList" class="divide-y divide-zinc-900/8 dark:divide-white/5"></tbody>
                         </table>
                     </div>
                     <!-- Mobile Cards -->
                     <div id="transactionsListMobile" class="transaction-card space-y-3"></div>
-                    <div id="emptyState" class="hidden py-12 text-center text-zinc-500">
+                    <div id="emptyState" class="hidden py-12 text-center text-zinc-500 dark:text-zinc-400">
                         <p>Nenhuma transação registrada ainda.</p>
                         <button onclick="openModal()" class="mt-2 text-accent hover:underline text-sm">Adicionar primeira transação</button>
                     </div>
@@ -374,10 +380,10 @@
     <div id="transactionModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(0,0,0,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgba(255,255,255,0.98);padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
-                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#18181b;margin:0;">Nova Transação</h3>
-                    <button onclick="closeModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Nova Transação</h3>
+                    <button onclick="closeModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -385,44 +391,44 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
                         <label style="cursor:pointer;">
                             <input type="radio" name="type" value="expense" style="display:none;" checked>
-                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);font-size:12px;font-weight:500;color:#52525b;transition:all 0.2s;" class="type-btn-expense">Despesa</div>
+                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgb(var(--c-overlay) / 0.1);font-size:12px;font-weight:500;color:rgb(var(--c-text-soft));transition:all 0.2s;" class="type-btn-expense">Despesa</div>
                         </label>
                         <label style="cursor:pointer;">
                             <input type="radio" name="type" value="income" style="display:none;">
-                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);font-size:12px;font-weight:500;color:#52525b;transition:all 0.2s;" class="type-btn-income">Receita</div>
+                            <div style="text-align:center;padding:8px;border-radius:8px;border:1px solid rgb(var(--c-overlay) / 0.1);font-size:12px;font-weight:500;color:rgb(var(--c-text-soft));transition:all 0.2s;" class="type-btn-income">Receita</div>
                         </label>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:#52525b;margin-bottom:4px;">Valor (R$)</label>
-                        <input type="number" name="amount" step="0.01" min="0.01" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:600;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;" placeholder="0,00">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Valor (R$)</label>
+                        <input type="number" name="amount" step="0.01" min="0.01" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:600;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="0,00">
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
                             <label style="cursor:pointer;">
                                 <input type="radio" name="amountType" value="total" style="display:none;" checked>
-                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);font-size:10px;font-weight:500;color:#52525b;transition:all 0.2s;" class="amount-type-total">Valor Total<span style="display:block;font-size:9px;font-weight:400;color:#71717a;margin-top:2px;">Divide pelas parcelas</span></div>
+                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgb(var(--c-overlay) / 0.1);font-size:10px;font-weight:500;color:rgb(var(--c-text-soft));transition:all 0.2s;" class="amount-type-total">Valor Total<span style="display:block;font-size:9px;font-weight:400;color:rgb(var(--c-text-faint));margin-top:2px;">Divide pelas parcelas</span></div>
                             </label>
                             <label style="cursor:pointer;">
                                 <input type="radio" name="amountType" value="installment" style="display:none;">
-                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);font-size:10px;font-weight:500;color:#52525b;transition:all 0.2s;" class="amount-type-installment">Valor da Parcela<span style="display:block;font-size:9px;font-weight:400;color:#71717a;margin-top:2px;">Repete o valor</span></div>
+                                <div style="text-align:center;padding:6px;border-radius:8px;border:1px solid rgb(var(--c-overlay) / 0.1);font-size:10px;font-weight:500;color:rgb(var(--c-text-soft));transition:all 0.2s;" class="amount-type-installment">Valor da Parcela<span style="display:block;font-size:9px;font-weight:400;color:rgb(var(--c-text-faint));margin-top:2px;">Repete o valor</span></div>
                             </label>
                         </div>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:#52525b;margin-bottom:4px;">Categoria</label>
-                        <select name="category" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;"></select>
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Categoria</label>
+                        <select name="category" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;"></select>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:#52525b;margin-bottom:4px;">Data 1ª Parcela</label>
-                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;text-align:center;color-scheme:light;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Data 1ª Parcela</label>
+                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;text-align:center;">
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:#52525b;margin-bottom:4px;">Nº de Parcelas</label>
-                        <input type="number" name="installments" min="1" value="1" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Nº de Parcelas</label>
+                        <input type="number" name="installments" min="1" value="1" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;">
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:#52525b;margin-bottom:4px;">Descrição (opcional)</label>
-                        <input type="text" name="description" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;" placeholder="Ex: Supermercado, Salário...">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Descrição (opcional)</label>
+                        <input type="text" name="description" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Ex: Supermercado, Salário...">
                     </div>
-                    <button type="button" id="saveTransactionBtn" onclick="document.getElementById('transactionForm').requestSubmit()" style="width:100%;background:#7c3aed;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(124,58,237,0.3);transition:all 0.2s;">
+                    <button type="button" id="saveTransactionBtn" onclick="document.getElementById('transactionForm').requestSubmit()" style="width:100%;background:rgb(var(--c-accent));color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgb(var(--c-accent) / 0.3);transition:all 0.2s;">
                         <span id="saveBtnText">Salvar Transação</span>
                         <span id="saveBtnSpinner" class="spinner" style="display:none;"></span>
                     </button>
@@ -435,19 +441,19 @@
     <div id="categoryModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeCategoryModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(0,0,0,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgba(255,255,255,0.98);padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
-                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#18181b;margin:0;">Gerenciar Categorias</h3>
-                    <button onclick="closeCategoryModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Gerenciar Categorias</h3>
+                    <button onclick="closeCategoryModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 <div style="padding:16px;">
                     <form onsubmit="event.preventDefault(); addCategory();" style="display:flex;gap:8px;margin-bottom:12px;">
-                        <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required style="flex:1;padding:8px 12px;border-radius:8px;font-size:14px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;">
-                        <button type="submit" style="background:#7c3aed;color:white;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;white-space:nowrap;border:none;cursor:pointer;">Adicionar</button>
+                        <input type="text" id="newCategoryInput" placeholder="Nova categoria..." required style="flex:1;padding:8px 12px;border-radius:8px;font-size:14px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;">
+                        <button type="submit" style="background:rgb(var(--c-accent));color:white;padding:8px 12px;border-radius:8px;font-size:14px;font-weight:500;white-space:nowrap;border:none;cursor:pointer;">Adicionar</button>
                     </form>
-                    <p style="font-size:11px;color:#71717a;line-height:1.45;margin:0 0 12px;">Envie uma logo para a categoria. A cor é sugerida automaticamente pela imagem, mas também pode ser ajustada manualmente.</p>
+                    <p style="font-size:11px;color:rgb(var(--c-text-faint));line-height:1.45;margin:0 0 12px;">Envie uma logo para a categoria. A cor é sugerida automaticamente pela imagem, mas também pode ser ajustada manualmente.</p>
                     <div id="categoriesList" style="max-height:50vh;overflow-y:auto;padding-right:4px;display:grid;gap:10px;"></div>
                 </div>
             </div>
@@ -458,63 +464,63 @@
     <div id="debtRolloverModal" style="display:none;position:fixed;inset:0;z-index:10000;">
         <div onclick="closeDebtRolloverModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgba(255,255,255,0.97);backdrop-filter:blur(16px);width:100%;max-height:88vh;overflow-y:auto;border:1px solid rgba(0,0,0,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.35);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgba(255,255,255,0.98);padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / 0.97);backdrop-filter:blur(16px);width:100%;max-height:88vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.35);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <div>
-                        <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#18181b;margin:0;">Dívida não paga</h3>
-                        <p id="debtRolloverSummary" style="font-size:11px;color:#52525b;margin:3px 0 0;"></p>
+                        <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Dívida não paga</h3>
+                        <p id="debtRolloverSummary" style="font-size:11px;color:rgb(var(--c-text-soft));margin:3px 0 0;"></p>
                     </div>
-                    <button onclick="closeDebtRolloverModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                    <button onclick="closeDebtRolloverModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 <form id="debtRolloverForm" onsubmit="confirmDebtRollover(event)" style="padding:16px;">
-                    <p style="font-size:12px;color:#d4d4d8;line-height:1.45;margin:0 0 12px;">Marcarei esta dívida como <strong style="color:#e11d48;">não paga</strong>. Escolha se ela deve voltar no próximo mês.</p>
+                    <p style="font-size:12px;color:rgb(var(--c-text-faint));line-height:1.45;margin:0 0 12px;">Marcarei esta dívida como <strong style="color:rgb(var(--c-danger));">não paga</strong>. Escolha se ela deve voltar no próximo mês.</p>
                     <div style="display:grid;gap:8px;margin-bottom:12px;">
                         <label class="debt-option-card">
                             <input type="radio" name="rolloverAction" value="mark_only" checked style="margin-right:8px;">
-                            <span style="font-size:13px;font-weight:700;color:#18181b;">Só marcar como não paga</span>
-                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Remove do mês atual e não cria nova cobrança automática.</span>
+                            <span style="font-size:13px;font-weight:700;color:rgb(var(--c-text-strong));">Só marcar como não paga</span>
+                            <span style="display:block;font-size:11px;color:rgb(var(--c-text-faint));margin-left:26px;margin-top:2px;">Remove do mês atual e não cria nova cobrança automática.</span>
                         </label>
                         <label class="debt-option-card">
                             <input type="radio" name="rolloverAction" value="current_next" style="margin-right:8px;">
-                            <span style="font-size:13px;font-weight:700;color:#18181b;">Adicionar só esta parcela no mês seguinte</span>
-                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Copia o valor desta parcela para o próximo mês.</span>
+                            <span style="font-size:13px;font-weight:700;color:rgb(var(--c-text-strong));">Adicionar só esta parcela no mês seguinte</span>
+                            <span style="display:block;font-size:11px;color:rgb(var(--c-text-faint));margin-left:26px;margin-top:2px;">Copia o valor desta parcela para o próximo mês.</span>
                         </label>
                         <label class="debt-option-card">
                             <input type="radio" name="rolloverAction" value="remaining_next" style="margin-right:8px;">
-                            <span style="font-size:13px;font-weight:700;color:#18181b;">Adicionar dívida restante/inteira no mês seguinte</span>
-                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Junta as parcelas restantes em uma cobrança no próximo mês.</span>
+                            <span style="font-size:13px;font-weight:700;color:rgb(var(--c-text-strong));">Adicionar dívida restante/inteira no mês seguinte</span>
+                            <span style="display:block;font-size:11px;color:rgb(var(--c-text-faint));margin-left:26px;margin-top:2px;">Junta as parcelas restantes em uma cobrança no próximo mês.</span>
                         </label>
                         <label class="debt-option-card">
                             <input type="radio" name="rolloverAction" value="reparcel" style="margin-right:8px;">
-                            <span style="font-size:13px;font-weight:700;color:#18181b;">Entrada + novo parcelamento</span>
-                            <span style="display:block;font-size:11px;color:#71717a;margin-left:26px;margin-top:2px;">Abate uma entrada e cria parcelas futuras.</span>
+                            <span style="font-size:13px;font-weight:700;color:rgb(var(--c-text-strong));">Entrada + novo parcelamento</span>
+                            <span style="display:block;font-size:11px;color:rgb(var(--c-text-faint));margin-left:26px;margin-top:2px;">Abate uma entrada e cria parcelas futuras.</span>
                         </label>
                     </div>
-                    <div id="reparcelFields" style="display:none;margin-bottom:12px;padding:12px;border-radius:10px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);">
-                        <label style="display:block;font-size:11px;font-weight:600;color:#52525b;margin-bottom:6px;">Base do novo parcelamento</label>
-                        <select name="reparcelBase" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;margin-bottom:10px;">
+                    <div id="reparcelFields" style="display:none;margin-bottom:12px;padding:12px;border-radius:10px;background:rgb(var(--c-overlay) / 0.03);border:1px solid rgb(var(--c-overlay) / 0.06);">
+                        <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:6px;">Base do novo parcelamento</label>
+                        <select name="reparcelBase" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;margin-bottom:10px;">
                             <option value="current">Só a parcela atual</option>
                             <option value="remaining">Dívida restante/inteira</option>
                         </select>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
                             <div>
-                                <label style="display:block;font-size:11px;font-weight:600;color:#52525b;margin-bottom:4px;">Entrada paga (R$)</label>
-                                <input type="number" name="downPayment" step="0.01" min="0" value="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;">
+                                <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;">Entrada paga (R$)</label>
+                                <input type="number" name="downPayment" step="0.01" min="0" value="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;">
                             </div>
                             <div>
-                                <label style="display:block;font-size:11px;font-weight:600;color:#52525b;margin-bottom:4px;">Nº parcelas</label>
-                                <input type="number" name="newInstallments" min="1" value="1" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;">
+                                <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;">Nº parcelas</label>
+                                <input type="number" name="newInstallments" min="1" value="1" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;">
                             </div>
                         </div>
-                        <label style="display:block;font-size:11px;font-weight:600;color:#52525b;margin-bottom:4px;">Valor de cada parcela (R$)</label>
-                        <input type="number" name="newInstallmentAmount" step="0.01" min="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;" placeholder="Deixe vazio para calcular automático">
-                        <p style="font-size:10px;color:#71717a;margin:6px 0 0;">A entrada só reduz o saldo levado para frente; as novas parcelas começam no mês seguinte.</p>
+                        <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;">Valor de cada parcela (R$)</label>
+                        <input type="number" name="newInstallmentAmount" step="0.01" min="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Deixe vazio para calcular automático">
+                        <p style="font-size:10px;color:rgb(var(--c-text-faint));margin:6px 0 0;">A entrada só reduz o saldo levado para frente; as novas parcelas começam no mês seguinte.</p>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                        <button type="button" onclick="closeDebtRolloverModal()" style="background:rgba(0,0,0,0.05);color:#52525b;font-weight:600;padding:10px;border-radius:8px;font-size:13px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;">Cancelar</button>
-                        <button type="submit" style="background:#e11d48;color:white;font-weight:700;padding:10px;border-radius:8px;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(225,29,72,0.28);">Confirmar</button>
+                        <button type="button" onclick="closeDebtRolloverModal()" style="background:rgb(var(--c-overlay) / 0.05);color:rgb(var(--c-text-soft));font-weight:600;padding:10px;border-radius:8px;font-size:13px;border:1px solid rgb(var(--c-overlay) / 0.08);cursor:pointer;">Cancelar</button>
+                        <button type="submit" style="background:rgb(var(--c-danger));color:white;font-weight:700;padding:10px;border-radius:8px;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 12px rgb(var(--c-danger) / 0.28);">Confirmar</button>
                     </div>
                 </form>
             </div>
@@ -525,36 +531,145 @@
     <div id="profileModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeProfileModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(0,0,0,0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgba(255,255,255,0.98);padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
-                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:#18181b;margin:0;">Meu Perfil</h3>
-                    <button onclick="closeProfileModal()" style="background:none;border:none;color:#71717a;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Meu Perfil</h3>
+                    <button onclick="closeProfileModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 <form id="profileForm" onsubmit="handleProfileSubmit(event)" style="padding:16px;">
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:#52525b;margin-bottom:4px;">Seu Nome</label>
-                        <input type="text" id="profileNameInput" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;background:#ffffff;border:1px solid rgba(0,0,0,0.1);color:#18181b;box-sizing:border-box;" placeholder="Como deseja ser chamado(a)?">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Seu Nome</label>
+                        <input type="text" id="profileNameInput" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Como deseja ser chamado(a)?">
                     </div>
                     <div style="margin-bottom:16px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:#71717a;margin-bottom:4px;">E-mail</label>
-                        <div id="profileEmailDisplay" style="padding:8px 12px;border-radius:8px;font-size:13px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.05);color:#71717a;box-sizing:border-box;"></div>
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:4px;">E-mail</label>
+                        <div id="profileEmailDisplay" style="padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-overlay) / 0.03);border:1px solid rgb(var(--c-overlay) / 0.05);color:rgb(var(--c-text-faint));box-sizing:border-box;"></div>
                     </div>
-                    <div style="margin-bottom:16px;padding:12px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.05);border-radius:8px;">
+                    <div style="margin-bottom:16px;padding:12px;background:rgb(var(--c-overlay) / 0.02);border:1px solid rgb(var(--c-overlay) / 0.05);border-radius:8px;">
                         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                            <input type="checkbox" id="profileAnonymousToggle" style="width:18px;height:18px;accent-color:#7c3aed;cursor:pointer;">
+                            <input type="checkbox" id="profileAnonymousToggle" style="width:18px;height:18px;accent-color:rgb(var(--c-accent));cursor:pointer;">
                             <div style="flex:1;">
-                                <div style="font-size:13px;color:#18181b;font-weight:500;">Transações Anônimas</div>
-                                <div style="font-size:11px;color:#71717a;margin-top:2px;">Outros membros da casa não verão suas transações no histórico</div>
+                                <div style="font-size:13px;color:rgb(var(--c-text-strong));font-weight:500;">Transações Anônimas</div>
+                                <div style="font-size:11px;color:rgb(var(--c-text-faint));margin-top:2px;">Outros membros da casa não verão suas transações no histórico</div>
                             </div>
                         </label>
                     </div>
-                    <button type="submit" id="saveProfileBtn" style="width:100%;background:#7c3aed;color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(124,58,237,0.3);transition:all 0.2s;">
+                    <button type="submit" id="saveProfileBtn" style="width:100%;background:rgb(var(--c-accent));color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgb(var(--c-accent) / 0.3);transition:all 0.2s;">
                         <span id="saveProfileBtnText">Salvar Configurações</span>
                         <span id="saveProfileSpinner" class="spinner" style="display:none;"></span>
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal (list) -->
+    <div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeSettingsModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Configurações</h3>
+                    <button onclick="closeSettingsModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+                    <button onclick="closeSettingsModal();openMembersModal();" class="settings-row">
+                        <span class="settings-row-icon" style="background:rgb(var(--c-accent) / 0.12);color:rgb(var(--c-accent));">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 10-2.83-6.83"></path></svg>
+                        </span>
+                        <span class="settings-row-text">
+                            <span class="settings-row-title">Integrantes da Casa</span>
+                            <span class="settings-row-desc">Gerencie quem faz parte da casa</span>
+                        </span>
+                        <svg class="settings-row-chevron" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                    <button onclick="closeSettingsModal();openCategoryModal();" class="settings-row">
+                        <span class="settings-row-icon" style="background:rgb(var(--c-primary) / 0.12);color:rgb(var(--c-primary));">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        </span>
+                        <span class="settings-row-text">
+                            <span class="settings-row-title">Editar Categorias</span>
+                            <span class="settings-row-desc">Crie, edite e organize suas categorias</span>
+                        </span>
+                        <svg class="settings-row-chevron" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                    <button onclick="closeSettingsModal();openThemeModal();" class="settings-row">
+                        <span class="settings-row-icon" style="background:rgb(var(--c-warning) / 0.14);color:rgb(var(--c-warning));">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        </span>
+                        <span class="settings-row-text">
+                            <span class="settings-row-title">Visual</span>
+                            <span class="settings-row-desc">Modo claro ou escuro</span>
+                        </span>
+                        <svg class="settings-row-chevron" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                    <button onclick="closeSettingsModal();openProfileModal();" class="settings-row">
+                        <span class="settings-row-icon" style="background:rgb(var(--c-danger) / 0.12);color:rgb(var(--c-danger));">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </span>
+                        <span class="settings-row-text">
+                            <span class="settings-row-title">Meu Perfil</span>
+                            <span class="settings-row-desc">Nome e transações anônimas</span>
+                        </span>
+                        <svg class="settings-row-chevron" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members Modal (Integrantes da Casa) -->
+    <div id="membersModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeMembersModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Integrantes da Casa</h3>
+                    <button onclick="closeMembersModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div style="padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:rgb(var(--c-accent) / 0.08);border:1px solid rgb(var(--c-accent) / 0.2);border-radius:10px;margin-bottom:16px;">
+                        <div>
+                            <div style="font-size:11px;color:rgb(var(--c-text-faint));margin-bottom:2px;">Código de convite</div>
+                            <div id="membersHouseholdCode" style="font-family:monospace;font-weight:700;font-size:15px;letter-spacing:0.08em;color:rgb(var(--c-accent));"></div>
+                        </div>
+                        <button onclick="copyHouseholdCode()" style="background:rgb(var(--c-accent));color:white;font-weight:500;font-size:12px;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;">Copiar e convidar</button>
+                    </div>
+                    <div id="membersList" style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="text-align:center;padding:20px;color:rgb(var(--c-text-faint));font-size:13px;">Carregando integrantes...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Modal (Visual) -->
+    <div id="themeModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeThemeModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Visual</h3>
+                    <button onclick="closeThemeModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <button id="themeOptionLight" onclick="setTheme('light')" class="theme-option">
+                        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.36 6.36l-.7-.7M6.34 6.34l-.7-.7m12.72 0l-.7.7M6.34 17.66l-.7.7M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <span>Claro</span>
+                    </button>
+                    <button id="themeOptionDark" onclick="setTheme('dark')" class="theme-option">
+                        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                        <span>Escuro</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

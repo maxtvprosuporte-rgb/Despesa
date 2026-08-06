@@ -32,8 +32,16 @@
         let isAnonymous = false; // Modo anônimo
         let currentDebtRolloverId = null;
         let householdMemberCount = 1;
+        let householdMembers = [];
+        let householdCreatedBy = null;
 
         const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
+
+        // ── Tema (claro/escuro) ──
+        function isDarkMode() { return document.documentElement.classList.contains('dark'); }
+        function chartLegendColor() { return isDarkMode() ? '#a1a1aa' : '#52525b'; }
+        function chartTickColor() { return isDarkMode() ? '#a1a1aa' : '#71717a'; }
+        function chartGridColor() { return isDarkMode() ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)'; }
         const CATEGORY_COLOR_PALETTE = [
             '#059669', '#7c3aed', '#f59e0b', '#e11d48',
             '#3b82f6', '#ec4899', '#14b8a6', '#f97316',
@@ -106,7 +114,7 @@
         }
 
         function categoryPillHtml(category = '') {
-            return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-zinc-900/5 text-zinc-600 border border-zinc-900/8">${categoryAvatarHtml(category, 'cat-pill-logo')}<span>${escapeHtml(category)}</span></span>`;
+            return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/8 dark:border-white/5">${categoryAvatarHtml(category, 'cat-pill-logo')}<span>${escapeHtml(category)}</span></span>`;
         }
 
         function hexToRgba(hex, alpha = 1) {
@@ -178,6 +186,14 @@
         window.markDebtStatus = markDebtStatus;
         window.closeDebtRolloverModal = closeDebtRolloverModal;
         window.confirmDebtRollover = confirmDebtRollover;
+        window.openSettingsModal = openSettingsModal;
+        window.closeSettingsModal = closeSettingsModal;
+        window.openMembersModal = openMembersModal;
+        window.closeMembersModal = closeMembersModal;
+        window.removeMember = removeMember;
+        window.openThemeModal = openThemeModal;
+        window.closeThemeModal = closeThemeModal;
+        window.setTheme = setTheme;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
@@ -459,7 +475,10 @@
 
                 const householdRef = doc(db, 'households', householdCode);
                 const householdSnap = await withTimeout(getDoc(householdRef));
-                const members = householdSnap.exists() ? (householdSnap.data().members || []) : [];
+                const hhData = householdSnap.exists() ? householdSnap.data() : {};
+                const members = hhData.members || [];
+                householdMembers = members;
+                householdCreatedBy = hhData.createdBy || members[0] || null;
                 householdMemberCount = members.length || 1;
                 updateHouseCardsVisibility();
 
@@ -509,7 +528,148 @@
                 const original = el.textContent;
                 el.textContent = 'Copiado!';
                 setTimeout(() => { el.textContent = original; }, 1500);
+                showToast('Código copiado! Envie para quem você quer convidar.');
             });
+        }
+
+        // ── Configurações (menu) ──
+        function openSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // ── Integrantes da Casa ──
+        function openMembersModal() {
+            document.getElementById('membersModal').style.display = 'block';
+            document.getElementById('membersHouseholdCode').textContent = householdCode || '';
+            renderMembersList();
+        }
+        function closeMembersModal() {
+            document.getElementById('membersModal').style.display = 'none';
+        }
+
+        async function renderMembersList() {
+            const container = document.getElementById('membersList');
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:rgb(var(--c-text-faint));font-size:13px;">Carregando integrantes...</div>';
+
+            const isCreator = currentUser && householdCreatedBy === currentUser.uid;
+            const members = householdMembers.length ? householdMembers : [currentUser?.uid].filter(Boolean);
+
+            try {
+                const rows = await Promise.all(members.map(async (uid) => {
+                    let name = 'Membro';
+                    let email = '';
+                    try {
+                        const uSnap = await withTimeout(getDoc(doc(db, 'users', uid)));
+                        if (uSnap.exists()) {
+                            name = uSnap.data().name || 'Membro';
+                            email = uSnap.data().email || '';
+                        }
+                    } catch (e) { /* ignore */ }
+                    const isSelf = uid === currentUser?.uid;
+                    const isOwner = uid === householdCreatedBy;
+                    const initials = (name || '?').trim().slice(0, 2).toUpperCase();
+                    const canRemove = isCreator && !isSelf;
+                    return `
+                        <div class="member-row">
+                            <span class="member-avatar">${escapeHtml(initials)}</span>
+                            <div style="flex:1;min-width:0;">
+                                <div class="member-name" style="display:flex;align-items:center;flex-wrap:wrap;">
+                                    ${escapeHtml(name)}
+                                    ${isSelf ? '<span class="member-tag">Você</span>' : ''}
+                                    ${isOwner ? '<span class="member-tag" style="background:rgb(var(--c-accent) / 0.15);color:rgb(var(--c-accent));">Criador(a)</span>' : ''}
+                                </div>
+                                ${email ? `<div style="font-size:11px;color:rgb(var(--c-text-faint));">${escapeHtml(email)}</div>` : ''}
+                            </div>
+                            ${canRemove ? `<button class="member-remove-btn" onclick="removeMember('${uid}', '${escapeHtml(name).replace(/'/g, "\\'")}')">Remover</button>` : ''}
+                        </div>`;
+                }));
+                container.innerHTML = rows.join('') || '<div style="text-align:center;padding:20px;color:rgb(var(--c-text-faint));font-size:13px;">Nenhum integrante encontrado.</div>';
+
+                if (!isCreator) {
+                    container.innerHTML += '<div style="text-align:center;padding-top:10px;font-size:11px;color:rgb(var(--c-text-faint));">Apenas quem criou a casa pode remover integrantes.</div>';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar integrantes:', error);
+                container.innerHTML = '<div style="text-align:center;padding:20px;color:rgb(var(--c-danger));font-size:13px;">Erro ao carregar integrantes.</div>';
+            }
+        }
+
+        async function removeMember(uid, name) {
+            if (!currentUser || householdCreatedBy !== currentUser.uid) {
+                showToast('Apenas quem criou a casa pode remover integrantes.', 'error');
+                return;
+            }
+            if (uid === currentUser.uid) return;
+
+            const confirmed = confirm(`Remover ${name} da casa?\n\nTodas as transações registradas por essa pessoa serão apagadas permanentemente. Essa ação não pode ser desfeita.`);
+            if (!confirmed) return;
+
+            try {
+                showToast('Removendo integrante...');
+
+                // Delete this member's transactions in the household
+                const toDelete = transactions.filter(t => t.userId === uid);
+                for (const t of toDelete) {
+                    await deleteTransactionFromFirestore(t.id);
+                }
+                transactions = transactions.filter(t => t.userId !== uid);
+
+                // Remove uid from household members array
+                const newMembers = householdMembers.filter(m => m !== uid);
+                await withTimeout(setDoc(doc(db, 'households', householdCode), { members: newMembers }, { merge: true }));
+                householdMembers = newMembers;
+                householdMemberCount = newMembers.length || 1;
+
+                // Best-effort: clear the removed user's own household link (may fail due to permissions, that's fine)
+                try {
+                    await withTimeout(setDoc(doc(db, 'users', uid), { householdCode: null }, { merge: true }));
+                } catch (e) { /* ignore - no permission to write another user's doc */ }
+
+                updateHouseCardsVisibility();
+                updateUI();
+                renderMembersList();
+                showToast(`${name} foi removido(a) da casa.`);
+            } catch (error) {
+                console.error('Erro ao remover integrante:', error);
+                showToast(`Erro ao remover: ${error.message}`, 'error');
+            }
+        }
+
+        // ── Visual (tema claro/escuro) ──
+        function applyThemeToDom(mode) {
+            document.documentElement.classList.toggle('dark', mode === 'dark');
+            const lightBtn = document.getElementById('themeOptionLight');
+            const darkBtn = document.getElementById('themeOptionDark');
+            if (lightBtn) lightBtn.classList.toggle('active', mode !== 'dark');
+            if (darkBtn) darkBtn.classList.toggle('active', mode === 'dark');
+            const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+            if (themeColorMeta) themeColorMeta.setAttribute('content', mode === 'dark' ? '#09090b' : '#F3F4F6');
+        }
+
+        function openThemeModal() {
+            document.getElementById('themeModal').style.display = 'block';
+            applyThemeToDom(isDarkMode() ? 'dark' : 'light');
+        }
+        function closeThemeModal() {
+            document.getElementById('themeModal').style.display = 'none';
+        }
+
+        async function setTheme(mode) {
+            applyThemeToDom(mode);
+            try { localStorage.setItem('fincontrol_theme', mode); } catch (e) {}
+
+            // Re-render charts so Chart.js picks up the new colors
+            if (typeof renderChart === 'function') renderChart();
+
+            // Persist to the user's profile so it follows them across devices
+            if (currentUser) {
+                try {
+                    await withTimeout(setDoc(doc(db, 'users', currentUser.uid), { theme: mode }, { merge: true }));
+                } catch (e) { /* non-critical */ }
+            }
         }
 
         function withTimeout(promise, ms = 10000) {
@@ -633,9 +793,9 @@
                 statusEl.textContent = 'No negativo';
                 statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-danger/10 text-danger border border-danger/20';
             } else {
-                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-zinc-900 break-all';
+                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 break-all';
                 statusEl.textContent = 'Equilibrado';
-                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 text-zinc-600 border border-zinc-900/10';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
             }
         }
 
@@ -709,7 +869,7 @@
                     headerTr.innerHTML = `<td colspan="6">
                         <div class="flex items-center justify-between">
                             ${categoryLabelHtml(category)}
-                            <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
+                            <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
                         </div>
                     </td>`;
                     tbodyFrag.appendChild(headerTr);
@@ -725,7 +885,7 @@
                     const catTotal = items.reduce((s, t) => s + t.amount, 0);
                     catHeader.innerHTML = `<div class="flex items-center justify-between">
                         ${categoryLabelHtml(category)}
-                        <span class="text-[11px] text-zinc-500 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
+                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
                     </div>`;
                     mobileFrag.appendChild(catHeader);
                 }
@@ -736,7 +896,7 @@
                     const isCurrentUser = t.userId === currentUser?.uid;
                     const userBadgeClass = isCurrentUser ? 'bg-accent/20 text-accent border-accent/30' : 'bg-primary/20 text-primary border-primary/30';
                     const groupInfo = t.groupId && t.totalInstallments > 1
-                        ? `<span class="text-[9px] text-zinc-600 ml-1">Parcela ${t.installmentNum||'?'}/${t.totalInstallments||'?'}</span>`
+                        ? `<span class="text-[9px] text-zinc-600 dark:text-zinc-300 ml-1">Parcela ${t.installmentNum||'?'}/${t.totalInstallments||'?'}</span>`
                         : '';
                     const desc = t.description || t.category;
                     const cleanDesc = hasGroup ? desc : desc;
@@ -755,32 +915,32 @@
                     
                     // Desktop table row
                     const tr = document.createElement('tr');
-                    tr.className = `group hover:bg-zinc-900/[0.02] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
+                    tr.className = `group hover:bg-zinc-900/[0.02] dark:hover:bg-white/[0.02] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
                     tr.style.background = rowBg;
                     tr.style.borderLeft = `3px solid ${accentColor}`;
                     tr.innerHTML = `
-                        <td class="py-3.5"><div class="font-medium text-zinc-800">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}</td>
+                        <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}</td>
                         ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
                         <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${safeUserName}</span></td>
-                        ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-500 hidden md:table-cell">${formatDate(t.date)}</td>`}
+                        ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-500 dark:text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>`}
                         <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
                         <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-2 flex-wrap">
                             ${debtButtons}
-                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div></td>`;
                     tbodyFrag.appendChild(tr);
                     
                     // Mobile card
                     const card = document.createElement('div');
-                    card.className = `bg-zinc-900/[0.025] border border-zinc-900/8 rounded-xl p-4 hover:border-zinc-900/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
+                    card.className = `bg-zinc-900/[0.025] dark:bg-white/[0.03] border border-zinc-900/8 dark:border-white/5 rounded-xl p-4 hover:border-zinc-900/10 dark:hover:border-white/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
                     card.style.background = rowBg;
                     card.style.borderColor = hexToRgba(accentColor, 0.30);
                     card.style.borderLeft = `3px solid ${accentColor}`;
                     card.innerHTML = `
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1 min-w-0">
-                                <p class="font-medium text-zinc-800 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
+                                <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
                                 ${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}
                             </div>
                             <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
@@ -789,12 +949,12 @@
                             <div class="flex items-center gap-2 flex-wrap">
                                 ${!hasGroup ? categoryPillHtml(t.category) : ''}
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
-                                <span class="text-[10px] text-zinc-500">${formatDate(t.date)}</span>
+                                <span class="text-[10px] text-zinc-500 dark:text-zinc-400">${formatDate(t.date)}</span>
                             </div>
                             <div class="flex items-center gap-2 flex-wrap justify-end">
                                 ${debtButtons}
-                                <button onclick="editTransaction(${t.id})" class="text-zinc-500 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                                <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                             </div>
                         </div>`;
                     mobileFrag.appendChild(card);
@@ -1012,7 +1172,7 @@
                         legend: {
                             position: 'top',
                             labels: {
-                                color: '#52525b',
+                                color: chartLegendColor(),
                                 font: { family: 'Plus Jakarta Sans', size: 11 },
                                 padding: 16,
                                 usePointStyle: true,
@@ -1038,13 +1198,13 @@
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(0, 0, 0, 0.06)', drawBorder: false },
-                            ticks: { color: '#71717a', font: { family: 'Plus Jakarta Sans', size: 11 } }
+                            grid: { color: chartGridColor(), drawBorder: false },
+                            ticks: { color: chartTickColor(), font: { family: 'Plus Jakarta Sans', size: 11 } }
                         },
                         y: {
-                            grid: { color: 'rgba(0, 0, 0, 0.06)', drawBorder: false },
+                            grid: { color: chartGridColor(), drawBorder: false },
                             ticks: {
-                                color: '#71717a',
+                                color: chartTickColor(),
                                 font: { family: 'Plus Jakarta Sans', size: 11 },
                                 callback: function(value) { return formatCurrency(value); }
                             },
@@ -1170,7 +1330,7 @@
                         legend: {
                             position: 'top',
                             labels: {
-                                color: '#52525b',
+                                color: chartLegendColor(),
                                 font: {
                                     family: 'Plus Jakarta Sans',
                                     size: 11
@@ -1200,11 +1360,11 @@
                     scales: {
                         x: {
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.06)',
+                                color: chartGridColor(),
                                 drawBorder: false
                             },
                             ticks: {
-                                color: '#71717a',
+                                color: chartTickColor(),
                                 font: {
                                     family: 'Plus Jakarta Sans',
                                     size: 11
@@ -1213,11 +1373,11 @@
                         },
                         y: {
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.06)',
+                                color: chartGridColor(),
                                 drawBorder: false
                             },
                             ticks: {
-                                color: '#71717a',
+                                color: chartTickColor(),
                                 font: {
                                     family: 'Plus Jakarta Sans',
                                     size: 11
@@ -1690,7 +1850,7 @@
                 name.style.color=color;
                 name.textContent=cat;
                 const helper=document.createElement('div');
-                helper.className='text-[11px] text-zinc-500 truncate';
+                helper.className='text-[11px] text-zinc-500 dark:text-zinc-400 truncate';
                 helper.textContent=getCategoryLogo(cat) ? 'Logo ativa · cor sincronizada' : 'Sem logo · cor manual';
                 copy.appendChild(name);
                 copy.appendChild(helper);
@@ -1737,7 +1897,7 @@
 
                 const deleteBtn=document.createElement('button');
                 deleteBtn.type='button';
-                deleteBtn.className='text-zinc-500 hover:text-danger transition-colors p-1';
+                deleteBtn.className='text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1';
                 deleteBtn.title='Excluir';
                 deleteBtn.innerHTML='<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
                 deleteBtn.addEventListener('click', ()=>deleteCategory(cat));
@@ -1912,6 +2072,10 @@
                 if (userSnap.exists()) {
                     const data = userSnap.data();
                     isAnonymous = data.isAnonymous || false;
+                    if (data.theme === 'dark' || data.theme === 'light') {
+                        applyThemeToDom(data.theme);
+                        try { localStorage.setItem('fincontrol_theme', data.theme); } catch (e) {}
+                    }
                     return data.name || '';
                 }
             } catch (e) {
@@ -2070,7 +2234,7 @@
         function editTransaction(id){const t=transactions.find(i=>i.id===id);if(t)openModal(t);}
         function closeModal(){document.getElementById('transactionModal').style.display='none';editingId=null;}
 
-        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();closeCategoryModal();closeDebtRolloverModal();}});
+        document.addEventListener('keydown',(e)=>{if(e.key==='Escape'){closeModal();closeCategoryModal();closeDebtRolloverModal();closeSettingsModal();closeMembersModal();closeThemeModal();closeProfileModal();}});
 
         function showLoginLoading(on){
             document.getElementById('loginBtnText').textContent=on?'Entrando...':'Entrar';
