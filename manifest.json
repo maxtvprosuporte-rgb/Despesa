@@ -1,0 +1,17 @@
+{
+  "name": "FinControl - Controle Financeiro do Casal",
+  "short_name": "FinControl",
+  "description": "Controle financeiro compartilhado para casais",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F3F4F6",
+  "theme_color": "#F3F4F6",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
