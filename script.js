@@ -1890,23 +1890,23 @@
 
                 const removeLogoBtn=document.createElement('button');
                 removeLogoBtn.type='button';
-                removeLogoBtn.className='category-chip-btn';
+                removeLogoBtn.className='category-chip-btn category-remove-logo-btn';
                 removeLogoBtn.textContent='Remover logo';
                 removeLogoBtn.style.display=getCategoryLogo(cat) ? 'inline-flex' : 'none';
                 removeLogoBtn.addEventListener('click', ()=>removeCategoryLogo(cat));
 
                 const deleteBtn=document.createElement('button');
                 deleteBtn.type='button';
-                deleteBtn.className='text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1';
-                deleteBtn.title='Excluir';
+                deleteBtn.className='category-delete-btn';
+                deleteBtn.title='Excluir categoria';
                 deleteBtn.innerHTML='<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
                 deleteBtn.addEventListener('click', ()=>deleteCategory(cat));
 
                 tools.appendChild(colorInput);
                 tools.appendChild(uploadBtn);
                 tools.appendChild(autoBtn);
-                tools.appendChild(removeLogoBtn);
                 tools.appendChild(deleteBtn);
+                tools.appendChild(removeLogoBtn);
                 tools.appendChild(fileInput);
                 d.appendChild(left);
                 d.appendChild(tools);

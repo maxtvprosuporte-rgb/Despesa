@@ -399,14 +399,15 @@
             background: rgb(var(--c-overlay) / 0.06);
         }
         .category-tools {
-            display: grid;
-            grid-template-columns: 42px repeat(3, max-content) 32px;
+            display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             justify-content: flex-end;
         }
         .category-color-input {
-            width: 42px;
+            flex: 0 0 40px;
+            width: 40px;
             height: 38px;
             padding: 2px;
             border-radius: 10px;
@@ -415,6 +416,8 @@
             border: 1px solid rgb(var(--c-overlay) / 0.1);
         }
         .category-chip-btn {
+            flex: 1 1 auto;
+            min-width: 96px;
             min-height: 38px;
             display: inline-flex;
             align-items: center;
@@ -434,6 +437,30 @@
             border-color: rgb(var(--c-accent) / 0.45);
             color: rgb(var(--c-text-strong));
             background: rgb(var(--c-accent) / 0.14);
+        }
+        .category-delete-btn {
+            flex: 0 0 38px;
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgb(var(--c-overlay) / 0.1);
+            background: rgb(var(--c-overlay) / 0.05);
+            color: rgb(var(--c-text-soft));
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .category-delete-btn:hover {
+            border-color: rgb(var(--c-danger) / 0.4);
+            background: rgb(var(--c-danger) / 0.12);
+            color: rgb(var(--c-danger));
+        }
+        .category-delete-btn svg { width: 16px; height: 16px; }
+        /* "Remover logo" sempre ocupa a linha inteira quando aparece, ficando separada dos demais botões */
+        .category-remove-logo-btn {
+            flex-basis: 100%;
         }
         #categoryModal .modal-panel {
             max-width: 680px !important;
@@ -485,29 +512,18 @@
             }
             .category-row {
                 grid-template-columns: 1fr;
-                gap: 14px;
+                gap: 12px;
                 padding: 14px;
             }
             .category-tools {
                 width: 100%;
-                grid-template-columns: 48px 1fr 1fr;
-                justify-content: stretch;
-                gap: 9px;
-            }
-            .category-color-input {
-                width: 48px;
-                height: 40px;
+                justify-content: flex-start;
+                gap: 8px;
             }
             .category-chip-btn {
-                width: 100%;
+                min-width: 0;
                 min-height: 40px;
                 padding: 9px 10px;
-            }
-            .category-tools > button:last-of-type {
-                min-height: 40px;
-                border: 1px solid rgb(var(--c-overlay) / 0.08);
-                border-radius: 10px;
-                background: rgb(var(--c-overlay) / 0.04);
             }
         }
 
