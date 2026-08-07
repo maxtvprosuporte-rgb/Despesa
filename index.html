@@ -37,12 +37,14 @@
             }
         }
     </script>
-    <!-- Aplica o tema salvo o quanto antes, pra nao "piscar" claro antes do escuro -->
+    <!-- Aplica o tema e a translucidez salvos o quanto antes, pra nao "piscar" o visual errado -->
     <script>
         (function(){
             try {
                 var t = localStorage.getItem('fincontrol_theme');
                 if (t === 'dark') document.documentElement.classList.add('dark');
+                var tr = localStorage.getItem('fincontrol_translucent');
+                if (tr === '1') document.documentElement.classList.add('translucent');
             } catch(e) {}
         })();
     </script>
@@ -342,9 +344,9 @@
                         <select id="filterUser" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                             <option value="all">Todos os usuários</option>
                         </select>
-                        <select id="filterType" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
+                        <select id="filterType" onchange="onFilterTypeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                             <option value="all">Todos os tipos</option>
-                            <option value="expense">Despesas</option>
+                            <option value="expense" selected>Despesas</option>
                             <option value="income">Receitas</option>
                         </select>
                         <button onclick="resetHistoryFilters()" class="text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors ml-auto">Limpar filtros</button>
@@ -380,8 +382,8 @@
     <div id="transactionModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Nova Transação</h3>
                     <button onclick="closeModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -441,8 +443,8 @@
     <div id="categoryModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeCategoryModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Gerenciar Categorias</h3>
                     <button onclick="closeCategoryModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -464,8 +466,8 @@
     <div id="debtRolloverModal" style="display:none;position:fixed;inset:0;z-index:10000;">
         <div onclick="closeDebtRolloverModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgb(var(--c-surface) / 0.97);backdrop-filter:blur(16px);width:100%;max-height:88vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.35);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-height:88vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.35);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <div>
                         <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Dívida não paga</h3>
                         <p id="debtRolloverSummary" style="font-size:11px;color:rgb(var(--c-text-soft));margin:3px 0 0;"></p>
@@ -531,8 +533,8 @@
     <div id="profileModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeProfileModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Meu Perfil</h3>
                     <button onclick="closeProfileModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -569,8 +571,8 @@
     <div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeSettingsModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Configurações</h3>
                     <button onclick="closeSettingsModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -626,8 +628,8 @@
     <div id="membersModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeMembersModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Integrantes da Casa</h3>
                     <button onclick="closeMembersModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -653,8 +655,8 @@
     <div id="themeModal" style="display:none;position:fixed;inset:0;z-index:9999;">
         <div onclick="closeThemeModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
-            <div style="background:rgb(var(--c-surface) / 0.95);backdrop-filter:blur(16px);width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
-                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / 0.98);padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
                     <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Visual</h3>
                     <button onclick="closeThemeModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -669,6 +671,15 @@
                         <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                         <span>Escuro</span>
                     </button>
+                </div>
+                <div style="padding:0 16px 16px;">
+                    <label for="translucentToggle" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:12px;border:1px solid rgb(var(--c-overlay) / 0.08);background:rgb(var(--c-overlay) / 0.02);cursor:pointer;">
+                        <span>
+                            <span style="display:block;font-size:13px;font-weight:600;color:rgb(var(--c-text-strong));">Efeitos translúcidos</span>
+                            <span style="display:block;font-size:11px;color:rgb(var(--c-text-faint));margin-top:2px;">Cards e janelas com efeito vidro (desfoque). Deixa mais bonito, mas usa mais processamento.</span>
+                        </span>
+                        <input type="checkbox" id="translucentToggle" onchange="setTranslucent(this.checked)" style="flex:0 0 auto;width:18px;height:18px;accent-color:rgb(var(--c-accent));cursor:pointer;">
+                    </label>
                 </div>
             </div>
         </div>

@@ -42,6 +42,21 @@
         function chartLegendColor() { return isDarkMode() ? '#a1a1aa' : '#52525b'; }
         function chartTickColor() { return isDarkMode() ? '#a1a1aa' : '#71717a'; }
         function chartGridColor() { return isDarkMode() ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)'; }
+
+        // ── Filtro de histórico (tipo) - padrão "Despesas", lembrando a última escolha ──
+        function applyStoredFilterType() {
+            const typeEl = document.getElementById('filterType');
+            if (!typeEl) return;
+            let saved = null;
+            try { saved = localStorage.getItem('fincontrol_filterType'); } catch (e) {}
+            typeEl.value = (saved === 'all' || saved === 'expense' || saved === 'income') ? saved : 'expense';
+        }
+        function onFilterTypeChange() {
+            const typeEl = document.getElementById('filterType');
+            if (typeEl) { try { localStorage.setItem('fincontrol_filterType', typeEl.value); } catch (e) {} }
+            updateUI();
+        }
+        applyStoredFilterType();
         const CATEGORY_COLOR_PALETTE = [
             '#059669', '#7c3aed', '#f59e0b', '#e11d48',
             '#3b82f6', '#ec4899', '#14b8a6', '#f97316',
@@ -114,7 +129,7 @@
         }
 
         function categoryPillHtml(category = '') {
-            return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/8 dark:border-white/5">${categoryAvatarHtml(category, 'cat-pill-logo')}<span>${escapeHtml(category)}</span></span>`;
+            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/8 dark:border-white/5">${categoryAvatarHtml(category, 'cat-pill-logo')}<span>${escapeHtml(category)}</span></span>`;
         }
 
         function hexToRgba(hex, alpha = 1) {
@@ -194,6 +209,8 @@
         window.openThemeModal = openThemeModal;
         window.closeThemeModal = closeThemeModal;
         window.setTheme = setTheme;
+        window.onFilterTypeChange = onFilterTypeChange;
+        window.setTranslucent = setTranslucent;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
@@ -649,9 +666,18 @@
             if (themeColorMeta) themeColorMeta.setAttribute('content', mode === 'dark' ? '#09090b' : '#F3F4F6');
         }
 
+        function isTranslucent() { return document.documentElement.classList.contains('translucent'); }
+
+        function applyTranslucentToDom(enabled) {
+            document.documentElement.classList.toggle('translucent', !!enabled);
+            const toggle = document.getElementById('translucentToggle');
+            if (toggle) toggle.checked = !!enabled;
+        }
+
         function openThemeModal() {
             document.getElementById('themeModal').style.display = 'block';
             applyThemeToDom(isDarkMode() ? 'dark' : 'light');
+            applyTranslucentToDom(isTranslucent());
         }
         function closeThemeModal() {
             document.getElementById('themeModal').style.display = 'none';
@@ -668,6 +694,17 @@
             if (currentUser) {
                 try {
                     await withTimeout(setDoc(doc(db, 'users', currentUser.uid), { theme: mode }, { merge: true }));
+                } catch (e) { /* non-critical */ }
+            }
+        }
+
+        async function setTranslucent(enabled) {
+            applyTranslucentToDom(enabled);
+            try { localStorage.setItem('fincontrol_translucent', enabled ? '1' : '0'); } catch (e) {}
+
+            if (currentUser) {
+                try {
+                    await withTimeout(setDoc(doc(db, 'users', currentUser.uid), { translucent: !!enabled }, { merge: true }));
                 } catch (e) { /* non-critical */ }
             }
         }
@@ -921,7 +958,7 @@
                     tr.innerHTML = `
                         <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}</td>
                         ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
-                        <td class="py-3.5"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${userBadgeClass} border">${safeUserName}</span></td>
+                        <td class="py-3.5"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${userBadgeClass} border">${safeUserName}</span></td>
                         ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-500 dark:text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>`}
                         <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
                         <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-2 flex-wrap">
@@ -948,7 +985,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2 flex-wrap">
                                 ${!hasGroup ? categoryPillHtml(t.category) : ''}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
                                 <span class="text-[10px] text-zinc-500 dark:text-zinc-400">${formatDate(t.date)}</span>
                             </div>
                             <div class="flex items-center gap-2 flex-wrap justify-end">
@@ -989,7 +1026,8 @@
             const typeEl = document.getElementById('filterType');
             if (sortEl) sortEl.value = 'date-desc';
             if (userEl) userEl.value = 'all';
-            if (typeEl) typeEl.value = 'all';
+            if (typeEl) typeEl.value = 'expense';
+            try { localStorage.setItem('fincontrol_filterType', 'expense'); } catch (e) {}
             updateUI();
         }
 
@@ -2075,6 +2113,10 @@
                     if (data.theme === 'dark' || data.theme === 'light') {
                         applyThemeToDom(data.theme);
                         try { localStorage.setItem('fincontrol_theme', data.theme); } catch (e) {}
+                    }
+                    if (typeof data.translucent === 'boolean') {
+                        applyTranslucentToDom(data.translucent);
+                        try { localStorage.setItem('fincontrol_translucent', data.translucent ? '1' : '0'); } catch (e) {}
                     }
                     return data.name || '';
                 }
