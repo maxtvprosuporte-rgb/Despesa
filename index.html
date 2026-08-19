@@ -206,8 +206,64 @@
 
         </div>
 
-        <!-- Summary Cards -->
-        <div id="summaryCardsGrid" class="grid grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">
+        <!-- Summary Cards: ordem mobile = 2 colunas por fileira -->
+        <!-- Fileira 1: Minha Despesa | Minha Receita -->
+        <!-- Fileira 2: Minha Diferença (mês atual) | Minha % vs mês passado -->
+        <!-- Fileira 3 (só casa c/ +1 usuário): Despesa da Casa | Receita da Casa -->
+        <!-- Fileira 4 (só casa c/ +1 usuário): Diferença da Casa (mês atual) | % da Casa vs mês passado -->
+        <div id="summaryCardsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+            <!-- Fileira 1: Minhas -->
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-100 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Minha Despesa</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold text-danger break-all" id="userExpense">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    <span class="w-2 h-2 rounded-full bg-accent"></span>
+                    <span id="userExpenseName">Somente suas saídas</span>
+                </div>
+            </div>
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-200 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Minha Receita</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold text-primary break-all" id="userIncome">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    <span class="w-2 h-2 rounded-full bg-accent"></span>
+                    <span id="userIncomeName">Somente suas entradas</span>
+                </div>
+            </div>
+
+            <!-- Fileira 2: Minha Diferença e Minha % vs mês passado -->
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-accent/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"></path></svg>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Minha Diferença</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold break-all" id="userBalance">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3">
+                    <span id="balanceStatus" class="text-xs font-medium px-2 py-1 rounded-lg"></span>
+                </div>
+            </div>
+            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">% Mês Passado</p>
+                </div>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold break-all" id="userMonthComparisonPercent">0%</h2>
+                <div class="mt-2 sm:mt-3">
+                    <span id="userMonthComparisonStatus" class="text-xs font-medium px-2 py-1 rounded-lg"></span>
+                </div>
+            </div>
+
+            <!-- Fileira 3: Casa (só aparece com +1 usuário) -->
             <div class="house-card hidden glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-100 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
                 <div class="flex items-center gap-2 mb-1">
@@ -232,95 +288,29 @@
                     Todos os membros
                 </div>
             </div>
-            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-danger/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-danger/10 transition-all"></div>
-                <div class="flex items-center gap-2 mb-1">
-                    <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Minha Despesa</p>
-                </div>
-                <h2 class="font-display text-lg sm:text-2xl font-semibold text-danger break-all" id="userExpense">R$ 0,00</h2>
-                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                    <span class="w-2 h-2 rounded-full bg-accent"></span>
-                    <span id="userExpenseName">Somente suas saídas</span>
-                </div>
-            </div>
-            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
-                <div class="flex items-center gap-2 mb-1">
-                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Minha Receita</p>
-                </div>
-                <h2 class="font-display text-lg sm:text-2xl font-semibold text-primary break-all" id="userIncome">R$ 0,00</h2>
-                <div class="mt-2 sm:mt-3 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                    <span class="w-2 h-2 rounded-full bg-accent"></span>
-                    <span id="userIncomeName">Somente suas entradas</span>
-                </div>
-            </div>
-        </div>
 
-        <!-- 5th Box: Saldo do Usuário -->
-        <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-accent/10 transition-all"></div>
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"></path></svg>
-                </div>
-                <div>
-                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Meu Saldo do Mês</p>
-                    <p class="text-zinc-600 dark:text-zinc-300 text-xs">Receitas - Despesas do período</p>
-                </div>
-            </div>
-            <div class="flex items-baseline gap-3 flex-wrap">
-                <h2 class="font-display text-2xl sm:text-3xl font-semibold break-all" id="userBalance">R$ 0,00</h2>
-                <span id="balanceStatus" class="text-xs font-medium px-2 py-1 rounded-lg"></span>
-            </div>
-        </div>
-
-        <!-- 6th & 7th Box: Diferença Receita x Despesa e Comparação com Mês Passado -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
+            <!-- Fileira 4: Diferença e % da Casa (só aparece com +1 usuário) -->
+            <div class="house-card hidden glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-300 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-accent/10 transition-all"></div>
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Diferença Receita x Despesa</p>
-                        <p class="text-zinc-600 dark:text-zinc-300 text-xs">Saldo (positivo/negativo) da Casa e Pessoal</p>
-                    </div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Diferença da Casa</p>
                 </div>
-                <div class="flex items-center justify-between py-1.5 border-b border-zinc-900/5 dark:border-white/5">
-                    <span class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        Casa
-                    </span>
-                    <span id="houseDifference" class="font-display text-sm sm:text-base font-semibold break-all">R$ 0,00</span>
-                </div>
-                <div class="flex items-center justify-between py-1.5">
-                    <span class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-accent"></span>
-                        Pessoal
-                    </span>
-                    <span id="userDifference" class="font-display text-sm sm:text-base font-semibold break-all">R$ 0,00</span>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold break-all" id="houseDifference">R$ 0,00</h2>
+                <div class="mt-2 sm:mt-3">
+                    <span id="houseDifferenceStatus" class="text-xs font-medium px-2 py-1 rounded-lg"></span>
                 </div>
             </div>
-
-            <div class="glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
+            <div class="house-card hidden glass-panel rounded-xl sm:rounded-2xl p-3 sm:p-6 animate-fade-in delay-400 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-all"></div>
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Comparado ao Mês Passado</p>
-                        <p class="text-zinc-600 dark:text-zinc-300 text-xs">Variação % do saldo (Receita - Despesa)</p>
-                    </div>
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">% Mês Passado (Casa)</p>
                 </div>
-                <div class="flex items-baseline gap-3 flex-wrap">
-                    <h2 class="font-display text-2xl sm:text-3xl font-semibold break-all" id="monthComparisonPercent">0%</h2>
-                    <span id="monthComparisonStatus" class="text-xs font-medium px-2 py-1 rounded-lg"></span>
+                <h2 class="font-display text-lg sm:text-2xl font-semibold break-all" id="houseMonthComparisonPercent">0%</h2>
+                <div class="mt-2 sm:mt-3">
+                    <span id="houseMonthComparisonStatus" class="text-xs font-medium px-2 py-1 rounded-lg"></span>
                 </div>
-                <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400" id="monthComparisonDetail"></p>
             </div>
         </div>
 

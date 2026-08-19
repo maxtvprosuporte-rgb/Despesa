@@ -528,14 +528,11 @@
 
         function updateHouseCardsVisibility() {
             const houseCards = document.querySelectorAll('.house-card');
-            const grid = document.getElementById('summaryCardsGrid');
             if (!houseCards.length) return;
             const showHouseCards = householdMemberCount > 1;
             houseCards.forEach(card => card.classList.toggle('hidden', !showHouseCards));
-            if (grid) {
-                grid.classList.toggle('lg:grid-cols-4', showHouseCards);
-                grid.classList.toggle('lg:grid-cols-2', !showHouseCards);
-            }
+            // A grade (grid-cols-2 no mobile, lg:grid-cols-4 no desktop) é fixa;
+            // os cards da casa simplesmente somem/aparecem, reorganizando as fileiras.
         }
 
         function copyHouseholdCode() {
@@ -814,49 +811,43 @@
             document.getElementById('userIncome').textContent = formatCurrency(userIncome);
             document.getElementById('userExpense').textContent = formatCurrency(userExpense);
 
-            // User balance
+            // Box: Minha Diferença (mês atual), com sinal positivo/negativo e badge de status
             const userBalance = userIncome - userExpense;
-            const balanceEl = document.getElementById('userBalance');
-            const statusEl = document.getElementById('balanceStatus');
-            
-            balanceEl.textContent = formatCurrency(userBalance);
-            
-            if (userBalance > 0) {
-                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-primary break-all';
-                statusEl.textContent = 'Sobrando';
-                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20';
-            } else if (userBalance < 0) {
-                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-danger break-all';
-                statusEl.textContent = 'No negativo';
-                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-danger/10 text-danger border border-danger/20';
-            } else {
-                balanceEl.className = 'font-display text-2xl sm:text-3xl font-semibold text-zinc-900 dark:text-zinc-50 break-all';
-                statusEl.textContent = 'Equilibrado';
-                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
-            }
+            renderDifferenceBox('userBalance', 'balanceStatus', userBalance);
 
-            // Box: Diferença Receita x Despesa (Casa e Pessoal), com sinal positivo/negativo
+            // Box: Diferença da Casa (mês atual), com sinal positivo/negativo e badge de status
             const houseDifference = houseIncome - houseExpense;
-            const userDifference = userIncome - userExpense;
-            renderSignedAmount('houseDifference', houseDifference);
-            renderSignedAmount('userDifference', userDifference);
+            renderDifferenceBox('houseDifference', 'houseDifferenceStatus', houseDifference);
 
-            // Box: Comparação em % com o mês passado (saldo total: Receita - Despesa)
-            renderMonthComparison(houseIncome, houseExpense);
+            // Boxes: Comparação em % com o mês passado (Minha e da Casa)
+            renderMonthComparison('user', userIncome, userExpense, uid, true);
+            renderMonthComparison('house', houseIncome, houseExpense, uid, false);
         }
 
-        // Formata um valor com sinal (+/-) e cor (verde para positivo, vermelho para negativo)
-        function renderSignedAmount(elId, value) {
-            const el = document.getElementById(elId);
+        // Formata o valor de uma diferença/saldo com cor e badge de status (Sobrando/No negativo/Equilibrado)
+        function renderDifferenceBox(valueElId, statusElId, value) {
+            const el = document.getElementById(valueElId);
+            const statusEl = document.getElementById(statusElId);
             if (!el) return;
-            const sign = value > 0 ? '+ ' : value < 0 ? '- ' : '';
-            el.textContent = sign + formatCurrency(Math.abs(value));
+            el.textContent = formatCurrency(value);
             if (value > 0) {
-                el.className = 'font-display text-sm sm:text-base font-semibold break-all text-primary';
+                el.className = 'font-display text-lg sm:text-2xl font-semibold text-primary break-all';
+                if (statusEl) {
+                    statusEl.textContent = 'Sobrando';
+                    statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20';
+                }
             } else if (value < 0) {
-                el.className = 'font-display text-sm sm:text-base font-semibold break-all text-danger';
+                el.className = 'font-display text-lg sm:text-2xl font-semibold text-danger break-all';
+                if (statusEl) {
+                    statusEl.textContent = 'No negativo';
+                    statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-danger/10 text-danger border border-danger/20';
+                }
             } else {
-                el.className = 'font-display text-sm sm:text-base font-semibold break-all text-zinc-900 dark:text-zinc-50';
+                el.className = 'font-display text-lg sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-50 break-all';
+                if (statusEl) {
+                    statusEl.textContent = 'Equilibrado';
+                    statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
+                }
             }
         }
 
@@ -867,32 +858,35 @@
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         }
 
-        // Compara o saldo (Receita - Despesa) da casa do mês atual com o mês anterior
-        function renderMonthComparison(currentHouseIncome, currentHouseExpense) {
-            const percentEl = document.getElementById('monthComparisonPercent');
-            const statusEl = document.getElementById('monthComparisonStatus');
-            const detailEl = document.getElementById('monthComparisonDetail');
-            if (!percentEl || !statusEl || !detailEl) return;
+        // Compara o saldo (Receita - Despesa) do mês atual com o mês anterior.
+        // prefix: 'user' ou 'house' -> define quais elementos do DOM são atualizados.
+        // onlyUser: true filtra só as transações do usuário atual; false inclui a casa toda (exceto anônimas de outros).
+        function renderMonthComparison(prefix, currentIncome, currentExpense, uid, onlyUser) {
+            const percentEl = document.getElementById(prefix + 'MonthComparisonPercent');
+            const statusEl = document.getElementById(prefix + 'MonthComparisonStatus');
+            if (!percentEl || !statusEl) return;
 
             const prevMonth = getPreviousMonthStr(currentMonth);
-            const uid = currentUser?.uid;
             let prevFiltered = transactions.filter(t => t.date.startsWith(prevMonth) && isVisibleMonthlyTransaction(t));
-            prevFiltered = prevFiltered.filter(t => {
-                if (t.userId === uid) return true;
-                if (t.isAnonymous) return false;
-                return true;
-            });
+            if (onlyUser) {
+                prevFiltered = prevFiltered.filter(t => t.userId === uid);
+            } else {
+                prevFiltered = prevFiltered.filter(t => {
+                    if (t.userId === uid) return true;
+                    if (t.isAnonymous) return false;
+                    return true;
+                });
+            }
             const prevIncome = prevFiltered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
             const prevExpense = prevFiltered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
             const prevBalance = prevIncome - prevExpense;
-            const currentBalance = currentHouseIncome - currentHouseExpense;
+            const currentBalance = currentIncome - currentExpense;
 
             if (prevFiltered.length === 0) {
                 percentEl.textContent = '—';
-                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-zinc-900 dark:text-zinc-50';
+                percentEl.className = 'font-display text-lg sm:text-2xl font-semibold break-all text-zinc-900 dark:text-zinc-50';
                 statusEl.textContent = 'Sem dados';
                 statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
-                detailEl.textContent = 'Não há lançamentos no mês anterior para comparar.';
                 return;
             }
 
@@ -907,20 +901,18 @@
             percentEl.textContent = sign + percentChange.toFixed(1).replace('.', ',') + '%';
 
             if (percentChange > 0) {
-                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-primary';
+                percentEl.className = 'font-display text-lg sm:text-2xl font-semibold break-all text-primary';
                 statusEl.textContent = 'Melhorou';
                 statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20';
             } else if (percentChange < 0) {
-                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-danger';
+                percentEl.className = 'font-display text-lg sm:text-2xl font-semibold break-all text-danger';
                 statusEl.textContent = 'Piorou';
                 statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-danger/10 text-danger border border-danger/20';
             } else {
-                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-zinc-900 dark:text-zinc-50';
+                percentEl.className = 'font-display text-lg sm:text-2xl font-semibold break-all text-zinc-900 dark:text-zinc-50';
                 statusEl.textContent = 'Estável';
                 statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
             }
-
-            detailEl.textContent = `Mês anterior: ${formatCurrency(prevBalance)} → Atual: ${formatCurrency(currentBalance)}`;
         }
 
         function renderTransactions() {
