@@ -834,6 +834,93 @@
                 statusEl.textContent = 'Equilibrado';
                 statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
             }
+
+            // Box: Diferença Receita x Despesa (Casa e Pessoal), com sinal positivo/negativo
+            const houseDifference = houseIncome - houseExpense;
+            const userDifference = userIncome - userExpense;
+            renderSignedAmount('houseDifference', houseDifference);
+            renderSignedAmount('userDifference', userDifference);
+
+            // Box: Comparação em % com o mês passado (saldo total: Receita - Despesa)
+            renderMonthComparison(houseIncome, houseExpense);
+        }
+
+        // Formata um valor com sinal (+/-) e cor (verde para positivo, vermelho para negativo)
+        function renderSignedAmount(elId, value) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            const sign = value > 0 ? '+ ' : value < 0 ? '- ' : '';
+            el.textContent = sign + formatCurrency(Math.abs(value));
+            if (value > 0) {
+                el.className = 'font-display text-sm sm:text-base font-semibold break-all text-primary';
+            } else if (value < 0) {
+                el.className = 'font-display text-sm sm:text-base font-semibold break-all text-danger';
+            } else {
+                el.className = 'font-display text-sm sm:text-base font-semibold break-all text-zinc-900 dark:text-zinc-50';
+            }
+        }
+
+        // Calcula o mês anterior a partir de currentMonth ("YYYY-MM")
+        function getPreviousMonthStr(monthStr) {
+            const [y, m] = monthStr.split('-').map(Number);
+            const d = new Date(y, m - 2, 1); // m é 1-indexado; m-2 -> mês anterior (0-indexado)
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        }
+
+        // Compara o saldo (Receita - Despesa) da casa do mês atual com o mês anterior
+        function renderMonthComparison(currentHouseIncome, currentHouseExpense) {
+            const percentEl = document.getElementById('monthComparisonPercent');
+            const statusEl = document.getElementById('monthComparisonStatus');
+            const detailEl = document.getElementById('monthComparisonDetail');
+            if (!percentEl || !statusEl || !detailEl) return;
+
+            const prevMonth = getPreviousMonthStr(currentMonth);
+            const uid = currentUser?.uid;
+            let prevFiltered = transactions.filter(t => t.date.startsWith(prevMonth) && isVisibleMonthlyTransaction(t));
+            prevFiltered = prevFiltered.filter(t => {
+                if (t.userId === uid) return true;
+                if (t.isAnonymous) return false;
+                return true;
+            });
+            const prevIncome = prevFiltered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const prevExpense = prevFiltered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            const prevBalance = prevIncome - prevExpense;
+            const currentBalance = currentHouseIncome - currentHouseExpense;
+
+            if (prevFiltered.length === 0) {
+                percentEl.textContent = '—';
+                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-zinc-900 dark:text-zinc-50';
+                statusEl.textContent = 'Sem dados';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
+                detailEl.textContent = 'Não há lançamentos no mês anterior para comparar.';
+                return;
+            }
+
+            let percentChange;
+            if (prevBalance === 0) {
+                percentChange = currentBalance === 0 ? 0 : (currentBalance > 0 ? 100 : -100);
+            } else {
+                percentChange = ((currentBalance - prevBalance) / Math.abs(prevBalance)) * 100;
+            }
+
+            const sign = percentChange > 0 ? '+' : '';
+            percentEl.textContent = sign + percentChange.toFixed(1).replace('.', ',') + '%';
+
+            if (percentChange > 0) {
+                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-primary';
+                statusEl.textContent = 'Melhorou';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20';
+            } else if (percentChange < 0) {
+                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-danger';
+                statusEl.textContent = 'Piorou';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-danger/10 text-danger border border-danger/20';
+            } else {
+                percentEl.className = 'font-display text-2xl sm:text-3xl font-semibold break-all text-zinc-900 dark:text-zinc-50';
+                statusEl.textContent = 'Estável';
+                statusEl.className = 'text-xs font-medium px-2 py-1 rounded-lg bg-zinc-900/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 border border-zinc-900/10 dark:border-white/10';
+            }
+
+            detailEl.textContent = `Mês anterior: ${formatCurrency(prevBalance)} → Atual: ${formatCurrency(currentBalance)}`;
         }
 
         function renderTransactions() {
