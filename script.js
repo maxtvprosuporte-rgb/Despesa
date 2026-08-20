@@ -210,7 +210,6 @@
         window.closeThemeModal = closeThemeModal;
         window.setTheme = setTheme;
         window.onFilterTypeChange = onFilterTypeChange;
-        window.setTranslucent = setTranslucent;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
