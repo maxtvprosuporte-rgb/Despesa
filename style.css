@@ -14,21 +14,13 @@
             --c-pill-paid-text: 4 120 87;
             --c-pill-unpaid-text: 190 18 60;
             --c-input-bg: 255 255 255;
-            /* Translucidez (efeito vidro) - desativada por padrão: opaco e sem blur (melhor legibilidade/performance) */
+            /* Opaco e sem blur (melhor legibilidade/performance) */
             --glass-alpha-panel: 1;
             --glass-alpha-modal: 1;
             --glass-alpha-modal-header: 1;
             --glass-alpha-login: 1;
             --glass-blur-panel: 0px;
             --glass-blur-modal: 0px;
-        }
-        html.translucent {
-            --glass-alpha-panel: 0.75;
-            --glass-alpha-modal: 0.95;
-            --glass-alpha-modal-header: 0.98;
-            --glass-alpha-login: 0.9;
-            --glass-blur-panel: 12px;
-            --glass-blur-modal: 16px;
         }
         html.dark {
             --c-background: 9 9 11;
@@ -406,10 +398,13 @@
         .cat-item-row {
             padding: 14px 16px;
             border-top: 1px solid rgb(var(--c-overlay) / 0.05);
-            transition: background-color .15s;
+            transition: filter .15s;
         }
         .cat-item-row:hover {
-            background: rgb(var(--c-overlay) / 0.02);
+            filter: brightness(0.97);
+        }
+        html.dark .cat-item-row:hover {
+            filter: brightness(1.15);
         }
         .cat-item-row-last {
             /* último item do grupo: sem tratamento extra, a caixa já fecha por fora */

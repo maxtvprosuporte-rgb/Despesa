@@ -37,14 +37,12 @@
             }
         }
     </script>
-    <!-- Aplica o tema e a translucidez salvos o quanto antes, pra nao "piscar" o visual errado -->
+    <!-- Aplica o tema salvo o quanto antes, pra nao "piscar" o visual errado -->
     <script>
         (function(){
             try {
                 var t = localStorage.getItem('fincontrol_theme');
                 if (t === 'dark') document.documentElement.classList.add('dark');
-                var tr = localStorage.getItem('fincontrol_translucent');
-                if (tr === '1') document.documentElement.classList.add('translucent');
             } catch(e) {}
         })();
     </script>
@@ -709,15 +707,6 @@
                         <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                         <span>Escuro</span>
                     </button>
-                </div>
-                <div style="padding:0 16px 16px;">
-                    <label for="translucentToggle" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:12px;border:1px solid rgb(var(--c-overlay) / 0.08);background:rgb(var(--c-overlay) / 0.02);cursor:pointer;">
-                        <span>
-                            <span style="display:block;font-size:13px;font-weight:600;color:rgb(var(--c-text-strong));">Efeitos translúcidos</span>
-                            <span style="display:block;font-size:11px;color:rgb(var(--c-text-faint));margin-top:2px;">Cards e janelas com efeito vidro (desfoque). Deixa mais bonito, mas usa mais processamento.</span>
-                        </span>
-                        <input type="checkbox" id="translucentToggle" onchange="setTranslucent(this.checked)" style="flex:0 0 auto;width:18px;height:18px;accent-color:rgb(var(--c-accent));cursor:pointer;">
-                    </label>
                 </div>
             </div>
         </div>

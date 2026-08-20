@@ -663,18 +663,9 @@
             if (themeColorMeta) themeColorMeta.setAttribute('content', mode === 'dark' ? '#09090b' : '#F3F4F6');
         }
 
-        function isTranslucent() { return document.documentElement.classList.contains('translucent'); }
-
-        function applyTranslucentToDom(enabled) {
-            document.documentElement.classList.toggle('translucent', !!enabled);
-            const toggle = document.getElementById('translucentToggle');
-            if (toggle) toggle.checked = !!enabled;
-        }
-
         function openThemeModal() {
             document.getElementById('themeModal').style.display = 'block';
             applyThemeToDom(isDarkMode() ? 'dark' : 'light');
-            applyTranslucentToDom(isTranslucent());
         }
         function closeThemeModal() {
             document.getElementById('themeModal').style.display = 'none';
@@ -691,17 +682,6 @@
             if (currentUser) {
                 try {
                     await withTimeout(setDoc(doc(db, 'users', currentUser.uid), { theme: mode }, { merge: true }));
-                } catch (e) { /* non-critical */ }
-            }
-        }
-
-        async function setTranslucent(enabled) {
-            applyTranslucentToDom(enabled);
-            try { localStorage.setItem('fincontrol_translucent', enabled ? '1' : '0'); } catch (e) {}
-
-            if (currentUser) {
-                try {
-                    await withTimeout(setDoc(doc(db, 'users', currentUser.uid), { translucent: !!enabled }, { merge: true }));
                 } catch (e) { /* non-critical */ }
             }
         }
@@ -1118,7 +1098,8 @@
                     
                     // Desktop table row
                     const tr = document.createElement('tr');
-                    tr.className = `group history-row hover:bg-zinc-900/[0.025] dark:hover:bg-white/[0.03] transition-colors${hasGroup ? ' cat-sub-row' : ''}${isLastInGroup ? ' cat-group-last' : ''}`;
+                    tr.className = `group history-row hover:brightness-95 dark:hover:brightness-110 transition-colors${hasGroup ? ' cat-sub-row' : ''}${isLastInGroup ? ' cat-group-last' : ''}`;
+                    tr.style.background = `linear-gradient(90deg, ${hexToRgba(accentColor, 0.16)}, ${hexToRgba(accentColor, 0.035)})`;
                     if (hasGroup) {
                         tr.style.setProperty('--group-color', groupColor);
                     } else {
@@ -1142,6 +1123,7 @@
                         // próprios — a caixa já fornece o contorno externo do grupo).
                         const row = document.createElement('div');
                         row.className = `cat-item-row${isLastInGroup ? ' cat-item-row-last' : ''}`;
+                        row.style.background = `linear-gradient(90deg, ${hexToRgba(accentColor, 0.14)}, ${hexToRgba(accentColor, 0.03)})`;
                         row.innerHTML = `
                             <div class="flex items-start justify-between mb-2.5">
                                 <div class="flex-1 min-w-0">
@@ -1165,7 +1147,8 @@
                     } else {
                         // Mobile: card independente (categoria com um único lançamento)
                         const card = document.createElement('div');
-                        card.className = 'history-row bg-zinc-900/[0.02] dark:bg-white/[0.025] border border-zinc-900/8 dark:border-white/5 rounded-xl p-4 hover:border-zinc-900/12 dark:hover:border-white/10 transition-colors';
+                        card.className = 'history-row border border-zinc-900/8 dark:border-white/5 rounded-xl p-4 hover:brightness-95 dark:hover:brightness-110 transition-colors';
+                        card.style.background = `linear-gradient(90deg, ${hexToRgba(accentColor, 0.16)}, ${hexToRgba(accentColor, 0.035)})`;
                         card.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
                         card.innerHTML = `
                             <div class="flex items-start justify-between mb-3">
@@ -2315,10 +2298,6 @@
                     if (data.theme === 'dark' || data.theme === 'light') {
                         applyThemeToDom(data.theme);
                         try { localStorage.setItem('fincontrol_theme', data.theme); } catch (e) {}
-                    }
-                    if (typeof data.translucent === 'boolean') {
-                        applyTranslucentToDom(data.translucent);
-                        try { localStorage.setItem('fincontrol_translucent', data.translucent ? '1' : '0'); } catch (e) {}
                     }
                     return data.name || '';
                 }
