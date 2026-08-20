@@ -1045,15 +1045,16 @@
             catOrder.forEach(category => {
                 const catItems = catMap[category];
                 const hasGroup = catItems.length > 1;
+                const categoryColor = getCategoryColor(category);
+                const groupColor = hexToRgba(categoryColor, 0.35);
+                const catTotal = catItems.reduce((s, t) => s + t.amount, 0);
 
                 if (hasGroup) {
                     // Desktop: category header row
                     const headerTr = document.createElement('tr');
                     headerTr.className = 'cat-group-header';
-                    const categoryColor = getCategoryColor(category);
-                    headerTr.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
-                    headerTr.style.borderLeftColor = categoryColor;
-                    const catTotal = catItems.reduce((s, t) => s + t.amount, 0);
+                    headerTr.style.setProperty('--group-color', groupColor);
+                    headerTr.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.16)}, ${hexToRgba(categoryColor, 0.04)})`;
                     headerTr.innerHTML = `<td colspan="6">
                         <div class="flex items-center justify-between">
                             ${categoryLabelHtml(category)}
@@ -1063,22 +1064,28 @@
                     tbodyFrag.appendChild(headerTr);
                 }
 
-                // Mobile: category header card
+                // Mobile: para categorias com mais de 1 item, tudo fica dentro de uma
+                // única caixa (cat-group-box) com o cabeçalho por cima e os itens
+                // empilhados dentro, deixando claro que pertencem ao mesmo grupo.
+                let groupBox = null;
                 if (hasGroup) {
+                    groupBox = document.createElement('div');
+                    groupBox.className = 'cat-group-box';
+                    groupBox.style.setProperty('--group-color', groupColor);
+
                     const catHeader = document.createElement('div');
                     catHeader.className = 'cat-group-card-header';
-                    const categoryColor = getCategoryColor(category);
-                    catHeader.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
-                    catHeader.style.borderLeftColor = categoryColor;
-                    const catTotal = catItems.reduce((s, t) => s + t.amount, 0);
+                    catHeader.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.16)}, ${hexToRgba(categoryColor, 0.04)})`;
                     catHeader.innerHTML = `<div class="flex items-center justify-between">
                         ${categoryLabelHtml(category)}
                         <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">${catItems.length} transações · ${formatCurrency(catTotal)}</span>
                     </div>`;
-                    mobileFrag.appendChild(catHeader);
+                    groupBox.appendChild(catHeader);
+                    mobileFrag.appendChild(groupBox);
                 }
 
-                catItems.forEach(t => {
+                catItems.forEach((t, idx) => {
+                    const isLastInGroup = hasGroup && idx === catItems.length - 1;
                     const isIncome = t.type === 'income';
                     const userName = t.userName || 'Desconhecido';
                     const isCurrentUser = t.userId === currentUser?.uid;
@@ -1111,8 +1118,12 @@
                     
                     // Desktop table row
                     const tr = document.createElement('tr');
-                    tr.className = `group history-row hover:bg-zinc-900/[0.025] dark:hover:bg-white/[0.03] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
-                    tr.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
+                    tr.className = `group history-row hover:bg-zinc-900/[0.025] dark:hover:bg-white/[0.03] transition-colors${hasGroup ? ' cat-sub-row' : ''}${isLastInGroup ? ' cat-group-last' : ''}`;
+                    if (hasGroup) {
+                        tr.style.setProperty('--group-color', groupColor);
+                    } else {
+                        tr.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
+                    }
                     tr.innerHTML = `
                         <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}${lateNote}</td>
                         ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
@@ -1125,33 +1136,60 @@
                             <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div></td>`;
                     tbodyFrag.appendChild(tr);
-                    
-                    // Mobile card
-                    const card = document.createElement('div');
-                    card.className = `history-row bg-zinc-900/[0.02] dark:bg-white/[0.025] border border-zinc-900/8 dark:border-white/5 rounded-xl p-4 hover:border-zinc-900/12 dark:hover:border-white/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
-                    card.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
-                    card.innerHTML = `
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1 min-w-0">
-                                <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
-                                ${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}
-                                ${lateNote}
+
+                    if (hasGroup) {
+                        // Mobile: linha simples DENTRO da caixa do grupo (sem borda/raio
+                        // próprios — a caixa já fornece o contorno externo do grupo).
+                        const row = document.createElement('div');
+                        row.className = `cat-item-row${isLastInGroup ? ' cat-item-row-last' : ''}`;
+                        row.innerHTML = `
+                            <div class="flex items-start justify-between mb-2.5">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
+                                    ${lateNote}
+                                </div>
+                                <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
                             </div>
-                            <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                ${!hasGroup ? categoryPillHtml(t.category) : ''}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
-                                <span class="text-[10px] text-zinc-500 dark:text-zinc-400">${formatDate(t.date)}</span>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
+                                    <span class="text-[10px] text-zinc-500 dark:text-zinc-400">${formatDate(t.date)}</span>
+                                </div>
+                                <div class="flex items-center gap-2 flex-wrap justify-end">
+                                    ${debtButtons}
+                                    <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                    <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                </div>
+                            </div>`;
+                        groupBox.appendChild(row);
+                    } else {
+                        // Mobile: card independente (categoria com um único lançamento)
+                        const card = document.createElement('div');
+                        card.className = 'history-row bg-zinc-900/[0.02] dark:bg-white/[0.025] border border-zinc-900/8 dark:border-white/5 rounded-xl p-4 hover:border-zinc-900/12 dark:hover:border-white/10 transition-colors';
+                        card.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
+                        card.innerHTML = `
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
+                                    ${t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}
+                                    ${lateNote}
+                                </div>
+                                <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
                             </div>
-                            <div class="flex items-center gap-2 flex-wrap justify-end">
-                                ${debtButtons}
-                                <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                                <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                            </div>
-                        </div>`;
-                    mobileFrag.appendChild(card);
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    ${categoryPillHtml(t.category)}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${userBadgeClass} border">${safeUserName}</span>
+                                    <span class="text-[10px] text-zinc-500 dark:text-zinc-400">${formatDate(t.date)}</span>
+                                </div>
+                                <div class="flex items-center gap-2 flex-wrap justify-end">
+                                    ${debtButtons}
+                                    <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                    <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                </div>
+                            </div>`;
+                        mobileFrag.appendChild(card);
+                    }
                 });
             });
         }
