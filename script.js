@@ -772,6 +772,23 @@
             return transactions.filter(t => t.date.startsWith(currentMonth) && isVisibleMonthlyTransaction(t));
         }
 
+        // Todas as transações do mês (SEM excluir as "não pagas"), usada só no
+        // Histórico, que precisa mostrar as 3 seções: Pendente / Pagas / Não pagas.
+        // Os cálculos do dashboard continuam usando getFilteredTransactions().
+        function getMonthHistoryTransactions() {
+            return transactions.filter(t => t.date.startsWith(currentMonth));
+        }
+
+        // Classifica uma despesa em 'pending' | 'paid' | 'unpaid'. Receitas retornam null
+        // (não têm conceito de pago/não pago). Transações antigas sem paymentStatus
+        // definido são tratadas como pendentes por padrão.
+        function getPaymentBucket(t) {
+            if (t.type !== 'expense') return null;
+            if (t.paymentStatus === 'paid') return 'paid';
+            if (t.paymentStatus === 'unpaid') return 'unpaid';
+            return 'pending';
+        }
+
         function updateUI() { updateSummary(); renderTransactions(); renderChart(); }
 
         function setupDebtRolloverControls() {
@@ -925,7 +942,9 @@
             const tbodyFrag = document.createDocumentFragment();
             const mobileFrag = document.createDocumentFragment();
 
-            const monthFiltered = getFilteredTransactions();
+            // Usa TODAS as transações do mês (inclusive as "não pagas"), pois o
+            // histórico agora precisa exibir as 3 seções de status.
+            const monthFiltered = getMonthHistoryTransactions();
 
             // Show/hide filter bar when there are transactions
             if (monthFiltered.length > 0) {
@@ -956,23 +975,71 @@
 
             // Apply sort
             const sortVal = document.getElementById('filterSort')?.value || 'date-desc';
-            let sorted;
-            if (sortVal === 'amount-desc') sorted = [...filtered].sort((a,b) => b.amount - a.amount);
-            else if (sortVal === 'amount-asc') sorted = [...filtered].sort((a,b) => a.amount - b.amount);
-            else if (sortVal === 'date-asc') sorted = [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date));
-            else sorted = [...filtered].sort((a,b) => new Date(b.date) - new Date(a.date));
+            const sortFn = (a, b) => {
+                if (sortVal === 'amount-desc') return b.amount - a.amount;
+                if (sortVal === 'amount-asc') return a.amount - b.amount;
+                if (sortVal === 'date-asc') return new Date(a.date) - new Date(b.date);
+                return new Date(b.date) - new Date(a.date);
+            };
 
-            // Group by category
+            // Separa despesas em 3 seções por status de pagamento; receitas ficam
+            // numa lista única (sem seção especial), como já era antes.
+            const pendingItems = filtered.filter(t => getPaymentBucket(t) === 'pending').sort(sortFn);
+            const paidItems = filtered.filter(t => getPaymentBucket(t) === 'paid').sort(sortFn);
+            const unpaidItems = filtered.filter(t => getPaymentBucket(t) === 'unpaid').sort(sortFn);
+            const incomeItems = filtered.filter(t => t.type === 'income').sort(sortFn);
+
+            appendHistorySection(pendingItems, 'Pendente', 'rgb(var(--c-warning))', tbodyFrag, mobileFrag);
+            appendHistorySection(paidItems, 'Contas pagas desse mês', 'rgb(var(--c-primary))', tbodyFrag, mobileFrag);
+            appendHistorySection(unpaidItems, 'Contas não pagas', 'rgb(var(--c-danger))', tbodyFrag, mobileFrag);
+            appendCategoryGroupedRows(incomeItems, tbodyFrag, mobileFrag);
+
+            tbody.appendChild(tbodyFrag);
+            mobileList.appendChild(mobileFrag);
+        }
+
+        // Renderiza uma seção com cabeçalho (Pendente / Pagas / Não pagas) seguida
+        // dos itens agrupados por categoria. Não renderiza nada se a lista estiver vazia.
+        function appendHistorySection(items, label, colorCss, tbodyFrag, mobileFrag) {
+            if (!items.length) return;
+            const total = items.reduce((s, t) => s + t.amount, 0);
+
+            const headerTr = document.createElement('tr');
+            headerTr.innerHTML = `<td colspan="6">
+                <div class="history-section-header">
+                    <span class="dot" style="background:${colorCss}"></span>
+                    <span class="label" style="color:${colorCss}">${label}</span>
+                    <span class="meta">${items.length} · ${formatCurrency(total)}</span>
+                </div>
+            </td>`;
+            tbodyFrag.appendChild(headerTr);
+
+            const headerDiv = document.createElement('div');
+            headerDiv.innerHTML = `<div class="history-section-header">
+                <span class="dot" style="background:${colorCss}"></span>
+                <span class="label" style="color:${colorCss}">${label}</span>
+                <span class="meta">${items.length} · ${formatCurrency(total)}</span>
+            </div>`;
+            mobileFrag.appendChild(headerDiv.firstElementChild);
+
+            appendCategoryGroupedRows(items, tbodyFrag, mobileFrag);
+        }
+
+        // Agrupa uma lista de transações por categoria e monta as linhas (desktop)
+        // e os cards (mobile) do histórico.
+        function appendCategoryGroupedRows(items, tbodyFrag, mobileFrag) {
+            if (!items.length) return;
+
             const catOrder = [];
             const catMap = {};
-            sorted.forEach(t => {
+            items.forEach(t => {
                 if (!catMap[t.category]) { catMap[t.category] = []; catOrder.push(t.category); }
                 catMap[t.category].push(t);
             });
 
             catOrder.forEach(category => {
-                const items = catMap[category];
-                const hasGroup = items.length > 1;
+                const catItems = catMap[category];
+                const hasGroup = catItems.length > 1;
 
                 if (hasGroup) {
                     // Desktop: category header row
@@ -981,11 +1048,11 @@
                     const categoryColor = getCategoryColor(category);
                     headerTr.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
                     headerTr.style.borderLeftColor = categoryColor;
-                    const catTotal = items.reduce((s, t) => s + t.amount, 0);
+                    const catTotal = catItems.reduce((s, t) => s + t.amount, 0);
                     headerTr.innerHTML = `<td colspan="6">
                         <div class="flex items-center justify-between">
                             ${categoryLabelHtml(category)}
-                            <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
+                            <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">${catItems.length} transações · ${formatCurrency(catTotal)}</span>
                         </div>
                     </td>`;
                     tbodyFrag.appendChild(headerTr);
@@ -998,15 +1065,15 @@
                     const categoryColor = getCategoryColor(category);
                     catHeader.style.background = `linear-gradient(90deg, ${hexToRgba(categoryColor, 0.20)}, ${hexToRgba(categoryColor, 0.055)})`;
                     catHeader.style.borderLeftColor = categoryColor;
-                    const catTotal = items.reduce((s, t) => s + t.amount, 0);
+                    const catTotal = catItems.reduce((s, t) => s + t.amount, 0);
                     catHeader.innerHTML = `<div class="flex items-center justify-between">
                         ${categoryLabelHtml(category)}
-                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">${items.length} transações · ${formatCurrency(catTotal)}</span>
+                        <span class="text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">${catItems.length} transações · ${formatCurrency(catTotal)}</span>
                     </div>`;
                     mobileFrag.appendChild(catHeader);
                 }
 
-                items.forEach(t => {
+                catItems.forEach(t => {
                     const isIncome = t.type === 'income';
                     const userName = t.userName || 'Desconhecido';
                     const isCurrentUser = t.userId === currentUser?.uid;
@@ -1020,13 +1087,22 @@
                     const safeUserName = escapeHtml(userName);
                     const accentColor = getTransactionAccentColor(t);
                     const rowBg = `linear-gradient(90deg, ${hexToRgba(accentColor, 0.16)}, ${hexToRgba(accentColor, 0.035)})`;
-                    const statusPill = t.paymentStatus === 'paid'
+                    const bucket = getPaymentBucket(t);
+                    const statusPill = bucket === 'paid'
                         ? '<span class="debt-status-pill paid">Pago</span>'
-                        : (t.paymentStatus === 'unpaid' ? '<span class="debt-status-pill unpaid">Não pago</span>' : '');
+                        : bucket === 'unpaid'
+                            ? '<span class="debt-status-pill unpaid">Não pago</span>'
+                            : bucket === 'pending'
+                                ? '<span class="debt-status-pill pending">Pendente</span>'
+                                : '';
+                    // Aviso quando a pendência veio de uma dívida não paga no mês anterior
+                    const lateNote = (bucket === 'pending' && t.createdFromUnpaidDebt)
+                        ? `<div class="unpaid-last-month-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m0 3.75h.007v.008H12v-.008zM10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.4h17.16a1.5 1.5 0 001.31-2.36L13.71 3.86a1.5 1.5 0 00-2.42 0z"></path></svg>Dívida não paga no mês anterior</div>`
+                        : '';
                     const debtButtons = !isIncome ? `
                             <span class="debt-status-actions">
-                                <button onclick="markDebtStatus(${t.id}, 'paid')" class="debt-status-btn paid ${t.paymentStatus === 'paid' ? 'active' : ''}" title="Marcar como pago">Pago</button>
-                                <button onclick="markDebtStatus(${t.id}, 'unpaid')" class="debt-status-btn unpaid ${t.paymentStatus === 'unpaid' ? 'active' : ''}" title="Marcar como não pago">Não pago</button>
+                                <button onclick="markDebtStatus(${t.id}, 'paid')" class="debt-status-btn paid ${bucket === 'paid' ? 'active' : ''}" title="Marcar como pago">Pago</button>
+                                <button onclick="markDebtStatus(${t.id}, 'unpaid')" class="debt-status-btn unpaid ${bucket === 'unpaid' ? 'active' : ''}" title="Marcar como não pago">Não pago</button>
                             </span>` : '';
                     
                     // Desktop table row
@@ -1035,7 +1111,7 @@
                     tr.style.background = rowBg;
                     tr.style.borderLeft = `3px solid ${accentColor}`;
                     tr.innerHTML = `
-                        <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}</td>
+                        <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}${lateNote}</td>
                         ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
                         <td class="py-3.5"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${userBadgeClass} border">${safeUserName}</span></td>
                         ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-500 dark:text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>`}
@@ -1058,6 +1134,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
                                 ${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}
+                                ${lateNote}
                             </div>
                             <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
                         </div>
@@ -1076,10 +1153,8 @@
                     mobileFrag.appendChild(card);
                 });
             });
-
-            tbody.appendChild(tbodyFrag);
-            mobileList.appendChild(mobileFrag);
         }
+
 
         function populateUserFilter(transactionsList) {
             const select = document.getElementById('filterUser');
@@ -1630,6 +1705,13 @@
                         const totalInst = wasGrouped ? (currentIdx + installments) : installments;
                         let desc = baseDesc;
                         if (totalInst > 1) desc = `${baseDesc} (${instNum}/${totalInst})`;
+                        // A parcela que estava sendo editada (i===0) mantém seu status de
+                        // pagamento anterior (ex: se já estava paga, continua paga).
+                        // Parcelas novas criadas por causa da edição começam pendentes.
+                        const preservedStatus = (i === 0 && currentTx.paymentStatus) ? currentTx.paymentStatus : null;
+                        const paymentStatus = fd.get('type') === 'expense'
+                            ? (preservedStatus || 'pending')
+                            : undefined;
                         const t = {
                             id: newGroupId + 10000 + i,
                             type: fd.get('type'),
@@ -1644,6 +1726,7 @@
                             installmentNum: instNum,
                             totalInstallments: totalInst
                         };
+                        if (paymentStatus) t.paymentStatus = paymentStatus;
                         transactions.push(t);
                         await saveSingleTransaction(t);
                     }
@@ -1670,6 +1753,7 @@
                             installmentNum: i+1,
                             totalInstallments: installments
                         };
+                        if (fd.get('type') === 'expense') t.paymentStatus = 'pending';
                         transactions.push(t);
                         await saveSingleTransaction(t);
                     }

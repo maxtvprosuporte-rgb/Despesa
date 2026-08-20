@@ -587,6 +587,43 @@
         }
         .debt-status-pill.paid { color:rgb(var(--c-pill-paid-text)); background:rgb(var(--c-primary) / .12); border-color:rgb(var(--c-primary) / .25); }
         .debt-status-pill.unpaid { color:rgb(var(--c-pill-unpaid-text)); background:rgb(var(--c-danger) / .12); border-color:rgb(var(--c-danger) / .25); }
+        .debt-status-pill.pending { color:rgb(var(--c-warning)); background:rgb(var(--c-warning) / .12); border-color:rgb(var(--c-warning) / .25); }
+        .debt-status-btn.pending.active {
+            color: #fff;
+            background: rgb(var(--c-warning));
+            box-shadow: 0 0 18px rgb(var(--c-warning) / .28);
+        }
+        .history-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 2px 8px;
+        }
+        .history-section-header .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            flex-shrink: 0;
+        }
+        .history-section-header .label {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .history-section-header .meta {
+            font-size: 11px;
+            color: rgb(var(--c-text-faint));
+        }
+        .unpaid-last-month-note {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10.5px;
+            font-weight: 600;
+            color: rgb(var(--c-warning));
+            margin-top: 3px;
+        }
         .debt-option-card {
             display: block;
             padding: 10px;
