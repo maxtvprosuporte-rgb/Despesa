@@ -142,8 +142,8 @@
         }
 
         function getTransactionAccentColor(t) {
-            if (t.paymentStatus === 'paid') return '#059669';
-            if (t.paymentStatus === 'unpaid') return '#e11d48';
+            // A cor da borda esquerda identifica a CATEGORIA de forma consistente;
+            // o status (pago/pendente/não pago) já é comunicado pelo selo e pela seção.
             return getCategoryColor(t.category);
         }
 
@@ -989,9 +989,15 @@
             const unpaidItems = filtered.filter(t => getPaymentBucket(t) === 'unpaid').sort(sortFn);
             const incomeItems = filtered.filter(t => t.type === 'income').sort(sortFn);
 
-            appendHistorySection(pendingItems, 'Pendente', 'rgb(var(--c-warning))', tbodyFrag, mobileFrag);
-            appendHistorySection(paidItems, 'Contas pagas desse mês', 'rgb(var(--c-primary))', tbodyFrag, mobileFrag);
-            appendHistorySection(unpaidItems, 'Contas não pagas', 'rgb(var(--c-danger))', tbodyFrag, mobileFrag);
+            // Ícones neutros por seção (o "peso" de cor fica só no chip do ícone,
+            // o rótulo permanece em texto neutro para uma leitura mais sóbria).
+            const ICON_PENDING = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+            const ICON_PAID = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+            const ICON_UNPAID = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"></path>';
+
+            appendHistorySection(pendingItems, 'Pendente', ICON_PENDING, '--c-warning', tbodyFrag, mobileFrag);
+            appendHistorySection(paidItems, 'Contas pagas desse mês', ICON_PAID, '--c-primary', tbodyFrag, mobileFrag);
+            appendHistorySection(unpaidItems, 'Contas não pagas', ICON_UNPAID, '--c-danger', tbodyFrag, mobileFrag);
             appendCategoryGroupedRows(incomeItems, tbodyFrag, mobileFrag);
 
             tbody.appendChild(tbodyFrag);
@@ -1000,26 +1006,25 @@
 
         // Renderiza uma seção com cabeçalho (Pendente / Pagas / Não pagas) seguida
         // dos itens agrupados por categoria. Não renderiza nada se a lista estiver vazia.
-        function appendHistorySection(items, label, colorCss, tbodyFrag, mobileFrag) {
+        function appendHistorySection(items, label, iconSvg, colorVar, tbodyFrag, mobileFrag) {
             if (!items.length) return;
             const total = items.reduce((s, t) => s + t.amount, 0);
+            const headerHtml = `
+                <div class="history-section-header">
+                    <span class="icon-badge" style="background:rgb(var(${colorVar}) / .14); color:rgb(var(${colorVar}))">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:13px;height:13px">${iconSvg}</svg>
+                    </span>
+                    <span class="label">${label}</span>
+                    <span class="count-badge">${items.length}</span>
+                    <span class="meta">${formatCurrency(total)}</span>
+                </div>`;
 
             const headerTr = document.createElement('tr');
-            headerTr.innerHTML = `<td colspan="6">
-                <div class="history-section-header">
-                    <span class="dot" style="background:${colorCss}"></span>
-                    <span class="label" style="color:${colorCss}">${label}</span>
-                    <span class="meta">${items.length} · ${formatCurrency(total)}</span>
-                </div>
-            </td>`;
+            headerTr.innerHTML = `<td colspan="6">${headerHtml}</td>`;
             tbodyFrag.appendChild(headerTr);
 
             const headerDiv = document.createElement('div');
-            headerDiv.innerHTML = `<div class="history-section-header">
-                <span class="dot" style="background:${colorCss}"></span>
-                <span class="label" style="color:${colorCss}">${label}</span>
-                <span class="meta">${items.length} · ${formatCurrency(total)}</span>
-            </div>`;
+            headerDiv.innerHTML = headerHtml;
             mobileFrag.appendChild(headerDiv.firstElementChild);
 
             appendCategoryGroupedRows(items, tbodyFrag, mobileFrag);
@@ -1086,7 +1091,6 @@
                     const safeDesc = escapeHtml(cleanDesc);
                     const safeUserName = escapeHtml(userName);
                     const accentColor = getTransactionAccentColor(t);
-                    const rowBg = `linear-gradient(90deg, ${hexToRgba(accentColor, 0.16)}, ${hexToRgba(accentColor, 0.035)})`;
                     const bucket = getPaymentBucket(t);
                     const statusPill = bucket === 'paid'
                         ? '<span class="debt-status-pill paid">Pago</span>'
@@ -1107,9 +1111,8 @@
                     
                     // Desktop table row
                     const tr = document.createElement('tr');
-                    tr.className = `group hover:bg-zinc-900/[0.02] dark:hover:bg-white/[0.02] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
-                    tr.style.background = rowBg;
-                    tr.style.borderLeft = `3px solid ${accentColor}`;
+                    tr.className = `group history-row hover:bg-zinc-900/[0.025] dark:hover:bg-white/[0.03] transition-colors${hasGroup ? ' cat-sub-row' : ''}`;
+                    tr.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
                     tr.innerHTML = `
                         <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}${lateNote}</td>
                         ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
@@ -1125,10 +1128,8 @@
                     
                     // Mobile card
                     const card = document.createElement('div');
-                    card.className = `bg-zinc-900/[0.025] dark:bg-white/[0.03] border border-zinc-900/8 dark:border-white/5 rounded-xl p-4 hover:border-zinc-900/10 dark:hover:border-white/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
-                    card.style.background = rowBg;
-                    card.style.borderColor = hexToRgba(accentColor, 0.30);
-                    card.style.borderLeft = `3px solid ${accentColor}`;
+                    card.className = `history-row bg-zinc-900/[0.02] dark:bg-white/[0.025] border border-zinc-900/8 dark:border-white/5 rounded-xl p-4 hover:border-zinc-900/12 dark:hover:border-white/10 transition-colors${hasGroup ? ' cat-sub-card' : ''}`;
+                    card.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
                     card.innerHTML = `
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1 min-w-0">

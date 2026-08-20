@@ -333,38 +333,38 @@
 
         /* Category grouping in history */
         .cat-group-header {
-            background: rgb(var(--c-accent) / 0.08);
-            border-left: 3px solid rgb(var(--c-accent));
+            background: rgb(var(--c-accent) / 0.055);
+            border-left: 2px solid rgb(var(--c-accent) / 0.5);
         }
         .cat-group-header td {
-            padding: 8px 12px;
+            padding: 7px 12px 7px 22px;
             font-family: 'Outfit', sans-serif;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             color: rgb(var(--c-accent-text));
-            letter-spacing: 0.02em;
+            letter-spacing: 0.015em;
         }
         .cat-sub-row td {
-            padding-left: 28px;
+            padding-left: 34px;
         }
         .cat-sub-row .cat-sub-date {
             font-size: 11px;
             color: rgb(var(--c-text-faint));
         }
         .cat-group-card-header {
-            background: rgb(var(--c-accent) / 0.06);
-            border-left: 3px solid rgb(var(--c-accent));
-            padding: 8px 12px;
+            background: rgb(var(--c-accent) / 0.05);
+            border-left: 2px solid rgb(var(--c-accent) / 0.5);
+            padding: 7px 12px 7px 16px;
             font-family: 'Outfit', sans-serif;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             color: rgb(var(--c-accent-text));
             border-radius: 8px 8px 0 0;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.015em;
         }
         .cat-sub-card {
-            margin-left: 12px;
-            border-left: 2px solid rgb(var(--c-accent) / 0.2);
+            margin-left: 14px;
+            border-left: 2px solid rgb(var(--c-accent) / 0.18);
             border-radius: 0 0 8px 8px;
         }
         .cat-sub-card:last-child {
@@ -578,42 +578,69 @@
         .debt-status-pill {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            padding: 3px 7px;
+            gap: 4px;
+            padding: 2.5px 8px;
             border-radius: 999px;
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 700;
-            border: 1px solid rgb(var(--c-overlay) / .08);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border: 1px solid transparent;
+            vertical-align: middle;
         }
-        .debt-status-pill.paid { color:rgb(var(--c-pill-paid-text)); background:rgb(var(--c-primary) / .12); border-color:rgb(var(--c-primary) / .25); }
-        .debt-status-pill.unpaid { color:rgb(var(--c-pill-unpaid-text)); background:rgb(var(--c-danger) / .12); border-color:rgb(var(--c-danger) / .25); }
-        .debt-status-pill.pending { color:rgb(var(--c-warning)); background:rgb(var(--c-warning) / .12); border-color:rgb(var(--c-warning) / .25); }
+        .debt-status-pill.paid { color:rgb(var(--c-pill-paid-text)); background:rgb(var(--c-primary) / .10); }
+        .debt-status-pill.unpaid { color:rgb(var(--c-pill-unpaid-text)); background:rgb(var(--c-danger) / .10); }
+        .debt-status-pill.pending { color:rgb(var(--c-warning)); background:rgb(var(--c-warning) / .10); }
         .debt-status-btn.pending.active {
             color: #fff;
             background: rgb(var(--c-warning));
             box-shadow: 0 0 18px rgb(var(--c-warning) / .28);
         }
+
+        /* Seções do histórico: Pendente / Contas pagas / Contas não pagas */
         .history-section-header {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 14px 2px 8px;
+            gap: 9px;
+            padding: 20px 2px 11px;
+            margin-bottom: 2px;
+            border-bottom: 1px solid rgb(var(--c-overlay) / 0.06);
         }
-        .history-section-header .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
+        tr:first-child .history-section-header,
+        .transaction-card > .history-section-header:first-child {
+            padding-top: 2px;
+        }
+        .history-section-header .icon-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
         }
         .history-section-header .label {
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12.5px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: rgb(var(--c-text-strong));
+        }
+        .history-section-header .count-badge {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: rgb(var(--c-text-faint));
+            background: rgb(var(--c-overlay) / 0.05);
+            border-radius: 999px;
+            padding: 1px 7px;
+            font-variant-numeric: tabular-nums;
         }
         .history-section-header .meta {
-            font-size: 11px;
-            color: rgb(var(--c-text-faint));
+            margin-left: auto;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgb(var(--c-text-soft));
+            font-variant-numeric: tabular-nums;
         }
         .unpaid-last-month-note {
             display: flex;
