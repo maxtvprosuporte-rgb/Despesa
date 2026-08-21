@@ -34,6 +34,10 @@
         let householdMemberCount = 1;
         let householdMembers = [];
         let householdCreatedBy = null;
+        let savingsGoals = []; // metas de economia (pessoais, uma lista por usuário)
+        let savingsInstallments = []; // parcelas mensais de cada meta
+        let savingsInputMode = 'total'; // 'total' (valor total ÷ parcelas) | 'installment' (parcela × parcelas)
+        let currentView = 'dashboard'; // 'dashboard' | 'goals'
 
         const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
 
@@ -210,6 +214,14 @@
         window.closeThemeModal = closeThemeModal;
         window.setTheme = setTheme;
         window.onFilterTypeChange = onFilterTypeChange;
+        window.switchView = switchView;
+        window.openGoalModal = openGoalModal;
+        window.closeGoalModal = closeGoalModal;
+        window.setSavingsInputMode = setSavingsInputMode;
+        window.updateGoalPreview = updateGoalPreview;
+        window.handleGoalSubmit = handleGoalSubmit;
+        window.deleteSavingsGoal = deleteSavingsGoal;
+        window.markSavingsInstallment = markSavingsInstallment;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
@@ -512,7 +524,13 @@
 
                 const txSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'transactions')));
                 transactions = txSnap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
-                
+
+                const goalsSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'savingsGoals')));
+                savingsGoals = goalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                const instSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'savingsInstallments')));
+                savingsInstallments = instSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
                 showToast(`Erro ao carregar: ${error.message}`, 'error');
@@ -730,6 +748,29 @@
             await Promise.all(promises);
         }
 
+        // ── Metas de economia ──
+        async function saveSavingsGoal(goal) {
+            if (!currentUser || !householdCode) throw new Error('Usuário ou casa não configurados');
+            const { id, ...data } = goal;
+            await withTimeout(setDoc(doc(db, 'households', householdCode, 'savingsGoals', String(id)), data));
+        }
+
+        async function deleteSavingsGoalFromFirestore(id) {
+            if (!currentUser || !householdCode) return;
+            await withTimeout(fsDeleteDoc(doc(db, 'households', householdCode, 'savingsGoals', String(id))));
+        }
+
+        async function saveSavingsInstallment(inst) {
+            if (!currentUser || !householdCode) throw new Error('Usuário ou casa não configurados');
+            const { id, ...data } = inst;
+            await withTimeout(setDoc(doc(db, 'households', householdCode, 'savingsInstallments', String(id)), data));
+        }
+
+        async function deleteSavingsInstallmentFromFirestore(id) {
+            if (!currentUser || !householdCode) return;
+            await withTimeout(fsDeleteDoc(doc(db, 'households', householdCode, 'savingsInstallments', String(id))));
+        }
+
         function initApp() {
             const monthInput = document.getElementById('monthFilter');
             monthInput.value = currentMonth;
@@ -852,6 +893,19 @@
             const [y, m] = monthStr.split('-').map(Number);
             const d = new Date(y, m - 2, 1); // m é 1-indexado; m-2 -> mês anterior (0-indexado)
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        }
+
+        // Calcula o mês seguinte a partir de um "YYYY-MM"
+        function getNextMonthStr(monthStr) {
+            const [y, m] = monthStr.split('-').map(Number);
+            const d = new Date(y, m, 1); // m já é o índice do próximo mês (1-indexado = mês seguinte 0-indexado)
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        }
+
+        function addMonthsToStr(monthStr, count) {
+            let m = monthStr;
+            for (let i = 0; i < count; i++) m = getNextMonthStr(m);
+            return m;
         }
 
         // Compara o saldo (Receita - Despesa) do mês atual com o mês anterior.
@@ -2025,6 +2079,313 @@
                 console.error('Error deleting:', error);
                 showToast(`Erro ao excluir: ${error.message}`, 'error');
             }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // METAS DE ECONOMIA ("Guardar Dinheiro")
+        // ══════════════════════════════════════════════════════════
+        // Cada usuário tem suas próprias metas. Uma meta tem N parcelas mensais
+        // fixas (geradas todas de uma vez na criação). Ao marcar uma parcela como
+        // "Não guardei", ela é empurrada um mês pra frente, adiando o fim da meta.
+
+        function switchView(view) {
+            currentView = view;
+            const dashboardView = document.getElementById('dashboardView');
+            const goalsView = document.getElementById('goalsView');
+            const tabDashboard = document.getElementById('viewTabDashboard');
+            const tabGoals = document.getElementById('viewTabGoals');
+            if (view === 'goals') {
+                dashboardView.classList.add('hidden');
+                goalsView.classList.remove('hidden');
+                tabDashboard.classList.remove('view-tab-active');
+                tabGoals.classList.add('view-tab-active');
+                renderGoalsView();
+            } else {
+                dashboardView.classList.remove('hidden');
+                goalsView.classList.add('hidden');
+                tabGoals.classList.remove('view-tab-active');
+                tabDashboard.classList.add('view-tab-active');
+            }
+        }
+
+        function getUserSavingsGoals() {
+            const uid = currentUser?.uid;
+            return savingsGoals.filter(g => g.userId === uid).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+        }
+
+        function getGoalInstallments(goalId) {
+            return savingsInstallments
+                .filter(i => i.goalId === goalId)
+                .sort((a, b) => a.installmentNum - b.installmentNum);
+        }
+
+        function getGoalProgress(goalId) {
+            const items = getGoalInstallments(goalId);
+            const saved = items.filter(i => i.status === 'saved');
+            const savedAmount = saved.reduce((s, i) => s + i.amount, 0);
+            const totalAmount = items.reduce((s, i) => s + i.amount, 0);
+            const pct = totalAmount > 0 ? (savedAmount / totalAmount) * 100 : 0;
+            return { savedAmount, totalAmount, pct, savedCount: saved.length, totalCount: items.length };
+        }
+
+        // ── Modal de criação ──
+        function openGoalModal() {
+            document.getElementById('goalForm').reset();
+            setSavingsInputMode('total');
+            document.getElementById('goalModal').style.display = 'block';
+            updateGoalPreview();
+        }
+        function closeGoalModal() {
+            document.getElementById('goalModal').style.display = 'none';
+        }
+
+        function setSavingsInputMode(mode) {
+            savingsInputMode = mode;
+            const isTotal = mode === 'total';
+            document.getElementById('goalModeTotalBtn').classList.toggle('goal-mode-active', isTotal);
+            document.getElementById('goalModeInstallmentBtn').classList.toggle('goal-mode-active', !isTotal);
+            document.getElementById('goalTotalAmountField').classList.toggle('hidden', !isTotal);
+            document.getElementById('goalInstallmentAmountField').classList.toggle('hidden', isTotal);
+            updateGoalPreview();
+        }
+
+        function updateGoalPreview() {
+            const installments = parseInt(document.getElementById('goalInstallments').value, 10) || 0;
+            const previewEl = document.getElementById('goalPreview');
+            if (!installments) { previewEl.textContent = ''; return; }
+
+            if (savingsInputMode === 'total') {
+                const total = parseFloat(document.getElementById('goalTotalAmount').value) || 0;
+                if (!total) { previewEl.textContent = ''; return; }
+                const perInstallment = total / installments;
+                previewEl.textContent = `≈ ${formatCurrency(perInstallment)} por mês, durante ${installments} ${installments === 1 ? 'mês' : 'meses'}`;
+            } else {
+                const perInstallment = parseFloat(document.getElementById('goalInstallmentAmount').value) || 0;
+                if (!perInstallment) { previewEl.textContent = ''; return; }
+                const total = perInstallment * installments;
+                previewEl.textContent = `Meta final: ${formatCurrency(total)}, em ${installments} ${installments === 1 ? 'mês' : 'meses'}`;
+            }
+        }
+
+        async function handleGoalSubmit(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const title = (fd.get('title') || '').toString().trim();
+            const installments = parseInt(fd.get('installments'), 10);
+
+            if (!title) { showToast('Dê um nome pra sua meta', 'error'); return; }
+            if (!installments || installments < 1) { showToast('Informe a quantidade de parcelas', 'error'); return; }
+
+            let installmentAmount;
+            if (savingsInputMode === 'total') {
+                const total = parseFloat(fd.get('totalAmount'));
+                if (!total || total <= 0) { showToast('Informe o valor total da meta', 'error'); return; }
+                installmentAmount = Math.round((total / installments) * 100) / 100;
+            } else {
+                installmentAmount = parseFloat(fd.get('installmentAmount'));
+                if (!installmentAmount || installmentAmount <= 0) { showToast('Informe o valor da parcela', 'error'); return; }
+            }
+
+            const goalId = Date.now();
+            const goal = {
+                id: goalId,
+                userId: currentUser.uid,
+                userName: getMyDisplayName(),
+                title,
+                installmentAmount,
+                totalInstallments: installments,
+                totalAmount: Math.round(installmentAmount * installments * 100) / 100,
+                createdAt: new Date().toISOString(),
+                startMonth: currentMonth
+            };
+
+            try {
+                savingsGoals.push(goal);
+                await saveSavingsGoal(goal);
+
+                for (let i = 0; i < installments; i++) {
+                    const inst = {
+                        id: goalId + 1 + i,
+                        goalId: goalId,
+                        userId: currentUser.uid,
+                        installmentNum: i + 1,
+                        amount: installmentAmount,
+                        month: addMonthsToStr(currentMonth, i),
+                        status: 'pending'
+                    };
+                    savingsInstallments.push(inst);
+                    await saveSavingsInstallment(inst);
+                }
+
+                closeGoalModal();
+                renderGoalsView();
+                showToast('Meta criada! Vamos guardar esse dinheiro 💰');
+            } catch (error) {
+                console.error('Erro ao criar meta:', error);
+                showToast(`Erro ao criar meta: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteSavingsGoal(goalId) {
+            if (!confirm('Excluir esta meta e todas as suas parcelas?')) return;
+            try {
+                const items = getGoalInstallments(goalId);
+                for (const i of items) {
+                    savingsInstallments = savingsInstallments.filter(x => x.id !== i.id);
+                    await deleteSavingsInstallmentFromFirestore(i.id);
+                }
+                savingsGoals = savingsGoals.filter(g => g.id !== goalId);
+                await deleteSavingsGoalFromFirestore(goalId);
+                renderGoalsView();
+                showToast('Meta excluída');
+            } catch (error) {
+                console.error('Erro ao excluir meta:', error);
+                showToast(`Erro ao excluir: ${error.message}`, 'error');
+            }
+        }
+
+        // Marca uma parcela como guardada ou não guardada.
+        // "Não guardei" empurra essa parcela pro mês seguinte (criando uma nova
+        // parcela pendente lá), adiando o fim da meta.
+        async function markSavingsInstallment(instId, status) {
+            const inst = savingsInstallments.find(i => i.id === instId);
+            if (!inst) return;
+
+            try {
+                if (status === 'saved') {
+                    inst.status = 'saved';
+                    inst.savedAt = new Date().toISOString();
+                    await saveSavingsInstallment(inst);
+                } else {
+                    inst.status = 'not_saved';
+                    await saveSavingsInstallment(inst);
+
+                    // Empurra essa parcela pro mês seguinte (livre, sem colidir
+                    // com outra parcela já agendada)
+                    let pushedMonth = getNextMonthStr(inst.month);
+                    const items = getGoalInstallments(inst.goalId);
+                    const occupied = new Set(items.filter(i => i.status !== 'not_saved' && i.id !== inst.id).map(i => i.month));
+                    while (occupied.has(pushedMonth)) pushedMonth = getNextMonthStr(pushedMonth);
+
+                    const newInst = {
+                        id: Date.now(),
+                        goalId: inst.goalId,
+                        userId: inst.userId,
+                        installmentNum: items.length + 1,
+                        amount: inst.amount,
+                        month: pushedMonth,
+                        status: 'pending',
+                        pushedFromMonth: inst.month
+                    };
+                    savingsInstallments.push(newInst);
+                    await saveSavingsInstallment(newInst);
+                }
+                renderGoalsView();
+            } catch (error) {
+                console.error('Erro ao marcar parcela:', error);
+                showToast(`Erro: ${error.message}`, 'error');
+            }
+        }
+
+        // ── Renderização da aba "Metas" ──
+        function renderGoalsView() {
+            const container = document.getElementById('goalsList');
+            const emptyState = document.getElementById('goalsEmptyState');
+            const goals = getUserSavingsGoals();
+
+            if (!goals.length) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            container.innerHTML = goals.map(goal => renderGoalCard(goal)).join('');
+        }
+
+        function renderGoalCard(goal) {
+            const progress = getGoalProgress(goal.id);
+            const items = getGoalInstallments(goal.id);
+            const pctDisplay = Math.min(100, progress.pct).toFixed(0);
+            const isComplete = progress.savedCount === progress.totalCount && progress.totalCount > 0;
+
+            const installmentsHtml = items.map(item => {
+                const isFuture = item.month > currentMonth;
+                const monthLabel = formatMonthLabel(item.month);
+
+                let statusHtml;
+                if (item.status === 'saved') {
+                    statusHtml = '<span class="debt-status-pill paid">Guardei</span>';
+                } else if (item.status === 'not_saved') {
+                    statusHtml = '<span class="debt-status-pill unpaid">Não guardei</span>';
+                } else if (isFuture) {
+                    statusHtml = '<span class="debt-status-pill pending">Futura</span>';
+                } else {
+                    statusHtml = '<span class="debt-status-pill pending">Pendente</span>';
+                }
+
+                const canAct = item.status === 'pending' && !isFuture;
+                const actionsHtml = canAct ? `
+                    <span class="debt-status-actions">
+                        <button onclick="markSavingsInstallment(${item.id}, 'saved')" class="debt-status-btn paid" title="Marcar como guardado">Guardei</button>
+                        <button onclick="markSavingsInstallment(${item.id}, 'not_saved')" class="debt-status-btn unpaid" title="Marcar como não guardado">Não guardei</button>
+                    </span>` : '';
+
+                const pushedNote = item.pushedFromMonth
+                    ? `<div class="unpaid-last-month-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m0 3.75h.007v.008H12v-.008zM10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.4h17.16a1.5 1.5 0 001.31-2.36L13.71 3.86a1.5 1.5 0 00-2.42 0z"></path></svg>Empurrada de ${formatMonthLabel(item.pushedFromMonth)}</div>`
+                    : '';
+
+                return `
+                    <div class="cat-item-row goal-installment-row${isFuture ? ' goal-installment-future' : ''}">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm capitalize">${monthLabel} ${statusHtml}</p>
+                                ${pushedNote}
+                            </div>
+                            <span class="font-semibold text-sm text-primary ml-3 whitespace-nowrap">${formatCurrency(item.amount)}</span>
+                        </div>
+                        ${actionsHtml ? `<div class="flex justify-end">${actionsHtml}</div>` : ''}
+                    </div>`;
+            }).join('');
+
+            return `
+                <div class="glass-panel rounded-xl sm:rounded-2xl p-4 sm:p-6 animate-fade-in relative overflow-hidden">
+                    <div class="flex items-start justify-between gap-3 mb-4">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h3 class="font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 truncate">${escapeHtml(goal.title)}</h3>
+                                ${isComplete ? '<span class="debt-status-pill paid">Concluída 🎉</span>' : ''}
+                            </div>
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">${formatCurrency(goal.installmentAmount)}/mês · ${goal.totalInstallments} ${goal.totalInstallments === 1 ? 'parcela' : 'parcelas'}</p>
+                        </div>
+                        <button onclick="deleteSavingsGoal(${goal.id})" class="text-zinc-400 hover:text-danger transition-colors p-1 flex-shrink-0" title="Excluir meta">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+
+                    <div class="mb-1 flex items-baseline justify-between gap-2">
+                        <span class="font-display text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-50">${formatCurrency(progress.savedAmount)}</span>
+                        <span class="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">de ${formatCurrency(progress.totalAmount)}</span>
+                    </div>
+                    <div class="goal-progress-track mb-1">
+                        <div class="goal-progress-fill" style="width:${Math.min(100, progress.pct)}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-semibold text-primary">${pctDisplay}% da meta</span>
+                        <span class="text-xs text-zinc-500 dark:text-zinc-400">${progress.savedCount}/${progress.totalCount} parcelas guardadas</span>
+                    </div>
+
+                    <details class="goal-installments-details">
+                        <summary class="text-xs font-semibold text-accent cursor-pointer select-none">Ver parcelas mês a mês</summary>
+                        <div class="mt-3 space-y-2">${installmentsHtml}</div>
+                    </details>
+                </div>`;
+        }
+
+        function formatMonthLabel(monthStr) {
+            const [y, m] = monthStr.split('-').map(Number);
+            const d = new Date(y, m - 1, 1);
+            return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
         }
 
         async function clearAllData() {

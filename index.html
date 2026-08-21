@@ -192,6 +192,21 @@
         </div>
     </header>
 
+    <!-- View Tabs: Dashboard / Metas de Economia -->
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6">
+        <div class="view-tabs">
+            <button id="viewTabDashboard" onclick="switchView('dashboard')" class="view-tab view-tab-active">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Dashboard
+            </button>
+            <button id="viewTabGoals" onclick="switchView('goals')" class="view-tab">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 2c-1.11 0-2.08.402-2.599 1M12 16v2m0-2c1.11 0 2.08-.402 2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Guardar Dinheiro
+            </button>
+        </div>
+    </div>
+
+    <div id="dashboardView">
     <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-8 space-y-3 sm:space-y-6">
         
         <!-- Month Filter & Export/Import -->
@@ -413,6 +428,83 @@
             </div>
         </div>
     </main>
+    </div><!-- end dashboardView -->
+
+    <!-- GOALS VIEW: "Guardar Dinheiro" -->
+    <div id="goalsView" class="hidden">
+        <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-8 space-y-3 sm:space-y-6">
+
+            <div class="flex items-center justify-between gap-3 flex-wrap animate-fade-in">
+                <div>
+                    <h2 class="font-display text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-50">Guardar Dinheiro</h2>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm mt-0.5">Defina uma meta, divida em parcelas mensais e acompanhe quanto já guardou.</p>
+                </div>
+                <button onclick="openGoalModal()" class="bg-accent hover:bg-accent/90 text-white px-3 sm:px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-accent/20 flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Nova meta
+                </button>
+            </div>
+
+            <div id="goalsList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+
+            <div id="goalsEmptyState" class="hidden py-16 text-center text-zinc-500 dark:text-zinc-400">
+                <svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 2c-1.11 0-2.08.402-2.599 1M12 16v2m0-2c1.11 0 2.08-.402 2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p>Você ainda não tem nenhuma meta de economia.</p>
+                <button onclick="openGoalModal()" class="mt-2 text-accent hover:underline text-sm">Criar minha primeira meta</button>
+            </div>
+
+        </main>
+    </div><!-- end goalsView -->
+
+    <!-- New Savings Goal Modal -->
+    <div id="goalModal" style="display:none;position:fixed;inset:0;z-index:9999;">
+        <div onclick="closeGoalModal()" style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;" class="modal-container">
+            <div style="background:rgb(var(--c-surface) / var(--glass-alpha-modal));backdrop-filter:blur(var(--glass-blur-modal));width:100%;max-width:420px;max-height:85vh;overflow-y:auto;border:1px solid rgb(var(--c-overlay) / 0.1);box-shadow:0 4px 24px rgba(0,0,0,0.3);border-radius:12px;" class="modal-panel">
+                <div style="position:sticky;top:0;background:rgb(var(--c-surface) / var(--glass-alpha-modal-header));padding:12px 16px;border-bottom:1px solid rgb(var(--c-overlay) / 0.05);display:flex;align-items:center;justify-content:space-between;z-index:10;">
+                    <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:rgb(var(--c-text-strong));margin:0;">Nova meta de economia</h3>
+                    <button onclick="closeGoalModal()" style="background:none;border:none;color:rgb(var(--c-text-faint));cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                        <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="goalForm" onsubmit="handleGoalSubmit(event)" style="padding:16px;">
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Nome da meta</label>
+                        <input type="text" name="title" required placeholder="Ex: Viagem, reserva de emergência..." class="form-input">
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Como você quer planejar?</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <button type="button" id="goalModeTotalBtn" onclick="setSavingsInputMode('total')" class="goal-mode-btn goal-mode-active">Tenho um valor total</button>
+                            <button type="button" id="goalModeInstallmentBtn" onclick="setSavingsInputMode('installment')" class="goal-mode-btn">Sei quanto guardo/mês</button>
+                        </div>
+                    </div>
+
+                    <div id="goalTotalAmountField" style="margin-bottom:14px;">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Valor total da meta</label>
+                        <input type="number" step="0.01" min="0" name="totalAmount" id="goalTotalAmount" oninput="updateGoalPreview()" placeholder="0,00" class="form-input">
+                    </div>
+                    <div id="goalInstallmentAmountField" class="hidden" style="margin-bottom:14px;">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Valor que consigo guardar por mês</label>
+                        <input type="number" step="0.01" min="0" name="installmentAmount" id="goalInstallmentAmount" oninput="updateGoalPreview()" placeholder="0,00" class="form-input">
+                    </div>
+
+                    <div style="margin-bottom:6px;">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Em quantas parcelas (meses)</label>
+                        <input type="number" step="1" min="1" name="installments" id="goalInstallments" oninput="updateGoalPreview()" placeholder="Ex: 12" class="form-input">
+                    </div>
+
+                    <p id="goalPreview" style="font-size:12px;font-weight:600;color:rgb(var(--c-accent-text));min-height:16px;margin:8px 0 4px;"></p>
+
+                    <div style="display:flex;gap:10px;padding-top:10px;">
+                        <button type="button" onclick="closeGoalModal()" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgb(var(--c-overlay) / 0.1);background:none;color:rgb(var(--c-text-soft));font-weight:500;font-size:13px;cursor:pointer;">Cancelar</button>
+                        <button type="submit" style="flex:1;padding:10px;border-radius:8px;border:none;background:rgb(var(--c-accent));color:#fff;font-weight:500;font-size:13px;cursor:pointer;">Criar meta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Add Transaction Modal -->
     <div id="transactionModal" style="display:none;position:fixed;inset:0;z-index:9999;">

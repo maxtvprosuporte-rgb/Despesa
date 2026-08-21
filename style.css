@@ -827,3 +827,97 @@
             white-space: nowrap;
         }
         .member-remove-btn:hover { background: rgb(var(--c-danger) / 0.2); }
+
+        /* ══════════════════════════════════════════════
+           Abas de visão (Dashboard / Guardar Dinheiro)
+           ══════════════════════════════════════════════ */
+        .view-tabs {
+            display: inline-flex;
+            gap: 4px;
+            padding: 4px;
+            background: rgb(var(--c-overlay) / 0.04);
+            border: 1px solid rgb(var(--c-overlay) / 0.06);
+            border-radius: 12px;
+        }
+        .view-tab {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 14px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            color: rgb(var(--c-text-faint));
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .view-tab:hover { color: rgb(var(--c-text-strong)); }
+        .view-tab-active {
+            background: rgb(var(--c-surface));
+            color: rgb(var(--c-accent-text));
+            box-shadow: 0 1px 3px rgb(var(--c-overlay) / 0.1);
+        }
+
+        /* Metas de economia */
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            background: rgb(var(--c-input-bg));
+            border: 1px solid rgb(var(--c-overlay) / 0.1);
+            color: rgb(var(--c-text-strong));
+            box-sizing: border-box;
+        }
+        .goal-mode-btn {
+            text-align: center;
+            padding: 9px 8px;
+            border-radius: 8px;
+            border: 1px solid rgb(var(--c-overlay) / 0.1);
+            background: transparent;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgb(var(--c-text-soft));
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .goal-mode-active {
+            border-color: rgb(var(--c-accent) / 0.5);
+            background: rgb(var(--c-accent) / 0.1);
+            color: rgb(var(--c-accent-text));
+        }
+        .goal-progress-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: rgb(var(--c-overlay) / 0.06);
+            overflow: hidden;
+        }
+        .goal-progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgb(var(--c-primary)), rgb(var(--c-primary) / 0.7));
+            transition: width .4s ease;
+        }
+        .goal-installments-details summary::-webkit-details-marker { display: none; }
+        .goal-installments-details summary { list-style: none; }
+        .goal-installments-details summary::before {
+            content: '▸';
+            display: inline-block;
+            margin-right: 5px;
+            transition: transform .15s;
+        }
+        .goal-installments-details[open] summary::before {
+            transform: rotate(90deg);
+        }
+        .goal-installment-row {
+            border-radius: 10px;
+            border: 1px solid rgb(var(--c-overlay) / 0.06);
+            border-top: 1px solid rgb(var(--c-overlay) / 0.06) !important;
+        }
+        .goal-installment-future {
+            opacity: 0.55;
+        }
