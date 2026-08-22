@@ -1474,6 +1474,9 @@
         // Gráfico único: despesas em barras empilhadas por categoria (mostra a
         // composição) + receita como linha sobreposta (mostra a evolução) —
         // tudo junto, sem precisar de dois gráficos separados.
+        // Gráfico único: uma linha por categoria de despesa, mostrando a evolução
+        // de cada categoria ao longo do tempo. Sem receita/despesa total — só as
+        // categorias.
         function renderCombinedChart(ctx) {
             const viewMode = document.getElementById('chartViewMode').value;
             const filtered = getChartTransactions();
@@ -1491,62 +1494,46 @@
                 groupingFn = (t) => new Date(t.date).getMonth();
             }
 
-            const incomeByBucket = Array.from({ length: labels.length }, () => 0);
             const categoryBuckets = {};
-
             filtered.forEach(t => {
+                if (t.type !== 'expense') return;
                 const bucket = groupingFn(t);
                 if (bucket < 0 || bucket >= labels.length) return;
-                if (t.type === 'income') {
-                    incomeByBucket[bucket] += t.amount;
-                } else if (t.type === 'expense') {
-                    if (!categoryBuckets[t.category]) categoryBuckets[t.category] = Array.from({ length: labels.length }, () => 0);
-                    categoryBuckets[t.category][bucket] += t.amount;
-                }
+                if (!categoryBuckets[t.category]) categoryBuckets[t.category] = Array.from({ length: labels.length }, () => 0);
+                categoryBuckets[t.category][bucket] += t.amount;
             });
 
-            const hasData = incomeByBucket.some(v => v > 0) || Object.keys(categoryBuckets).length > 0;
-            if (!hasData) return;
+            if (Object.keys(categoryBuckets).length === 0) return;
 
-            // Categorias ordenadas da maior pra menor, cada uma vira uma "fatia"
-            // empilhada da barra de despesas
+            // Categorias ordenadas da maior pra menor
             const sortedEntries = Object.entries(categoryBuckets).sort((a, b) => {
                 const totalA = a[1].reduce((s, v) => s + v, 0);
                 const totalB = b[1].reduce((s, v) => s + v, 0);
                 return totalB - totalA;
             });
 
-            const barDatasets = sortedEntries.map(([category, values]) => ({
-                type: 'bar',
-                label: category,
-                data: values,
-                backgroundColor: getCategoryColor(category),
-                borderRadius: 4,
-                stack: 'despesas',
-                order: 2
-            }));
-
-            const incomeLine = {
-                type: 'line',
-                label: 'Receitas',
-                data: incomeByBucket,
-                borderColor: '#059669',
-                backgroundColor: 'rgba(5, 150, 105, 0.12)',
-                borderWidth: 2.5,
-                tension: 0.3,
-                fill: false,
-                pointBackgroundColor: '#059669',
-                pointBorderColor: '#059669',
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                order: 1
-            };
+            const datasets = sortedEntries.map(([category, values]) => {
+                const color = getCategoryColor(category);
+                return {
+                    label: category,
+                    data: values,
+                    borderColor: color,
+                    backgroundColor: hexToRgba(color, 0.1),
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: false,
+                    pointBackgroundColor: color,
+                    pointBorderColor: color,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                };
+            });
 
             expenseChartInstance = new Chart(ctx, {
-                type: 'bar',
+                type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [incomeLine, ...barDatasets]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -1585,12 +1572,10 @@
                     },
                     scales: {
                         x: {
-                            stacked: true,
                             grid: { color: chartGridColor(), drawBorder: false },
                             ticks: { color: chartTickColor(), font: { family: 'Plus Jakarta Sans', size: 11 } }
                         },
                         y: {
-                            stacked: true,
                             grid: { color: chartGridColor(), drawBorder: false },
                             ticks: {
                                 color: chartTickColor(),
