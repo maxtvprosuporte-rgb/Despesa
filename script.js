@@ -25,6 +25,7 @@
         let currentMonth = new Date().toISOString().slice(0, 7);
         let editingId = null;
         let expenseChartInstance = null;
+        let categoriesChartInstance = null;
         let currentUser = null;
         let householdCode = null;
         let chartFilter = 'all';
@@ -190,7 +191,6 @@
         window.handleTransactionSubmit = handleTransactionSubmit;
         window.setChartFilter = setChartFilter;
         window.onChartViewModeChange = onChartViewModeChange;
-        window.onChartTypeModeChange = onChartTypeModeChange;
         window.clearAllData = clearAllData;
         window.copyHouseholdCode = copyHouseholdCode;
         window.createNewHousehold = createNewHousehold;
@@ -1095,7 +1095,7 @@
             emptyState.classList.add('hidden');
 
             // Apply sort
-            const sortVal = document.getElementById('filterSort')?.value || 'date-desc';
+            const sortVal = document.getElementById('filterSort')?.value || 'amount-desc';
             const sortFn = (a, b) => {
                 if (sortVal === 'amount-desc') return b.amount - a.amount;
                 if (sortVal === 'amount-asc') return a.amount - b.amount;
@@ -1361,6 +1361,16 @@
         function populateUserFilter(transactionsList) {
             const select = document.getElementById('filterUser');
             if (!select) return;
+
+            // Só faz sentido mostrar o filtro de usuário quando a casa tem mais de
+            // 1 morador — com um usuário só, filtrar por usuário é redundante.
+            if (householdMemberCount <= 1) {
+                select.style.display = 'none';
+                select.value = 'all';
+                return;
+            }
+            select.style.display = '';
+
             const currentVal = select.value;
             const users = new Map();
             transactionsList.forEach(t => {
@@ -1380,7 +1390,7 @@
             const sortEl = document.getElementById('filterSort');
             const userEl = document.getElementById('filterUser');
             const typeEl = document.getElementById('filterType');
-            if (sortEl) sortEl.value = 'date-desc';
+            if (sortEl) sortEl.value = 'amount-desc';
             if (userEl) userEl.value = 'all';
             if (typeEl) typeEl.value = 'expense';
             try { localStorage.setItem('fincontrol_filterType', 'expense'); } catch (e) {}
@@ -1395,37 +1405,6 @@
         }
 
         function onChartViewModeChange() {
-            const viewMode = document.getElementById('chartViewMode').value;
-            const customSelectors = document.getElementById('customDateSelectors');
-            
-            // Show/hide custom date selectors
-            if (viewMode === 'custom') {
-                customSelectors.style.display = 'flex';
-                populateCustomYearSelector();
-            } else {
-                customSelectors.style.display = 'none';
-            }
-            
-            renderChart();
-        }
-
-        function onChartTypeModeChange() {
-            const chartTypeMode = document.getElementById('chartTypeMode').value;
-            const viewModeWrapper = document.getElementById('chartViewModeWrapper');
-            const customSelectors = document.getElementById('customDateSelectors');
-            
-            if (chartTypeMode === 'categories') {
-                // In categories mode, still show viewMode so user can pick period
-                viewModeWrapper.style.display = '';
-                customSelectors.style.display = 'none';
-                const viewMode = document.getElementById('chartViewMode').value;
-                if (viewMode === 'custom') customSelectors.style.display = 'flex';
-            } else {
-                viewModeWrapper.style.display = '';
-                const viewMode = document.getElementById('chartViewMode').value;
-                customSelectors.style.display = (viewMode === 'custom') ? 'flex' : 'none';
-            }
-            
             renderChart();
         }
 
@@ -1451,18 +1430,11 @@
                     const txDate = new Date(t.date);
                     return txDate.getFullYear() === year && txDate.getMonth() === month;
                 });
-            } else if (viewMode === 'year') {
+            } else { // 'year'
                 const year = new Date().getFullYear();
                 filtered = transactions.filter(t => {
                     const txDate = new Date(t.date);
                     return txDate.getFullYear() === year;
-                });
-            } else { // custom
-                const year = parseInt(document.getElementById('chartCustomYear').value);
-                const month = parseInt(document.getElementById('chartCustomMonth').value);
-                filtered = transactions.filter(t => {
-                    const txDate = new Date(t.date);
-                    return txDate.getFullYear() === year && txDate.getMonth() === month;
                 });
             }
             
@@ -1503,15 +1475,9 @@
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
                 labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
                 groupingFn = (t) => new Date(t.date).getDate() - 1;
-            } else if (viewMode === 'year') {
+            } else { // 'year'
                 labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                 groupingFn = (t) => new Date(t.date).getMonth();
-            } else { // custom
-                const year = parseInt(document.getElementById('chartCustomYear').value);
-                const month = parseInt(document.getElementById('chartCustomMonth').value);
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
-                groupingFn = (t) => new Date(t.date).getDate() - 1;
             }
             
             // Group transactions by category and by bucket
@@ -1549,7 +1515,7 @@
                 pointHoverRadius: 5
             }));
             
-            expenseChartInstance = new Chart(ctx, {
+            categoriesChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
@@ -1638,7 +1604,7 @@
                 incomeData = dailyData.map(d => d.income);
                 expenseData = dailyData.map(d => d.expense);
                 
-            } else if (viewMode === 'year') {
+            } else { // 'year'
                 let yearTransactions = getChartTransactions();
                 
                 const monthlyData = Array.from({ length: 12 }, () => ({ income: 0, expense: 0 }));
@@ -1654,27 +1620,6 @@
                 labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                 incomeData = monthlyData.map(d => d.income);
                 expenseData = monthlyData.map(d => d.expense);
-                
-            } else if (viewMode === 'custom') {
-                const year = parseInt(document.getElementById('chartCustomYear').value);
-                const month = parseInt(document.getElementById('chartCustomMonth').value);
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                
-                let monthTransactions = getChartTransactions();
-                
-                const dailyData = Array.from({ length: daysInMonth }, () => ({ income: 0, expense: 0 }));
-                monthTransactions.forEach(t => {
-                    const day = new Date(t.date).getDate() - 1;
-                    if (t.type === 'income') {
-                        dailyData[day].income += t.amount;
-                    } else if (t.type === 'expense') {
-                        dailyData[day].expense += t.amount;
-                    }
-                });
-                
-                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
-                incomeData = dailyData.map(d => d.income);
-                expenseData = dailyData.map(d => d.expense);
             }
             
             const hasData = incomeData.some(v => v > 0) || expenseData.some(v => v > 0);
@@ -1787,52 +1732,27 @@
             });
         }
 
-        function populateCustomYearSelector() {
-            const select = document.getElementById('chartCustomYear');
-            if (!select) return;
-            
-            const currentYear = new Date().getFullYear();
-            const years = new Set();
-            years.add(currentYear);
-            
-            // Get years from transactions
-            transactions.forEach(t => {
-                if (t.date) {
-                    const year = new Date(t.date).getFullYear();
-                    years.add(year);
-                }
-            });
-            
-            const sortedYears = Array.from(years).sort((a, b) => b - a);
-            select.innerHTML = sortedYears.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`).join('');
-            
-            // Set default month to current month
-            const currentMonth = new Date().getMonth();
-            document.getElementById('chartCustomMonth').value = currentMonth;
-        }
-
         function safeDestroyChart() {
-            const canvas = document.getElementById('expenseChart');
-            if (expenseChartInstance) {
-                expenseChartInstance.destroy();
-                expenseChartInstance = null;
-            }
-            const existing = Chart.getChart(canvas);
-            if (existing) existing.destroy();
-            const ctx2 = canvas.getContext('2d');
-            ctx2.clearRect(0, 0, canvas.width, canvas.height);
+            ['expenseChart', 'categoriesChart'].forEach(canvasId => {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                const existing = Chart.getChart(canvas);
+                if (existing) existing.destroy();
+                const ctx2 = canvas.getContext('2d');
+                ctx2.clearRect(0, 0, canvas.width, canvas.height);
+            });
+            expenseChartInstance = null;
+            categoriesChartInstance = null;
         }
 
+        // Mostra os dois gráficos juntos, sem alternância: Evolução (receita x
+        // despesa) e Por Categoria, ambos respeitando o mesmo período/filtro.
         function renderChart() {
             safeDestroyChart();
-            const ctx = document.getElementById('expenseChart').getContext('2d');
-            const chartTypeMode = document.getElementById('chartTypeMode').value;
-            
-            if (chartTypeMode === 'categories') {
-                renderCategoriesChart(ctx);
-            } else {
-                renderEvolutionChart(ctx);
-            }
+            const evolutionCtx = document.getElementById('expenseChart').getContext('2d');
+            const categoriesCtx = document.getElementById('categoriesChart').getContext('2d');
+            renderEvolutionChart(evolutionCtx);
+            renderCategoriesChart(categoriesCtx);
         }
 
         async function handleTransactionSubmit(e) {

@@ -340,39 +340,21 @@
                             <svg class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                             <span class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Filtros:</span>
                         </div>
-                        <select id="chartTypeMode" onchange="onChartTypeModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
-                            <option value="evolution">Evolução</option>
-                            <option value="categories">Categorias</option>
+                        <select id="chartViewMode" onchange="onChartViewModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
+                            <option value="month">Mês Atual</option>
+                            <option value="year" selected>Ano Inteiro</option>
                         </select>
-                        <div id="chartViewModeWrapper">
-                            <select id="chartViewMode" onchange="onChartViewModeChange()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
-                                <option value="month">Mês Atual</option>
-                                <option value="year">Ano Inteiro</option>
-                                <option value="custom">Período Personalizado</option>
-                            </select>
-                        </div>
                         <button onclick="setChartFilter('all')" id="chartFilterAll" class="chart-filter-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Casa</button>
                         <button onclick="setChartFilter('user')" id="chartFilterUser" class="chart-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all">Minhas</button>
-                        <div id="customDateSelectors" style="display:none" class="flex items-center gap-2">
-                            <select id="chartCustomMonth" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
-                                <option value="0">Janeiro</option>
-                                <option value="1">Fevereiro</option>
-                                <option value="2">Março</option>
-                                <option value="3">Abril</option>
-                                <option value="4">Maio</option>
-                                <option value="5">Junho</option>
-                                <option value="6">Julho</option>
-                                <option value="7">Agosto</option>
-                                <option value="8">Setembro</option>
-                                <option value="9">Outubro</option>
-                                <option value="10">Novembro</option>
-                                <option value="11">Dezembro</option>
-                            </select>
-                            <select id="chartCustomYear" onchange="renderChart()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors"></select>
-                        </div>
                     </div>
                     <div class="h-64 sm:h-80 w-full flex items-center justify-center">
                         <canvas id="expenseChart"></canvas>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-zinc-900/8 dark:border-white/5">
+                        <h4 class="font-display font-semibold text-sm text-zinc-700 dark:text-zinc-300 mb-3">Por Categoria</h4>
+                        <div class="h-64 sm:h-80 w-full flex items-center justify-center">
+                            <canvas id="categoriesChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 <div class="glass-panel rounded-2xl p-4 sm:p-6 animate-fade-in delay-400">
@@ -389,7 +371,7 @@
                         <select id="filterSort" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
                             <option value="date-desc">Mais recente</option>
                             <option value="date-asc">Mais antigo</option>
-                            <option value="amount-desc">Maior valor</option>
+                            <option value="amount-desc" selected>Maior valor</option>
                             <option value="amount-asc">Menor valor</option>
                         </select>
                         <select id="filterUser" onchange="updateUI()" class="text-xs px-2.5 py-1.5 rounded-lg bg-[rgb(var(--c-input-bg))] border border-zinc-900/10 dark:border-white/10 text-zinc-800 dark:text-zinc-100 cursor-pointer hover:border-zinc-900/15 dark:hover:border-white/20 transition-colors">
