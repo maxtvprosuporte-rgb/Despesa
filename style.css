@@ -928,3 +928,16 @@
         .goal-installment-future {
             opacity: 0.55;
         }
+
+        /* Dica de saldo disponível pra guardar uma parcela de meta */
+        .savings-balance-hint {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10.5px;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+        .savings-balance-hint.positive { color: rgb(var(--c-primary)); }
+        .savings-balance-hint.warning { color: rgb(var(--c-warning)); }
+        .savings-balance-hint.negative { color: rgb(var(--c-danger)); }

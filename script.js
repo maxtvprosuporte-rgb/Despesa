@@ -798,15 +798,97 @@
         // Todas as transações do mês (SEM excluir as "não pagas"), usada só no
         // Histórico, que precisa mostrar as 3 seções: Pendente / Pagas / Não pagas.
         // Os cálculos do dashboard continuam usando getFilteredTransactions().
+        // Também injeta as parcelas de metas de economia do usuário atual como
+        // itens de despesa "sintéticos" (dinheiro guardado = dinheiro reservado).
         function getMonthHistoryTransactions() {
-            return transactions.filter(t => t.date.startsWith(currentMonth));
+            const real = transactions.filter(t => t.date.startsWith(currentMonth));
+            return real.concat(getSavingsAsHistoryItems(currentMonth));
+        }
+
+        // Valor "efetivo" de uma parcela de meta pro cálculo de despesas/histórico:
+        // - pendente ou guardada: conta o valor cheio (já é considerado reservado)
+        // - parcial: conta só o que foi realmente guardado
+        // - não guardada: não conta nada esse mês (o valor foi todo empurrado pro próximo)
+        function getEffectiveSavingsAmount(inst) {
+            if (inst.status === 'partial') return inst.savedAmount || 0;
+            if (inst.status === 'not_saved') return 0;
+            return inst.amount; // 'pending' ou 'saved'
+        }
+
+        function getUserMonthSavingsInstallments(monthStr, uid) {
+            return savingsInstallments.filter(i => i.month === monthStr && i.userId === uid);
+        }
+
+        function getUserMonthSavingsTotal(monthStr, uid, excludeInstId = null) {
+            return getUserMonthSavingsInstallments(monthStr, uid)
+                .filter(i => i.id !== excludeInstId)
+                .reduce((s, i) => s + getEffectiveSavingsAmount(i), 0);
+        }
+
+        // Converte as parcelas de metas do usuário atual, no mês informado, em
+        // itens no formato de transação (pra reaproveitar toda a renderização do
+        // Histórico: seções Pendente/Pagas/Não pagas, agrupamento por categoria etc).
+        function getSavingsAsHistoryItems(monthStr) {
+            const uid = currentUser?.uid;
+            if (!uid) return [];
+            return getUserMonthSavingsInstallments(monthStr, uid).map(inst => {
+                const goal = savingsGoals.find(g => g.id === inst.goalId);
+                return {
+                    id: `sav_${inst.id}`,
+                    type: 'expense',
+                    amount: getEffectiveSavingsAmount(inst),
+                    category: 'Guardar Dinheiro',
+                    date: `${monthStr}-01`,
+                    description: goal ? goal.title : 'Meta de economia',
+                    userId: inst.userId,
+                    userName: getMyDisplayName(),
+                    isAnonymous: false,
+                    isSavingsInstallment: true,
+                    savingsInstId: inst.id,
+                    savingsStatus: inst.status,
+                    savingsFullAmount: inst.amount,
+                    savingsSavedAmount: inst.savedAmount,
+                    savingsPushedFromMonth: inst.pushedFromMonth
+                };
+            });
+        }
+
+        // Saldo disponível do usuário nesse mês, EXCLUINDO uma parcela de meta
+        // específica (usado pra avaliar se dá pra guardar aquela parcela ou não).
+        function getDisposableForInstallment(inst) {
+            const uid = inst.userId;
+            const monthTx = transactions.filter(t => t.date.startsWith(inst.month) && isVisibleMonthlyTransaction(t) && t.userId === uid);
+            const income = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+            const regularExpense = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            const otherSavings = getUserMonthSavingsTotal(inst.month, uid, inst.id);
+            return Math.round((income - regularExpense - otherSavings) * 100) / 100;
+        }
+
+        // Aviso de saldo pra uma parcela pendente/acionável: informa se sobra
+        // dinheiro suficiente esse mês, se só dá pra guardar uma parte, ou se o
+        // saldo está negativo (sem sobra nenhuma).
+        function renderSavingsBalanceHintHtml(inst) {
+            const disposable = getDisposableForInstallment(inst);
+            if (disposable >= inst.amount) {
+                return `<div class="savings-balance-hint positive"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Saldo positivo: sobram ${formatCurrency(disposable)} esse mês — dá pra guardar a parcela inteira</div>`;
+            } else if (disposable > 0) {
+                return `<div class="savings-balance-hint warning"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"></path></svg>Saldo insuficiente pro valor total — você tem ${formatCurrency(disposable)} disponível esse mês. Considere guardar um valor parcial.</div>`;
+            } else {
+                return `<div class="savings-balance-hint negative"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>Saldo negativo esse mês — sem sobra pra guardar essa parcela agora</div>`;
+            }
         }
 
         // Classifica uma despesa em 'pending' | 'paid' | 'unpaid'. Receitas retornam null
         // (não têm conceito de pago/não pago). Transações antigas sem paymentStatus
-        // definido são tratadas como pendentes por padrão.
+        // definido são tratadas como pendentes por padrão. Parcelas de metas de
+        // economia usam seu próprio status de 4 estados, mapeado pros 3 baldes.
         function getPaymentBucket(t) {
             if (t.type !== 'expense') return null;
+            if (t.isSavingsInstallment) {
+                if (t.savingsStatus === 'saved' || t.savingsStatus === 'partial') return 'paid';
+                if (t.savingsStatus === 'not_saved') return 'unpaid';
+                return 'pending';
+            }
             if (t.paymentStatus === 'paid') return 'paid';
             if (t.paymentStatus === 'unpaid') return 'unpaid';
             return 'pending';
@@ -844,7 +926,10 @@
             // User totals (only current user)
             const userTransactions = f.filter(t => t.userId === uid);
             const userIncome = userTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-            const userExpense = userTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+            // Parcelas de metas de economia entram como despesa: esse dinheiro já
+            // está reservado, então funciona como se tivesse sido gasto no mês.
+            const userSavingsTotal = uid ? getUserMonthSavingsTotal(currentMonth, uid) : 0;
+            const userExpense = userTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0) + userSavingsTotal;
 
             document.getElementById('houseIncome').textContent = formatCurrency(houseIncome);
             document.getElementById('houseExpense').textContent = formatCurrency(houseExpense);
@@ -1135,23 +1220,65 @@
                     const safeUserName = escapeHtml(userName);
                     const accentColor = getTransactionAccentColor(t);
                     const bucket = getPaymentBucket(t);
-                    const statusPill = bucket === 'paid'
-                        ? '<span class="debt-status-pill paid">Pago</span>'
-                        : bucket === 'unpaid'
-                            ? '<span class="debt-status-pill unpaid">Não pago</span>'
-                            : bucket === 'pending'
-                                ? '<span class="debt-status-pill pending">Pendente</span>'
-                                : '';
+                    const isSavings = !!t.isSavingsInstallment;
+
+                    let statusPill;
+                    if (isSavings) {
+                        statusPill = t.savingsStatus === 'saved' ? '<span class="debt-status-pill paid">Guardado</span>'
+                            : t.savingsStatus === 'partial' ? '<span class="debt-status-pill partial">Parcial</span>'
+                            : t.savingsStatus === 'not_saved' ? '<span class="debt-status-pill unpaid">Não guardado</span>'
+                            : '<span class="debt-status-pill pending">Pendente</span>';
+                    } else {
+                        statusPill = bucket === 'paid'
+                            ? '<span class="debt-status-pill paid">Pago</span>'
+                            : bucket === 'unpaid'
+                                ? '<span class="debt-status-pill unpaid">Não pago</span>'
+                                : bucket === 'pending'
+                                    ? '<span class="debt-status-pill pending">Pendente</span>'
+                                    : '';
+                    }
+
                     // Aviso quando a pendência veio de uma dívida não paga no mês anterior
-                    const lateNote = (bucket === 'pending' && t.createdFromUnpaidDebt)
+                    const lateNote = (!isSavings && bucket === 'pending' && t.createdFromUnpaidDebt)
                         ? `<div class="unpaid-last-month-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m0 3.75h.007v.008H12v-.008zM10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.4h17.16a1.5 1.5 0 001.31-2.36L13.71 3.86a1.5 1.5 0 00-2.42 0z"></path></svg>Dívida não paga no mês anterior</div>`
                         : '';
-                    const debtButtons = !isIncome ? `
+
+                    // Notas específicas de parcelas de meta de economia
+                    const savingsPushedNote = (isSavings && t.savingsPushedFromMonth)
+                        ? `<div class="unpaid-last-month-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m0 3.75h.007v.008H12v-.008zM10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.4h17.16a1.5 1.5 0 001.31-2.36L13.71 3.86a1.5 1.5 0 00-2.42 0z"></path></svg>Empurrada de ${formatMonthLabel(t.savingsPushedFromMonth)}</div>`
+                        : '';
+                    const savingsPartialNote = (isSavings && t.savingsStatus === 'partial')
+                        ? `<div class="unpaid-last-month-note partial-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Guardou ${formatCurrency(t.savingsSavedAmount)} de ${formatCurrency(t.savingsFullAmount)} — diferença ajustada nas próximas parcelas</div>`
+                        : '';
+                    const savingsBalanceNote = (isSavings && t.savingsStatus === 'pending')
+                        ? renderSavingsBalanceHintHtml(savingsInstallments.find(i => i.id === t.savingsInstId) || { id: t.savingsInstId, month: currentMonth, userId: t.userId, amount: t.savingsFullAmount })
+                        : '';
+                    const savingsNotes = savingsPushedNote + savingsPartialNote + savingsBalanceNote;
+
+                    const debtButtons = isSavings
+                        ? (t.savingsStatus === 'pending' ? `
+                            <span class="debt-status-actions">
+                                <button onclick="markSavingsInstallment(${t.savingsInstId}, 'saved')" class="debt-status-btn paid" title="Marcar como guardado">Guardei</button>
+                                <button onclick="openPartialSaveModal(${t.savingsInstId})" class="debt-status-btn partial" title="Guardei só uma parte">Parcial</button>
+                                <button onclick="markSavingsInstallment(${t.savingsInstId}, 'not_saved')" class="debt-status-btn unpaid" title="Marcar como não guardado">Não guardei</button>
+                            </span>` : '')
+                        : (!isIncome ? `
                             <span class="debt-status-actions">
                                 <button onclick="markDebtStatus(${t.id}, 'paid')" class="debt-status-btn paid ${bucket === 'paid' ? 'active' : ''}" title="Marcar como pago">Pago</button>
                                 <button onclick="markDebtStatus(${t.id}, 'unpaid')" class="debt-status-btn unpaid ${bucket === 'unpaid' ? 'active' : ''}" title="Marcar como não pago">Não pago</button>
-                            </span>` : '';
-                    
+                            </span>` : '');
+
+                    // Ícones de editar/excluir não se aplicam a parcelas de meta (elas são
+                    // geridas na aba "Guardar Dinheiro"); mostramos um atalho pra lá.
+                    const rowActionIcons = isSavings
+                        ? `<button onclick="switchView('goals')" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Ver meta"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>`
+                        : `<button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>`;
+                    const rowActionIconsMobile = isSavings
+                        ? `<button onclick="switchView('goals')" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Ver meta"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>`
+                        : `<button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>`;
+
                     // Desktop table row
                     const tr = document.createElement('tr');
                     tr.className = `group history-row hover:brightness-95 dark:hover:brightness-110 transition-colors${hasGroup ? ' cat-sub-row' : ''}${isLastInGroup ? ' cat-group-last' : ''}`;
@@ -1162,15 +1289,14 @@
                         tr.style.borderLeft = `2px solid ${hexToRgba(accentColor, 0.55)}`;
                     }
                     tr.innerHTML = `
-                        <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}${lateNote}</td>
+                        <td class="py-3.5"><div class="font-medium text-zinc-800 dark:text-zinc-100">${safeDesc}${groupInfo} ${statusPill}</div>${!hasGroup && t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}${lateNote}${savingsNotes}</td>
                         ${hasGroup ? `<td class="py-3.5 cat-sub-date">${formatDate(t.date)}</td>` : `<td class="py-3.5">${categoryPillHtml(t.category)}</td>`}
                         <td class="py-3.5"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${userBadgeClass} border">${safeUserName}</span></td>
                         ${hasGroup ? `<td class="py-3.5"></td>` : `<td class="py-3.5 text-zinc-500 dark:text-zinc-400 hidden md:table-cell">${formatDate(t.date)}</td>`}
                         <td class="py-3.5 text-right font-semibold ${isIncome?'text-primary':'text-danger'}">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</td>
                         <td class="py-3.5 text-center"><div class="flex items-center justify-center gap-2 flex-wrap">
                             ${debtButtons}
-                            <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors opacity-0 group-hover:opacity-100" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                            <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors opacity-0 group-hover:opacity-100" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            ${rowActionIcons}
                         </div></td>`;
                     tbodyFrag.appendChild(tr);
 
@@ -1184,7 +1310,7 @@
                             <div class="flex items-start justify-between mb-2.5">
                                 <div class="flex-1 min-w-0">
                                     <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
-                                    ${lateNote}
+                                    ${lateNote}${savingsNotes}
                                 </div>
                                 <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
                             </div>
@@ -1195,8 +1321,7 @@
                                 </div>
                                 <div class="flex items-center gap-2 flex-wrap justify-end">
                                     ${debtButtons}
-                                    <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                                    <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                    ${rowActionIconsMobile}
                                 </div>
                             </div>`;
                         groupBox.appendChild(row);
@@ -1211,7 +1336,7 @@
                                 <div class="flex-1 min-w-0">
                                     <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm truncate">${safeDesc}${groupInfo} ${statusPill}</p>
                                     ${t.description && t.description !== t.category ? `<div class="mt-1">${categoryLabelHtml(t.category, 'text-xs')}</div>` : ''}
-                                    ${lateNote}
+                                    ${lateNote}${savingsNotes}
                                 </div>
                                 <span class="font-semibold text-sm ${isIncome?'text-primary':'text-danger'} ml-3 whitespace-nowrap">${isIncome?'+':'-'} ${formatCurrency(t.amount)}</span>
                             </div>
@@ -1223,8 +1348,7 @@
                                 </div>
                                 <div class="flex items-center gap-2 flex-wrap justify-end">
                                     ${debtButtons}
-                                    <button onclick="editTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-accent transition-colors p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
-                                    <button onclick="deleteTransaction(${t.id})" class="text-zinc-500 dark:text-zinc-400 hover:text-danger transition-colors p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                    ${rowActionIconsMobile}
                                 </div>
                             </div>`;
                         mobileFrag.appendChild(card);
@@ -2103,6 +2227,7 @@
                 tabDashboard.classList.remove('view-tab-active');
                 tabGoals.classList.add('view-tab-active');
                 renderGoalsView();
+                updateUI();
             } else {
                 dashboardView.classList.remove('hidden');
                 goalsView.classList.add('hidden');
@@ -2232,6 +2357,7 @@
 
                 closeGoalModal();
                 renderGoalsView();
+                updateUI();
                 showToast('Meta criada! Vamos guardar esse dinheiro 💰');
             } catch (error) {
                 console.error('Erro ao criar meta:', error);
@@ -2250,6 +2376,7 @@
                 savingsGoals = savingsGoals.filter(g => g.id !== goalId);
                 await deleteSavingsGoalFromFirestore(goalId);
                 renderGoalsView();
+                updateUI();
                 showToast('Meta excluída');
             } catch (error) {
                 console.error('Erro ao excluir meta:', error);
@@ -2295,6 +2422,7 @@
                     await saveSavingsInstallment(newInst);
                 }
                 renderGoalsView();
+                updateUI();
             } catch (error) {
                 console.error('Erro ao marcar parcela:', error);
                 showToast(`Erro: ${error.message}`, 'error');
@@ -2365,6 +2493,7 @@
                     }
                 }
                 renderGoalsView();
+                updateUI();
                 showToast('Parcela parcial registrada. Ajustamos os próximos meses pra compensar.');
             } catch (error) {
                 console.error('Erro ao registrar parcela parcial:', error);
@@ -2465,6 +2594,8 @@
                     ? `<div class="unpaid-last-month-note adjusted-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>Valor ajustado (era ${formatCurrency(item.originalAmount)}) pra compensar uma parcela anterior</div>`
                     : '';
 
+                const balanceNote = canAct ? renderSavingsBalanceHintHtml(item) : '';
+
                 const displayAmount = item.status === 'partial' ? item.savedAmount : item.amount;
 
                 return `
@@ -2475,6 +2606,7 @@
                                 ${pushedNote}
                                 ${partialNote}
                                 ${adjustedNote}
+                                ${balanceNote}
                             </div>
                             <span class="font-semibold text-sm text-primary ml-3 whitespace-nowrap">${formatCurrency(displayAmount)}</span>
                         </div>
