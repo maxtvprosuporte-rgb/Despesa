@@ -222,6 +222,9 @@
         window.handleGoalSubmit = handleGoalSubmit;
         window.deleteSavingsGoal = deleteSavingsGoal;
         window.markSavingsInstallment = markSavingsInstallment;
+        window.openPartialSaveModal = openPartialSaveModal;
+        window.closePartialSaveModal = closePartialSaveModal;
+        window.handlePartialSaveSubmit = handlePartialSaveSubmit;
 
         // ── Auth State Observer ──
         onAuthStateChanged(auth, async (user) => {
@@ -2120,12 +2123,21 @@
         }
 
         function getGoalProgress(goalId) {
+            const goal = savingsGoals.find(g => g.id === goalId);
             const items = getGoalInstallments(goalId);
-            const saved = items.filter(i => i.status === 'saved');
-            const savedAmount = saved.reduce((s, i) => s + i.amount, 0);
-            const totalAmount = items.reduce((s, i) => s + i.amount, 0);
+            let savedAmount = 0;
+            items.forEach(i => {
+                if (i.status === 'saved') savedAmount += i.amount;
+                else if (i.status === 'partial') savedAmount += (i.savedAmount || 0);
+            });
+            savedAmount = Math.round(savedAmount * 100) / 100;
+            // O total é o valor FIXO da meta (definido na criação), não a soma das
+            // parcelas atuais — isso porque parcelas futuras podem ser ajustadas
+            // pra cima quando uma parcela anterior é paga parcialmente.
+            const totalAmount = goal ? goal.totalAmount : items.reduce((s, i) => s + i.amount, 0);
             const pct = totalAmount > 0 ? (savedAmount / totalAmount) * 100 : 0;
-            return { savedAmount, totalAmount, pct, savedCount: saved.length, totalCount: items.length };
+            const savedCount = items.filter(i => i.status === 'saved').length;
+            return { savedAmount, totalAmount, pct, savedCount, totalCount: items.length };
         }
 
         // ── Modal de criação ──
@@ -2210,6 +2222,7 @@
                         userId: currentUser.uid,
                         installmentNum: i + 1,
                         amount: installmentAmount,
+                        originalAmount: installmentAmount,
                         month: addMonthsToStr(currentMonth, i),
                         status: 'pending'
                     };
@@ -2273,6 +2286,7 @@
                         userId: inst.userId,
                         installmentNum: items.length + 1,
                         amount: inst.amount,
+                        originalAmount: inst.originalAmount || inst.amount,
                         month: pushedMonth,
                         status: 'pending',
                         pushedFromMonth: inst.month
@@ -2285,6 +2299,111 @@
                 console.error('Erro ao marcar parcela:', error);
                 showToast(`Erro: ${error.message}`, 'error');
             }
+        }
+
+        // Marca uma parcela como PARCIALMENTE guardada: o usuário informa quanto
+        // conseguiu guardar (menos que o valor da parcela). A diferença (déficit)
+        // é redistribuída igualmente entre as parcelas PENDENTES seguintes da
+        // mesma meta, aumentando o valor delas — assim a meta continua batendo
+        // 100% no final, sem precisar adicionar meses extras.
+        // Se não sobrar nenhuma parcela pendente pra receber o déficit, cria uma
+        // parcela extra no próximo mês livre (mesma lógica do "não guardei").
+        async function markSavingsInstallmentPartial(instId, amountSaved) {
+            const inst = savingsInstallments.find(i => i.id === instId);
+            if (!inst) return;
+
+            amountSaved = Math.round(amountSaved * 100) / 100;
+            const deficit = Math.round((inst.amount - amountSaved) * 100) / 100;
+
+            try {
+                inst.status = 'partial';
+                inst.savedAmount = amountSaved;
+                inst.savedAt = new Date().toISOString();
+                await saveSavingsInstallment(inst);
+
+                if (deficit > 0) {
+                    const items = getGoalInstallments(inst.goalId);
+                    const remaining = items.filter(i => i.status === 'pending' && i.id !== inst.id);
+
+                    if (remaining.length > 0) {
+                        const share = Math.floor((deficit / remaining.length) * 100) / 100;
+                        let allocated = 0;
+                        for (let idx = 0; idx < remaining.length; idx++) {
+                            const r = remaining[idx];
+                            let extra;
+                            if (idx === remaining.length - 1) {
+                                // a última parcela absorve o resto do arredondamento,
+                                // garantindo que a soma bate certinho com o déficit
+                                extra = Math.round((deficit - allocated) * 100) / 100;
+                            } else {
+                                extra = share;
+                                allocated = Math.round((allocated + share) * 100) / 100;
+                            }
+                            r.amount = Math.round((r.amount + extra) * 100) / 100;
+                            await saveSavingsInstallment(r);
+                        }
+                    } else {
+                        // Não há mais parcelas pendentes: cria uma parcela extra
+                        // só com o valor do déficit, no próximo mês livre.
+                        let pushedMonth = getNextMonthStr(inst.month);
+                        const occupied = new Set(items.filter(i => i.id !== inst.id).map(i => i.month));
+                        while (occupied.has(pushedMonth)) pushedMonth = getNextMonthStr(pushedMonth);
+
+                        const newInst = {
+                            id: Date.now(),
+                            goalId: inst.goalId,
+                            userId: inst.userId,
+                            installmentNum: items.length + 1,
+                            amount: deficit,
+                            originalAmount: deficit,
+                            month: pushedMonth,
+                            status: 'pending',
+                            pushedFromMonth: inst.month
+                        };
+                        savingsInstallments.push(newInst);
+                        await saveSavingsInstallment(newInst);
+                    }
+                }
+                renderGoalsView();
+                showToast('Parcela parcial registrada. Ajustamos os próximos meses pra compensar.');
+            } catch (error) {
+                console.error('Erro ao registrar parcela parcial:', error);
+                showToast(`Erro: ${error.message}`, 'error');
+            }
+        }
+
+        function openPartialSaveModal(instId) {
+            const inst = savingsInstallments.find(i => i.id === instId);
+            if (!inst) return;
+            document.getElementById('partialSaveInstId').value = instId;
+            document.getElementById('partialSaveMax').textContent = formatCurrency(inst.amount);
+            const amountInput = document.getElementById('partialSaveAmount');
+            amountInput.max = inst.amount;
+            amountInput.value = '';
+            document.getElementById('partialSaveModal').style.display = 'block';
+            setTimeout(() => amountInput.focus(), 50);
+        }
+        function closePartialSaveModal() {
+            document.getElementById('partialSaveModal').style.display = 'none';
+        }
+
+        async function handlePartialSaveSubmit(e) {
+            e.preventDefault();
+            const instId = Number(document.getElementById('partialSaveInstId').value);
+            const inst = savingsInstallments.find(i => i.id === instId);
+            if (!inst) return;
+            let amountSaved = parseFloat(document.getElementById('partialSaveAmount').value);
+
+            if (isNaN(amountSaved) || amountSaved <= 0) { showToast('Informe quanto você conseguiu guardar', 'error'); return; }
+            if (amountSaved >= inst.amount) {
+                // Guardou o valor cheio (ou mais) — trata como "Guardei" normal
+                closePartialSaveModal();
+                await markSavingsInstallment(instId, 'saved');
+                return;
+            }
+
+            closePartialSaveModal();
+            await markSavingsInstallmentPartial(instId, amountSaved);
         }
 
         // ── Renderização da aba "Metas" ──
@@ -2316,6 +2435,8 @@
                 let statusHtml;
                 if (item.status === 'saved') {
                     statusHtml = '<span class="debt-status-pill paid">Guardei</span>';
+                } else if (item.status === 'partial') {
+                    statusHtml = '<span class="debt-status-pill partial">Parcial</span>';
                 } else if (item.status === 'not_saved') {
                     statusHtml = '<span class="debt-status-pill unpaid">Não guardei</span>';
                 } else if (isFuture) {
@@ -2328,6 +2449,7 @@
                 const actionsHtml = canAct ? `
                     <span class="debt-status-actions">
                         <button onclick="markSavingsInstallment(${item.id}, 'saved')" class="debt-status-btn paid" title="Marcar como guardado">Guardei</button>
+                        <button onclick="openPartialSaveModal(${item.id})" class="debt-status-btn partial" title="Guardei só uma parte">Parcial</button>
                         <button onclick="markSavingsInstallment(${item.id}, 'not_saved')" class="debt-status-btn unpaid" title="Marcar como não guardado">Não guardei</button>
                     </span>` : '';
 
@@ -2335,14 +2457,26 @@
                     ? `<div class="unpaid-last-month-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m0 3.75h.007v.008H12v-.008zM10.29 3.86l-8.18 14.18A1.5 1.5 0 003.42 20.4h17.16a1.5 1.5 0 001.31-2.36L13.71 3.86a1.5 1.5 0 00-2.42 0z"></path></svg>Empurrada de ${formatMonthLabel(item.pushedFromMonth)}</div>`
                     : '';
 
+                const partialNote = item.status === 'partial'
+                    ? `<div class="unpaid-last-month-note partial-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Guardou ${formatCurrency(item.savedAmount)} de ${formatCurrency(item.amount)} — a diferença foi ajustada nas próximas parcelas</div>`
+                    : '';
+
+                const adjustedNote = (item.status === 'pending' && item.originalAmount && item.amount > item.originalAmount)
+                    ? `<div class="unpaid-last-month-note adjusted-note"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>Valor ajustado (era ${formatCurrency(item.originalAmount)}) pra compensar uma parcela anterior</div>`
+                    : '';
+
+                const displayAmount = item.status === 'partial' ? item.savedAmount : item.amount;
+
                 return `
                     <div class="cat-item-row goal-installment-row${isFuture ? ' goal-installment-future' : ''}">
                         <div class="flex items-start justify-between mb-2">
                             <div class="flex-1 min-w-0">
                                 <p class="font-medium text-zinc-800 dark:text-zinc-100 text-sm capitalize">${monthLabel} ${statusHtml}</p>
                                 ${pushedNote}
+                                ${partialNote}
+                                ${adjustedNote}
                             </div>
-                            <span class="font-semibold text-sm text-primary ml-3 whitespace-nowrap">${formatCurrency(item.amount)}</span>
+                            <span class="font-semibold text-sm text-primary ml-3 whitespace-nowrap">${formatCurrency(displayAmount)}</span>
                         </div>
                         ${actionsHtml ? `<div class="flex justify-end">${actionsHtml}</div>` : ''}
                     </div>`;

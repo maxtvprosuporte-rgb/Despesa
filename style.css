@@ -630,11 +630,18 @@
         .debt-status-pill.paid { color:rgb(var(--c-pill-paid-text)); background:rgb(var(--c-primary) / .10); }
         .debt-status-pill.unpaid { color:rgb(var(--c-pill-unpaid-text)); background:rgb(var(--c-danger) / .10); }
         .debt-status-pill.pending { color:rgb(var(--c-warning)); background:rgb(var(--c-warning) / .10); }
+        .debt-status-pill.partial { color:rgb(var(--c-accent-text)); background:rgb(var(--c-accent) / .12); }
         .debt-status-btn.pending.active {
             color: #fff;
             background: rgb(var(--c-warning));
             box-shadow: 0 0 18px rgb(var(--c-warning) / .28);
         }
+        .debt-status-btn.partial:hover {
+            color: rgb(var(--c-accent-text));
+            background: rgb(var(--c-accent) / .1);
+        }
+        .partial-note { color: rgb(var(--c-accent-text)); }
+        .adjusted-note { color: rgb(var(--c-text-faint)); font-style: italic; }
 
         /* Seções do histórico: Pendente / Contas pagas / Contas não pagas */
         .history-section-header {
