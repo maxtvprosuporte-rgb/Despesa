@@ -548,11 +548,27 @@
 
         function updateHouseCardsVisibility() {
             const houseCards = document.querySelectorAll('.house-card');
-            if (!houseCards.length) return;
-            const showHouseCards = householdMemberCount > 1;
-            houseCards.forEach(card => card.classList.toggle('hidden', !showHouseCards));
-            // A grade (grid-cols-2 no mobile, lg:grid-cols-4 no desktop) é fixa;
-            // os cards da casa simplesmente somem/aparecem, reorganizando as fileiras.
+            if (houseCards.length) {
+                const showHouseCards = householdMemberCount > 1;
+                houseCards.forEach(card => card.classList.toggle('hidden', !showHouseCards));
+                // A grade (grid-cols-2 no mobile, lg:grid-cols-4 no desktop) é fixa;
+                // os cards da casa simplesmente somem/aparecem, reorganizando as fileiras.
+            }
+            updateChartFilterVisibility();
+        }
+
+        // O filtro "Casa" x "Minhas" do gráfico só faz sentido quando a casa tem
+        // mais de 1 morador — com um usuário só, os dois dariam o mesmo resultado.
+        function updateChartFilterVisibility() {
+            const btnAll = document.getElementById('chartFilterAll');
+            const btnUser = document.getElementById('chartFilterUser');
+            if (!btnAll || !btnUser) return;
+            const showFilter = householdMemberCount > 1;
+            btnAll.classList.toggle('hidden', !showFilter);
+            btnUser.classList.toggle('hidden', !showFilter);
+            if (!showFilter && chartFilter !== 'all') {
+                setChartFilter('all');
+            }
         }
 
         function copyHouseholdCode() {
