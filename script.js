@@ -25,7 +25,6 @@
         let currentMonth = new Date().toISOString().slice(0, 7);
         let editingId = null;
         let expenseChartInstance = null;
-        let categoriesChartInstance = null;
         let currentUser = null;
         let householdCode = null;
         let chartFilter = 'all';
@@ -1472,70 +1471,82 @@
             return filtered;
         }
 
-        function renderCategoriesChart(ctx) {
+        // Gráfico único: despesas em barras empilhadas por categoria (mostra a
+        // composição) + receita como linha sobreposta (mostra a evolução) —
+        // tudo junto, sem precisar de dois gráficos separados.
+        function renderCombinedChart(ctx) {
             const viewMode = document.getElementById('chartViewMode').value;
             const filtered = getChartTransactions();
-            
-            if (filtered.length === 0) {
-                return;
-            }
-            
-            // Build labels and grouping based on view mode
+
             let labels = [];
-            let groupingFn; // returns the bucket key for a transaction
-            
+            let groupingFn;
+
             if (viewMode === 'month') {
                 const now = new Date();
-                const year = now.getFullYear();
-                const month = now.getMonth();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
                 labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
                 groupingFn = (t) => new Date(t.date).getDate() - 1;
             } else { // 'year'
                 labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                 groupingFn = (t) => new Date(t.date).getMonth();
             }
-            
-            // Group transactions by category and by bucket
-            const categoryBuckets = {}; // { category: array of values indexed by bucket }
+
+            const incomeByBucket = Array.from({ length: labels.length }, () => 0);
+            const categoryBuckets = {};
+
             filtered.forEach(t => {
-                if (!categoryBuckets[t.category]) {
-                    categoryBuckets[t.category] = Array.from({ length: labels.length }, () => 0);
-                }
                 const bucket = groupingFn(t);
-                if (bucket >= 0 && bucket < labels.length) {
+                if (bucket < 0 || bucket >= labels.length) return;
+                if (t.type === 'income') {
+                    incomeByBucket[bucket] += t.amount;
+                } else if (t.type === 'expense') {
+                    if (!categoryBuckets[t.category]) categoryBuckets[t.category] = Array.from({ length: labels.length }, () => 0);
                     categoryBuckets[t.category][bucket] += t.amount;
                 }
             });
-            
-            // Sort categories by total amount descending
+
+            const hasData = incomeByBucket.some(v => v > 0) || Object.keys(categoryBuckets).length > 0;
+            if (!hasData) return;
+
+            // Categorias ordenadas da maior pra menor, cada uma vira uma "fatia"
+            // empilhada da barra de despesas
             const sortedEntries = Object.entries(categoryBuckets).sort((a, b) => {
                 const totalA = a[1].reduce((s, v) => s + v, 0);
                 const totalB = b[1].reduce((s, v) => s + v, 0);
                 return totalB - totalA;
             });
-            
-            const colors = sortedEntries.map(([category]) => getCategoryColor(category));
-            
-            const datasets = sortedEntries.map(([category, values], i) => ({
+
+            const barDatasets = sortedEntries.map(([category, values]) => ({
+                type: 'bar',
                 label: category,
                 data: values,
-                borderColor: colors[i],
-                backgroundColor: colors[i] + '1a',
-                borderWidth: 2,
+                backgroundColor: getCategoryColor(category),
+                borderRadius: 4,
+                stack: 'despesas',
+                order: 2
+            }));
+
+            const incomeLine = {
+                type: 'line',
+                label: 'Receitas',
+                data: incomeByBucket,
+                borderColor: '#059669',
+                backgroundColor: 'rgba(5, 150, 105, 0.12)',
+                borderWidth: 2.5,
                 tension: 0.3,
                 fill: false,
-                pointBackgroundColor: colors[i],
-                pointBorderColor: colors[i],
+                pointBackgroundColor: '#059669',
+                pointBorderColor: '#059669',
                 pointRadius: 3,
-                pointHoverRadius: 5
-            }));
-            
-            categoriesChartInstance = new Chart(ctx, {
-                type: 'line',
+                pointHoverRadius: 5,
+                order: 1
+            };
+
+            expenseChartInstance = new Chart(ctx, {
+                type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: datasets
+                    datasets: [incomeLine, ...barDatasets]
                 },
                 options: {
                     responsive: true,
@@ -1550,7 +1561,7 @@
                             labels: {
                                 color: chartLegendColor(),
                                 font: { family: 'Plus Jakarta Sans', size: 11 },
-                                padding: 16,
+                                padding: 14,
                                 usePointStyle: true,
                                 pointStyleWidth: 8
                             }
@@ -1574,10 +1585,12 @@
                     },
                     scales: {
                         x: {
+                            stacked: true,
                             grid: { color: chartGridColor(), drawBorder: false },
                             ticks: { color: chartTickColor(), font: { family: 'Plus Jakarta Sans', size: 11 } }
                         },
                         y: {
+                            stacked: true,
                             grid: { color: chartGridColor(), drawBorder: false },
                             ticks: {
                                 color: chartTickColor(),
@@ -1591,184 +1604,21 @@
             });
         }
 
-        function renderEvolutionChart(ctx) {
-            const viewMode = document.getElementById('chartViewMode').value;
-            
-            let labels = [];
-            let incomeData = [];
-            let expenseData = [];
-            
-            if (viewMode === 'month') {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = now.getMonth();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                
-                let monthTransactions = getChartTransactions();
-                
-                const dailyData = Array.from({ length: daysInMonth }, () => ({ income: 0, expense: 0 }));
-                monthTransactions.forEach(t => {
-                    const day = new Date(t.date).getDate() - 1;
-                    if (t.type === 'income') {
-                        dailyData[day].income += t.amount;
-                    } else if (t.type === 'expense') {
-                        dailyData[day].expense += t.amount;
-                    }
-                });
-                
-                labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
-                incomeData = dailyData.map(d => d.income);
-                expenseData = dailyData.map(d => d.expense);
-                
-            } else { // 'year'
-                let yearTransactions = getChartTransactions();
-                
-                const monthlyData = Array.from({ length: 12 }, () => ({ income: 0, expense: 0 }));
-                yearTransactions.forEach(t => {
-                    const month = new Date(t.date).getMonth();
-                    if (t.type === 'income') {
-                        monthlyData[month].income += t.amount;
-                    } else if (t.type === 'expense') {
-                        monthlyData[month].expense += t.amount;
-                    }
-                });
-                
-                labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                incomeData = monthlyData.map(d => d.income);
-                expenseData = monthlyData.map(d => d.expense);
-            }
-            
-            const hasData = incomeData.some(v => v > 0) || expenseData.some(v => v > 0);
-            if (!hasData) return;
-            
-            expenseChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Receitas',
-                            data: incomeData,
-                            borderColor: '#059669',
-                            backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: true,
-                            pointBackgroundColor: '#059669',
-                            pointBorderColor: '#059669',
-                            pointRadius: 4,
-                            pointHoverRadius: 6
-                        },
-                        {
-                            label: 'Despesas',
-                            data: expenseData,
-                            borderColor: '#e11d48',
-                            backgroundColor: 'rgba(225, 29, 72, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: true,
-                            pointBackgroundColor: '#e11d48',
-                            pointBorderColor: '#e11d48',
-                            pointRadius: 4,
-                            pointHoverRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: chartLegendColor(),
-                                font: {
-                                    family: 'Plus Jakarta Sans',
-                                    size: 11
-                                },
-                                padding: 16,
-                                usePointStyle: true,
-                                pointStyleWidth: 8
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(24, 24, 27, 0.95)',
-                            titleColor: '#fafafa',
-                            bodyColor: '#a1a1aa',
-                            borderColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 1,
-                            padding: 12,
-                            displayColors: true,
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.y || 0;
-                                    return `${label}: ${formatCurrency(value)}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: chartGridColor(),
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: chartTickColor(),
-                                font: {
-                                    family: 'Plus Jakarta Sans',
-                                    size: 11
-                                }
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: chartGridColor(),
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: chartTickColor(),
-                                font: {
-                                    family: 'Plus Jakarta Sans',
-                                    size: 11
-                                },
-                                callback: function(value) {
-                                    return formatCurrency(value);
-                                }
-                            },
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
         function safeDestroyChart() {
-            ['expenseChart', 'categoriesChart'].forEach(canvasId => {
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) return;
+            const canvas = document.getElementById('expenseChart');
+            if (canvas) {
                 const existing = Chart.getChart(canvas);
                 if (existing) existing.destroy();
                 const ctx2 = canvas.getContext('2d');
                 ctx2.clearRect(0, 0, canvas.width, canvas.height);
-            });
+            }
             expenseChartInstance = null;
-            categoriesChartInstance = null;
         }
 
-        // Mostra os dois gráficos juntos, sem alternância: Evolução (receita x
-        // despesa) e Por Categoria, ambos respeitando o mesmo período/filtro.
         function renderChart() {
             safeDestroyChart();
-            const evolutionCtx = document.getElementById('expenseChart').getContext('2d');
-            const categoriesCtx = document.getElementById('categoriesChart').getContext('2d');
-            renderEvolutionChart(evolutionCtx);
-            renderCategoriesChart(categoriesCtx);
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            renderCombinedChart(ctx);
         }
 
         async function handleTransactionSubmit(e) {
