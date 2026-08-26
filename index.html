@@ -8,35 +8,13 @@
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#F3F4F6">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Config do Tailwind precisa rodar antes do CSS/HTML ser processado pelo Tailwind CDN,
-         por isso fica inline aqui (é só o mapeamento de cores/fontes, não é "lógica" do app) -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                        display: ['"Outfit"', 'sans-serif'],
-                    },
-                    colors: {
-                        background: 'rgb(var(--c-background) / <alpha-value>)',
-                        surface: 'rgb(var(--c-surface) / <alpha-value>)',
-                        surfaceHighlight: 'rgb(var(--c-surface-highlight) / <alpha-value>)',
-                        primary: 'rgb(var(--c-primary) / <alpha-value>)',
-                        danger: 'rgb(var(--c-danger) / <alpha-value>)',
-                        accent: 'rgb(var(--c-accent) / <alpha-value>)',
-                        warning: 'rgb(var(--c-warning) / <alpha-value>)'
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- CSS do Tailwind pré-compilado (build estático) no lugar do script CDN
+         em tempo de execução: mesmas classes, sem o motor JIT rodando no navegador
+         a cada atualização da tela. Isso é o que deixava o site pesado. -->
+    <link rel="stylesheet" href="tailwind.css">
     <!-- Aplica o tema salvo o quanto antes, pra nao "piscar" o visual errado -->
     <script>
         (function(){
@@ -811,6 +789,9 @@
 
     </div><!-- end appContent -->
 
+    <!-- Versão fixa (não "latest") para evitar baixar/quebrar com atualizações
+         inesperadas do Chart.js, e "defer" para não bloquear a renderização inicial -->
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>
