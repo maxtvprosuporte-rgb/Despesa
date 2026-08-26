@@ -2032,14 +2032,18 @@
             // pra cima quando uma parcela anterior é paga parcialmente.
             const totalAmount = goal ? goal.totalAmount : items.reduce((s, i) => s + i.amount, 0);
             const pct = totalAmount > 0 ? (savedAmount / totalAmount) * 100 : 0;
-            const savedCount = items.filter(i => i.status === 'saved').length;
-            return { savedAmount, totalAmount, pct, savedCount, totalCount: items.length };
+            // A entrada inicial (isInitial) conta no valor guardado, mas não é uma
+            // "parcela" do plano mensal — não entra na contagem de parcelas.
+            const countableItems = items.filter(i => !i.isInitial);
+            const savedCount = countableItems.filter(i => i.status === 'saved').length;
+            return { savedAmount, totalAmount, pct, savedCount, totalCount: countableItems.length };
         }
 
         // ── Modal de criação ──
         function openGoalModal() {
             document.getElementById('goalForm').reset();
             setSavingsInputMode('total');
+            document.getElementById('goalStartMonth').value = currentMonth;
             document.getElementById('goalModal').style.display = 'block';
             updateGoalPreview();
         }
@@ -2059,19 +2063,27 @@
 
         function updateGoalPreview() {
             const installments = parseInt(document.getElementById('goalInstallments').value, 10) || 0;
+            const entrada = parseFloat(document.getElementById('goalEntradaAmount').value) || 0;
             const previewEl = document.getElementById('goalPreview');
             if (!installments) { previewEl.textContent = ''; return; }
+
+            const entradaNote = entrada > 0 ? ` · entrada de ${formatCurrency(entrada)} já contando como progresso` : '';
 
             if (savingsInputMode === 'total') {
                 const total = parseFloat(document.getElementById('goalTotalAmount').value) || 0;
                 if (!total) { previewEl.textContent = ''; return; }
-                const perInstallment = total / installments;
-                previewEl.textContent = `≈ ${formatCurrency(perInstallment)} por mês, durante ${installments} ${installments === 1 ? 'mês' : 'meses'}`;
+                if (entrada > total) {
+                    previewEl.textContent = 'A entrada não pode ser maior que o valor total da meta.';
+                    return;
+                }
+                const remaining = total - entrada;
+                const perInstallment = remaining / installments;
+                previewEl.textContent = `≈ ${formatCurrency(perInstallment)} por mês, durante ${installments} ${installments === 1 ? 'mês' : 'meses'}${entradaNote}`;
             } else {
                 const perInstallment = parseFloat(document.getElementById('goalInstallmentAmount').value) || 0;
                 if (!perInstallment) { previewEl.textContent = ''; return; }
-                const total = perInstallment * installments;
-                previewEl.textContent = `Meta final: ${formatCurrency(total)}, em ${installments} ${installments === 1 ? 'mês' : 'meses'}`;
+                const total = entrada + (perInstallment * installments);
+                previewEl.textContent = `Meta final: ${formatCurrency(total)}, em ${installments} ${installments === 1 ? 'mês' : 'meses'}${entradaNote}`;
             }
         }
 
@@ -2080,18 +2092,25 @@
             const fd = new FormData(e.target);
             const title = (fd.get('title') || '').toString().trim();
             const installments = parseInt(fd.get('installments'), 10);
+            const entrada = Math.round((parseFloat(fd.get('entradaAmount')) || 0) * 100) / 100;
+            const startMonth = (fd.get('startMonth') || '').toString().trim() || currentMonth;
 
             if (!title) { showToast('Dê um nome pra sua meta', 'error'); return; }
             if (!installments || installments < 1) { showToast('Informe a quantidade de parcelas', 'error'); return; }
+            if (entrada < 0) { showToast('O valor de entrada não pode ser negativo', 'error'); return; }
 
             let installmentAmount;
+            let totalAmount;
             if (savingsInputMode === 'total') {
                 const total = parseFloat(fd.get('totalAmount'));
                 if (!total || total <= 0) { showToast('Informe o valor total da meta', 'error'); return; }
-                installmentAmount = Math.round((total / installments) * 100) / 100;
+                if (entrada > total) { showToast('O valor de entrada não pode ser maior que o valor total da meta', 'error'); return; }
+                installmentAmount = Math.round(((total - entrada) / installments) * 100) / 100;
+                totalAmount = total;
             } else {
                 installmentAmount = parseFloat(fd.get('installmentAmount'));
                 if (!installmentAmount || installmentAmount <= 0) { showToast('Informe o valor da parcela', 'error'); return; }
+                totalAmount = Math.round((entrada + installmentAmount * installments) * 100) / 100;
             }
 
             const goalId = Date.now();
@@ -2102,24 +2121,44 @@
                 title,
                 installmentAmount,
                 totalInstallments: installments,
-                totalAmount: Math.round(installmentAmount * installments * 100) / 100,
+                totalAmount,
+                entradaAmount: entrada,
                 createdAt: new Date().toISOString(),
-                startMonth: currentMonth
+                startMonth
             };
 
             try {
                 savingsGoals.push(goal);
                 await saveSavingsGoal(goal);
 
+                // Se o usuário já tinha algum valor guardado, cria uma "parcela"
+                // especial (número 0) já marcada como guardada, contando de cara
+                // como progresso da meta, sem ocupar um mês do plano.
+                if (entrada > 0) {
+                    const entradaInst = {
+                        id: goalId + 1,
+                        goalId: goalId,
+                        userId: currentUser.uid,
+                        installmentNum: 0,
+                        amount: entrada,
+                        originalAmount: entrada,
+                        month: startMonth,
+                        status: 'saved',
+                        isInitial: true
+                    };
+                    savingsInstallments.push(entradaInst);
+                    await saveSavingsInstallment(entradaInst);
+                }
+
                 for (let i = 0; i < installments; i++) {
                     const inst = {
-                        id: goalId + 1 + i,
+                        id: goalId + 2 + i,
                         goalId: goalId,
                         userId: currentUser.uid,
                         installmentNum: i + 1,
                         amount: installmentAmount,
                         originalAmount: installmentAmount,
-                        month: addMonthsToStr(currentMonth, i),
+                        month: addMonthsToStr(startMonth, i),
                         status: 'pending'
                     };
                     savingsInstallments.push(inst);
@@ -2330,10 +2369,12 @@
 
             const installmentsHtml = items.map(item => {
                 const isFuture = item.month > currentMonth;
-                const monthLabel = formatMonthLabel(item.month);
+                const monthLabel = item.isInitial ? 'Entrada inicial' : formatMonthLabel(item.month);
 
                 let statusHtml;
-                if (item.status === 'saved') {
+                if (item.isInitial) {
+                    statusHtml = '<span class="debt-status-pill paid">Já guardado</span>';
+                } else if (item.status === 'saved') {
                     statusHtml = '<span class="debt-status-pill paid">Guardei</span>';
                 } else if (item.status === 'partial') {
                     statusHtml = '<span class="debt-status-pill partial">Parcial</span>';
@@ -2393,7 +2434,7 @@
                                 <h3 class="font-display text-lg font-semibold text-zinc-900 dark:text-zinc-50 truncate">${escapeHtml(goal.title)}</h3>
                                 ${isComplete ? '<span class="debt-status-pill paid">Concluída 🎉</span>' : ''}
                             </div>
-                            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">${formatCurrency(goal.installmentAmount)}/mês · ${goal.totalInstallments} ${goal.totalInstallments === 1 ? 'parcela' : 'parcelas'}</p>
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">${formatCurrency(goal.installmentAmount)}/mês · ${goal.totalInstallments} ${goal.totalInstallments === 1 ? 'parcela' : 'parcelas'} · desde ${formatMonthLabel(goal.startMonth)}${goal.entradaAmount ? ` · entrada de ${formatCurrency(goal.entradaAmount)}` : ''}</p>
                         </div>
                         <button onclick="deleteSavingsGoal(${goal.id})" class="text-zinc-400 hover:text-danger transition-colors p-1 flex-shrink-0" title="Excluir meta">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>

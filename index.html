@@ -444,12 +444,23 @@
                         <input type="number" step="0.01" min="0" name="installmentAmount" id="goalInstallmentAmount" oninput="updateGoalPreview()" placeholder="0,00" class="form-input">
                     </div>
 
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Valor de entrada (opcional)</label>
+                        <input type="number" step="0.01" min="0" name="entradaAmount" id="goalEntradaAmount" oninput="updateGoalPreview()" placeholder="0,00" class="form-input">
+                        <p style="font-size:11px;color:rgb(var(--c-text-faint));margin:5px 0 0;">Já tem algum valor guardado pra essa meta? Ele entra direto como progresso, sem contar como parcela.</p>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Mês de início</label>
+                        <input type="month" name="startMonth" id="goalStartMonth" class="form-input">
+                    </div>
+
                     <div style="margin-bottom:6px;">
                         <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Em quantas parcelas (meses)</label>
                         <input type="number" step="1" min="1" name="installments" id="goalInstallments" oninput="updateGoalPreview()" placeholder="Ex: 12" class="form-input">
                     </div>
 
-                    <p id="goalPreview" style="font-size:12px;font-weight:600;color:rgb(var(--c-accent-text));min-height:16px;margin:8px 0 4px;"></p>
+                    <p id="goalPreview" style="font-size:12px;font-weight:600;color:rgb(var(--c-accent-text));min-height:32px;margin:8px 0 4px;"></p>
 
                     <div style="display:flex;gap:10px;padding-top:10px;">
                         <button type="button" onclick="closeGoalModal()" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgb(var(--c-overlay) / 0.1);background:none;color:rgb(var(--c-text-soft));font-weight:500;font-size:13px;cursor:pointer;">Cancelar</button>
