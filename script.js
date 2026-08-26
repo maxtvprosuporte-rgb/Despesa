@@ -1436,20 +1436,21 @@
         function getChartTransactions() {
             const viewMode = document.getElementById('chartViewMode').value;
             let filtered;
-            
+
+            // Usa o período selecionado no dashboard (currentMonth), não a data
+            // real de hoje — assim o filtro "mês atual" do gráfico acompanha o
+            // mês escolhido lá em cima, e não fica travado no mês do calendário.
+            const [selYear, selMonth] = currentMonth.split('-').map(Number);
+
             if (viewMode === 'month') {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = now.getMonth();
                 filtered = transactions.filter(t => {
                     const txDate = new Date(t.date);
-                    return txDate.getFullYear() === year && txDate.getMonth() === month;
+                    return txDate.getFullYear() === selYear && (txDate.getMonth() + 1) === selMonth;
                 });
             } else { // 'year'
-                const year = new Date().getFullYear();
                 filtered = transactions.filter(t => {
                     const txDate = new Date(t.date);
-                    return txDate.getFullYear() === year;
+                    return txDate.getFullYear() === selYear;
                 });
             }
             
@@ -1485,8 +1486,8 @@
             let groupingFn;
 
             if (viewMode === 'month') {
-                const now = new Date();
-                const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                const [selYear, selMonth] = currentMonth.split('-').map(Number);
+                const daysInMonth = new Date(selYear, selMonth, 0).getDate();
                 labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
                 groupingFn = (t) => new Date(t.date).getDate() - 1;
             } else { // 'year'
