@@ -875,10 +875,10 @@
         .view-tab {
             display: flex;
             align-items: center;
-            gap: 7px;
-            padding: 8px 14px;
+            gap: 5px;
+            padding: 7px 9px;
             border-radius: 9px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: rgb(var(--c-text-faint));
             background: transparent;
@@ -886,6 +886,13 @@
             cursor: pointer;
             transition: all .15s;
             white-space: nowrap;
+        }
+        @media (min-width: 640px) {
+            .view-tab {
+                gap: 7px;
+                padding: 8px 14px;
+                font-size: 13px;
+            }
         }
         .view-tab:hover { color: rgb(var(--c-text-strong)); }
         .view-tab-active {
