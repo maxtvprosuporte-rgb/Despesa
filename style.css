@@ -39,6 +39,7 @@
             --c-pill-unpaid-text: 253 164 175;
             --c-input-bg: 9 9 11;
         }
+        html { background-color: rgb(var(--c-background)); }
         body { background-color: rgb(var(--c-background)); color: rgb(var(--c-text-strong)); transition: background-color .2s, color .2s; }
         .glass-panel {
             background: rgb(var(--c-surface) / var(--glass-alpha-panel));

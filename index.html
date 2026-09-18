@@ -8,6 +8,15 @@
     <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#F3F4F6">
+    <!-- Sem isso, um app instalado na tela de início do iPhone pinta a área
+         de cima (por trás da Dynamic Island / notch) com a cor ESTÁTICA do
+         manifest.json (theme_color), ignorando o tema escuro/claro que é
+         trocado dentro do app via JS. "black-translucent" faz essa área virar
+         uma sobreposição transparente, então o fundo real da página (que já
+         muda com o tema) aparece por trás da Dynamic Island também. -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FinControl">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -170,33 +179,32 @@
         </div>
     </header>
 
-    <!-- View Tabs: Dashboard / Metas de Economia -->
+    <!-- View Tabs: Dashboard / Metas de Economia + Período (mesma linha) -->
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6">
-        <div class="view-tabs">
-            <button id="viewTabDashboard" onclick="switchView('dashboard')" class="view-tab view-tab-active">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                Dashboard
-            </button>
-            <button id="viewTabGoals" onclick="switchView('goals')" class="view-tab">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 2c-1.11 0-2.08.402-2.599 1M12 16v2m0-2c1.11 0 2.08-.402 2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Guardar Dinheiro
-            </button>
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="view-tabs">
+                <button id="viewTabDashboard" onclick="switchView('dashboard')" class="view-tab view-tab-active">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Dashboard
+                </button>
+                <button id="viewTabGoals" onclick="switchView('goals')" class="view-tab">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V6m0 2c-1.11 0-2.08.402-2.599 1M12 16v2m0-2c1.11 0 2.08-.402 2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Guardar Dinheiro
+                </button>
+            </div>
+
+            <!-- Só aparece na aba Dashboard; switchView() esconde/mostra isto -->
+            <div id="periodFilterBar" class="flex items-center gap-2 sm:gap-3 bg-surface border border-zinc-900/8 dark:border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-500 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <label class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Período:</label>
+                <input type="month" id="monthFilter" class="bg-transparent text-zinc-900 dark:text-zinc-50 text-xs sm:text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
+            </div>
         </div>
     </div>
 
     <div id="dashboardView">
     <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-8 space-y-3 sm:space-y-6">
         
-        <!-- Month Filter & Export/Import -->
-        <div class="filter-bar flex items-center justify-between animate-fade-in flex-wrap gap-3">
-            <div class="flex items-center gap-2 sm:gap-3 bg-surface border border-zinc-900/8 dark:border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
-                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-500 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <label class="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Período:</label>
-                <input type="month" id="monthFilter" class="bg-transparent text-zinc-900 dark:text-zinc-50 text-xs sm:text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors">
-            </div>
-
-        </div>
-
         <!-- Summary Cards: ordem mobile = 2 colunas por fileira -->
         <!-- Fileira 1: Minha Despesa | Minha Receita -->
         <!-- Fileira 2: Minha Diferença (mês atual) | Minha % vs mês passado -->

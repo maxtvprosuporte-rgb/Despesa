@@ -2019,11 +2019,13 @@
             currentView = view;
             const dashboardView = document.getElementById('dashboardView');
             const goalsView = document.getElementById('goalsView');
+            const periodFilterBar = document.getElementById('periodFilterBar');
             const tabDashboard = document.getElementById('viewTabDashboard');
             const tabGoals = document.getElementById('viewTabGoals');
             if (view === 'goals') {
                 dashboardView.classList.add('hidden');
                 goalsView.classList.remove('hidden');
+                if (periodFilterBar) periodFilterBar.classList.add('hidden');
                 tabDashboard.classList.remove('view-tab-active');
                 tabGoals.classList.add('view-tab-active');
                 renderGoalsView();
@@ -2031,6 +2033,7 @@
             } else {
                 dashboardView.classList.remove('hidden');
                 goalsView.classList.add('hidden');
+                if (periodFilterBar) periodFilterBar.classList.remove('hidden');
                 tabGoals.classList.remove('view-tab-active');
                 tabDashboard.classList.add('view-tab-active');
             }
