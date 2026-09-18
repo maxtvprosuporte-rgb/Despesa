@@ -504,7 +504,20 @@
                 showHouseholdBadge(householdCode);
 
                 const householdRef = doc(db, 'households', householdCode);
-                const householdSnap = await withTimeout(getDoc(householdRef));
+                const settingsRef = doc(db, 'households', householdCode, 'settings', 'main');
+
+                // As 5 leituras abaixo são independentes entre si, então rodamos em paralelo
+                // (Promise.all) em vez de uma atrás da outra. Isso reduz o tempo total de
+                // espera de "soma dos 5 timeouts" para "o maior dos 5", e cada uma tem
+                // uma nova tentativa automática (fetchWithRetry) antes de falhar de vez.
+                const [householdSnap, settingsSnap, txSnap, goalsSnap, instSnap] = await Promise.all([
+                    fetchWithRetry(() => getDoc(householdRef)),
+                    fetchWithRetry(() => getDoc(settingsRef)),
+                    fetchWithRetry(() => getDocs(collection(db, 'households', householdCode, 'transactions'))),
+                    fetchWithRetry(() => getDocs(collection(db, 'households', householdCode, 'savingsGoals'))),
+                    fetchWithRetry(() => getDocs(collection(db, 'households', householdCode, 'savingsInstallments')))
+                ]);
+
                 const hhData = householdSnap.exists() ? householdSnap.data() : {};
                 const members = hhData.members || [];
                 householdMembers = members;
@@ -512,8 +525,6 @@
                 householdMemberCount = members.length || 1;
                 updateHouseCardsVisibility();
 
-                const settingsRef = doc(db, 'households', householdCode, 'settings', 'main');
-                const settingsSnap = await withTimeout(getDoc(settingsRef));
                 if (settingsSnap.exists()) {
                     const data = settingsSnap.data();
                     categories = Array.isArray(data.categories) ? [...data.categories] : [...DEFAULT_CATEGORIES];
@@ -521,16 +532,14 @@
                 } else {
                     categories = [...DEFAULT_CATEGORIES];
                     categoryMeta = normalizeCategoryMeta({});
-                    await withTimeout(setDoc(settingsRef, { categories, categoryMeta }));
+                    // Escrita não bloqueia a exibição dos dados já carregados acima.
+                    fetchWithRetry(() => setDoc(settingsRef, { categories, categoryMeta })).catch(err => {
+                        console.error('Erro ao criar configurações padrão:', err);
+                    });
                 }
 
-                const txSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'transactions')));
                 transactions = txSnap.docs.map(d => ({ id: Number(d.id), ...d.data() }));
-
-                const goalsSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'savingsGoals')));
                 savingsGoals = goalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-                const instSnap = await withTimeout(getDocs(collection(db, 'households', householdCode, 'savingsInstallments')));
                 savingsInstallments = instSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
             } catch (error) {
@@ -721,11 +730,30 @@
             }
         }
 
-        function withTimeout(promise, ms = 10000) {
+        function withTimeout(promise, ms = 15000) {
             return Promise.race([
                 promise,
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo limite excedido. Verifique sua conexão.')), ms))
             ]);
+        }
+
+        // Executa uma chamada ao Firestore com timeout e uma nova tentativa automática
+        // em caso de falha (rede instável, timeout, etc.) antes de desistir.
+        // `factory` deve ser uma função que RETORNA a promise (ex: () => getDoc(ref)),
+        // para que possamos chamá-la de novo do zero em caso de retry.
+        async function fetchWithRetry(factory, { retries = 1, timeoutMs = 15000, retryDelayMs = 1000 } = {}) {
+            let lastError;
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    return await withTimeout(factory(), timeoutMs);
+                } catch (error) {
+                    lastError = error;
+                    if (attempt < retries) {
+                        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+                    }
+                }
+            }
+            throw lastError;
         }
 
         function normalizeCategoryMeta(meta = {}) {
