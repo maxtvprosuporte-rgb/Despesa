@@ -112,11 +112,22 @@
             border: 1px solid rgb(var(--c-overlay) / 0.1);
             color: rgb(var(--c-text-strong));
             transition: all 0.2s;
+            font-size: 16px; /* iOS só evita o zoom automático ao focar se a fonte for >= 16px */
         }
         .login-input:focus {
             outline: none;
             border-color: rgb(var(--c-accent));
             box-shadow: 0 0 0 2px rgb(var(--c-accent) / 0.2);
+        }
+
+        /* Mesma proteção pra QUALQUER input/select/textarea do app (modais de transação,
+           categorias, metas, etc.) - sem isso o Safari dá zoom ao focar em qualquer um
+           deles e, em alguns fluxos (ex: abrir modal, tocar em outro campo, fechar),
+           o zoom pode "grudar" e não voltar sozinho. */
+        @supports (-webkit-touch-callout: none) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
         }
 
         .spinner {
