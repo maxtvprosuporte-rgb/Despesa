@@ -107,6 +107,20 @@
             contain: paint;
         }
 
+        .site-header {
+            position: sticky;
+            isolation: isolate; /* cria um contexto próprio: o blur do ::before nunca "vaza" pro conteúdo */
+        }
+        .site-header::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: rgb(var(--c-background) / 0.8);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+        }
+
         .login-input {
             background: rgb(var(--c-input-bg));
             border: 1px solid rgb(var(--c-overlay) / 0.1);
