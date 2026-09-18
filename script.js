@@ -18,6 +18,35 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // ── Correção de zoom travado no iOS ──
+        // O Safari/WKWebView às vezes dá zoom ao focar um campo e não volta sozinho,
+        // deixando a página "presa" numa escala errada (o topo fica borrado até você
+        // interagir). O truque abaixo força o WebKit a recalcular a escala: alterna a
+        // tag <meta viewport> rapidamente toda vez que você sai de um campo de texto,
+        // ou quando o app volta a ficar visível (ex: trocar de app e voltar).
+        (function setupIOSZoomReset() {
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+            if (!viewportMeta) return;
+            const baseContent = viewportMeta.getAttribute('content');
+            let resetTimer = null;
+            function resetZoom() {
+                clearTimeout(resetTimer);
+                viewportMeta.setAttribute('content', baseContent + ', maximum-scale=1.0');
+                resetTimer = setTimeout(() => {
+                    viewportMeta.setAttribute('content', baseContent);
+                }, 350);
+            }
+            document.addEventListener('focusout', (e) => {
+                if (e.target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+                    resetZoom();
+                }
+            }, true);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) resetZoom();
+            });
+            window.addEventListener('pageshow', resetZoom);
+        })();
+
         // ── App State ──
         let transactions = [];
         let categories = [];
