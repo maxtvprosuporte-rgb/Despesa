@@ -116,9 +116,13 @@
             position: absolute;
             inset: 0;
             z-index: 0;
-            background: rgb(var(--c-background) / 0.8);
-            -webkit-backdrop-filter: blur(12px);
-            backdrop-filter: blur(12px);
+            /* Fundo 100% sólido (sem blur). Em apps instalados na tela de início do
+               iPhone (modo standalone), combinar "black-translucent" na barra de
+               status com um fundo desfocado (backdrop-filter) faz o WebKit renderizar
+               esse borrado bugado no topo. Cor sólida elimina o bug de vez, e ainda
+               assim acompanha o tema claro/escuro (é isso que resolve a barra de
+               status por trás da Dynamic Island). */
+            background: rgb(var(--c-background));
         }
 
         .login-input {
