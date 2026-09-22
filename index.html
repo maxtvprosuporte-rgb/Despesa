@@ -14,8 +14,13 @@
          trocado dentro do app via JS. "black-translucent" faz essa área virar
          uma sobreposição transparente, então o fundo real da página (que já
          muda com o tema) aparece por trás da Dynamic Island também. -->
+    <!-- "black-translucent" foi removido: em apps instalados na tela de início,
+         o próprio iOS renderiza essa opção com um efeito de vidro fosco/borrado
+         por cima da área da barra de status, por fora do nosso controle via CSS.
+         "default" usa uma barra sólida e nítida (fundo claro, ícones escuros) -
+         fixa, mas sem o bug de blur. -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="FinControl">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
