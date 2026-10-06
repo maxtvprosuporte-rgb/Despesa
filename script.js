@@ -588,10 +588,53 @@
             if (houseCards.length) {
                 const showHouseCards = householdMemberCount > 1;
                 houseCards.forEach(card => card.classList.toggle('hidden', !showHouseCards));
+                // Botões de expandir/minimizar só existem quando há +1 integrante
+                ['user', 'house'].forEach(key => {
+                    document.getElementById(key + 'SummaryToggle')?.classList.toggle('hidden', !showHouseCards);
+                });
+                applySummarySectionState();
                 // A grade (grid-cols-2 no mobile, lg:grid-cols-4 no desktop) é fixa;
                 // os cards da casa simplesmente somem/aparecem, reorganizando as fileiras.
             }
             updateChartFilterVisibility();
+        }
+
+        // ===== Dashboard mobile: seções "Minhas finanças" / "Casa" recolhíveis =====
+        // Padrão: Minhas abertas, Casa minimizada. A escolha fica salva no aparelho.
+        const SUMMARY_STATE_KEY = 'fincontrol_summary_collapsed';
+        function getSummaryState() {
+            const defaults = { user: false, house: true };
+            try {
+                return { ...defaults, ...(JSON.parse(localStorage.getItem(SUMMARY_STATE_KEY)) || {}) };
+            } catch (e) { return defaults; }
+        }
+        function applySummarySectionState() {
+            const state = getSummaryState();
+            const multi = householdMemberCount > 1;
+            ['user', 'house'].forEach(key => {
+                const section = document.getElementById(key + 'SummarySection');
+                const btn = document.getElementById(key + 'SummaryToggle');
+                if (!section) return;
+                // Com 1 integrante só existe "Minhas": nunca minimiza
+                const collapsed = multi && !!state[key];
+                section.classList.toggle('is-collapsed', collapsed);
+                if (btn) btn.setAttribute('aria-expanded', String(!collapsed));
+            });
+        }
+        function toggleSummarySection(key) {
+            const state = getSummaryState();
+            state[key] = !state[key];
+            try { localStorage.setItem(SUMMARY_STATE_KEY, JSON.stringify(state)); } catch (e) {}
+            applySummarySectionState();
+        }
+        window.toggleSummarySection = toggleSummarySection;
+
+        // Resumo mostrado no botão (útil quando a seção está minimizada)
+        function updateSummaryPreview(elId, value) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            el.textContent = formatCurrency(value);
+            el.className = 'summary-toggle-preview ' + (value > 0 ? 'text-primary' : value < 0 ? 'text-danger' : '');
         }
 
         // O filtro "Casa" x "Minhas" do gráfico só faz sentido quando a casa tem
@@ -1011,10 +1054,12 @@
             // Box: Minha Diferença (mês atual), com sinal positivo/negativo e badge de status
             const userBalance = userIncome - userExpense;
             renderDifferenceBox('userBalance', 'balanceStatus', userBalance);
+            updateSummaryPreview('userSummaryPreview', userBalance);
 
             // Box: Diferença da Casa (mês atual), com sinal positivo/negativo e badge de status
             const houseDifference = houseIncome - houseExpense;
             renderDifferenceBox('houseDifference', 'houseDifferenceStatus', houseDifference);
+            updateSummaryPreview('houseSummaryPreview', houseDifference);
 
             // Boxes: Comparação em % com o mês passado (Minha e da Casa)
             renderMonthComparison('user', userIncome, userExpense, uid, true);
