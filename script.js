@@ -73,7 +73,12 @@
         let savingsGoals = []; // metas de economia (pessoais, uma lista por usuário)
         let savingsInstallments = []; // parcelas mensais de cada meta
         let savingsInputMode = 'total'; // 'total' (valor total ÷ parcelas) | 'installment' (parcela × parcelas)
-        let currentView = 'dashboard'; // 'dashboard' | 'goals'
+        let currentView = 'dashboard'; // 'dashboard' | 'goals' | 'shopping'
+        // Lista de compras compartilhada da casa (tempo real)
+        let shoppingItems = [];
+        let shoppingUnsub = null;
+        let shoppingLoaded = false;
+        let shoppingError = null;
 
         const DEFAULT_CATEGORIES = ['Alimentação','Moradia','Transporte','Lazer','Saúde','Educação','Salário','Investimentos','Outros'];
 
@@ -245,6 +250,11 @@
         window.openMembersModal = openMembersModal;
         window.closeMembersModal = closeMembersModal;
         window.removeMember = removeMember;
+        window.handleShoppingSubmit = handleShoppingSubmit;
+        window.confirmShoppingItem = confirmShoppingItem;
+        window.undoShoppingItem = undoShoppingItem;
+        window.deleteShoppingItem = deleteShoppingItem;
+        window.clearBoughtItems = clearBoughtItems;
         window.approveJoinRequest = approveJoinRequest;
         window.rejectJoinRequest = rejectJoinRequest;
         window.cancelJoinRequest = cancelJoinRequest;
@@ -291,6 +301,7 @@
                 }
             } else {
                 stopJoinWatchers();
+                stopShoppingListener();
                 currentUser = null;
                 householdCode = null;
                 meuNome = '';
@@ -535,6 +546,7 @@
 
         async function handleLogout() {
             stopJoinWatchers();
+            stopShoppingListener();
             await signOut(auth);
         }
 
@@ -581,6 +593,7 @@
                 householdMemberCount = members.length || 1;
                 updateHouseCardsVisibility();
                 startJoinRequestsListener();
+                startShoppingListener();
 
                 if (settingsSnap.exists()) {
                     const data = settingsSnap.data();
@@ -1073,6 +1086,216 @@
             } catch (error) {
                 console.error('Erro ao retomar pedido de entrada:', error);
             }
+        }
+
+        // ── Compras (lista compartilhada da casa) ──
+        // Cada item: households/{código}/shoppingItems/{id}
+        // { name, quantity, unit, status: 'pending' | 'bought', addedAt, addedBy, addedByName,
+        //   boughtAt, boughtBy, boughtByName }
+        function shoppingCol() {
+            return collection(db, 'households', householdCode, 'shoppingItems');
+        }
+
+        function startShoppingListener() {
+            stopShoppingListener();
+            if (!householdCode) return;
+            shoppingLoaded = false;
+            shoppingError = null;
+            shoppingUnsub = onSnapshot(shoppingCol(), (snap) => {
+                shoppingItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                shoppingLoaded = true;
+                shoppingError = null;
+                updateShoppingBadge();
+                renderShoppingList();
+            }, (err) => {
+                console.error('Erro ao carregar lista de compras:', err);
+                shoppingError = err;
+                shoppingLoaded = true;
+                renderShoppingList();
+            });
+        }
+
+        function stopShoppingListener() {
+            if (shoppingUnsub) { shoppingUnsub(); shoppingUnsub = null; }
+            shoppingItems = [];
+            shoppingLoaded = false;
+            shoppingError = null;
+            updateShoppingBadge();
+        }
+
+        function updateShoppingBadge() {
+            const badge = document.getElementById('shoppingTabBadge');
+            if (!badge) return;
+            const n = shoppingItems.filter(i => i.status !== 'bought').length;
+            badge.textContent = n;
+            badge.classList.toggle('hidden', n === 0);
+        }
+
+        function formatShoppingDateTime(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (isNaN(d)) return '';
+            const date = d.toLocaleDateString('pt-BR');
+            const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            return `${date} às ${time}`;
+        }
+
+        function formatShoppingQty(item) {
+            const q = Number(item.quantity);
+            const qty = isNaN(q) ? '1' : q.toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+            return `${qty} ${item.unit || 'un'}`;
+        }
+
+        function handleShoppingSubmit(e) {
+            e.preventDefault();
+            if (!currentUser || !householdCode) return;
+            const nameEl = document.getElementById('shoppingName');
+            const qtyEl = document.getElementById('shoppingQty');
+            const unitEl = document.getElementById('shoppingUnit');
+            const name = nameEl.value.trim();
+            if (!name) return;
+            let quantity = parseFloat(String(qtyEl.value).replace(',', '.'));
+            if (!(quantity > 0)) quantity = 1;
+
+            const ref = doc(shoppingCol());
+            const item = {
+                name,
+                quantity,
+                unit: unitEl.value || 'un',
+                status: 'pending',
+                addedAt: new Date().toISOString(),
+                addedBy: currentUser.uid,
+                addedByName: getMyDisplayName()
+            };
+            // Sem await: o onSnapshot já mostra o item na hora (e funciona offline)
+            setDoc(ref, item).catch(err => {
+                console.error('Erro ao adicionar item:', err);
+                showToast(`Erro ao adicionar item: ${err.message}`, 'error');
+            });
+
+            nameEl.value = '';
+            qtyEl.value = '1';
+            nameEl.focus();
+        }
+
+        function updateShoppingItem(id, data) {
+            return setDoc(doc(db, 'households', householdCode, 'shoppingItems', id), data, { merge: true })
+                .catch(err => {
+                    console.error('Erro ao atualizar item:', err);
+                    showToast(`Erro ao atualizar item: ${err.message}`, 'error');
+                });
+        }
+
+        function confirmShoppingItem(id) {
+            updateShoppingItem(id, {
+                status: 'bought',
+                boughtAt: new Date().toISOString(),
+                boughtBy: currentUser.uid,
+                boughtByName: getMyDisplayName()
+            });
+        }
+
+        function undoShoppingItem(id) {
+            updateShoppingItem(id, { status: 'pending', boughtAt: null, boughtBy: null, boughtByName: null });
+        }
+
+        function deleteShoppingItem(id) {
+            fsDeleteDoc(doc(db, 'households', householdCode, 'shoppingItems', id)).catch(err => {
+                console.error('Erro ao remover item:', err);
+                showToast(`Erro ao remover item: ${err.message}`, 'error');
+            });
+        }
+
+        async function clearBoughtItems() {
+            const bought = shoppingItems.filter(i => i.status === 'bought');
+            if (!bought.length) return;
+            if (!confirm(`Apagar ${bought.length} item(ns) já comprado(s) da lista?`)) return;
+            try {
+                await Promise.all(bought.map(i => fsDeleteDoc(doc(db, 'households', householdCode, 'shoppingItems', i.id))));
+                showToast('Itens comprados removidos.');
+            } catch (err) {
+                console.error('Erro ao limpar comprados:', err);
+                showToast(`Erro ao limpar: ${err.message}`, 'error');
+            }
+        }
+
+        function renderShoppingList() {
+            const container = document.getElementById('shoppingList');
+            if (!container) return;
+
+            if (shoppingError) {
+                container.innerHTML = '<div class="shop-empty" style="color:rgb(var(--c-danger));">Não foi possível carregar a lista de compras. Verifique a conexão e as permissões do Firestore.</div>';
+                return;
+            }
+            if (!shoppingLoaded) {
+                container.innerHTML = '<div class="shop-empty">Carregando lista...</div>';
+                return;
+            }
+
+            const pending = shoppingItems
+                .filter(i => i.status !== 'bought')
+                .sort((a, b) => String(b.addedAt || '').localeCompare(String(a.addedAt || '')));
+            const bought = shoppingItems
+                .filter(i => i.status === 'bought')
+                .sort((a, b) => String(b.boughtAt || '').localeCompare(String(a.boughtAt || '')));
+
+            const check = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
+            const trash = '<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+
+            const pendingRows = pending.map(i => {
+                const id = escapeHtml(i.id);
+                return `
+                    <div class="shop-item">
+                        <div class="shop-item-main">
+                            <div class="shop-item-top">
+                                <span class="shop-item-name">${escapeHtml(i.name || '')}</span>
+                                <span class="shop-qty">${escapeHtml(formatShoppingQty(i))}</span>
+                            </div>
+                            <div class="shop-item-meta">Adicionado por ${escapeHtml(i.addedByName || 'alguém')}<br>${escapeHtml(formatShoppingDateTime(i.addedAt))}</div>
+                        </div>
+                        <div class="shop-item-actions">
+                            <button class="shop-confirm-btn" onclick="confirmShoppingItem('${id}')">${check} Comprei</button>
+                            <button class="shop-del-btn" onclick="deleteShoppingItem('${id}')" aria-label="Remover item">${trash}</button>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            const boughtRows = bought.map(i => {
+                const id = escapeHtml(i.id);
+                return `
+                    <div class="shop-item is-bought">
+                        <div class="shop-item-main">
+                            <div class="shop-item-top">
+                                <span class="shop-item-name">${escapeHtml(i.name || '')}</span>
+                                <span class="shop-qty">${escapeHtml(formatShoppingQty(i))}</span>
+                            </div>
+                            <div class="shop-item-meta">
+                                Comprado por ${escapeHtml(i.boughtByName || 'alguém')} em ${escapeHtml(formatShoppingDateTime(i.boughtAt))}<br>
+                                Adicionado em ${escapeHtml(formatShoppingDateTime(i.addedAt))}
+                            </div>
+                        </div>
+                        <div class="shop-item-actions">
+                            <button class="shop-undo-btn" onclick="undoShoppingItem('${id}')">Desfazer</button>
+                            <button class="shop-del-btn" onclick="deleteShoppingItem('${id}')" aria-label="Remover item">${trash}</button>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                <section>
+                    <div class="shop-section-title"><span>Para comprar (${pending.length})</span></div>
+                    <div class="shop-list">
+                        ${pendingRows || '<div class="shop-empty">Nada na lista por enquanto. Adicione o primeiro item acima.</div>'}
+                    </div>
+                </section>
+                ${bought.length ? `
+                <section>
+                    <div class="shop-section-title">
+                        <span>Comprados (${bought.length})</span>
+                        <button class="shop-clear-btn" onclick="clearBoughtItems()">Limpar comprados</button>
+                    </div>
+                    <div class="shop-list">${boughtRows}</div>
+                </section>` : ''}`;
         }
 
         // ── Visual (tema claro/escuro) ──
@@ -2398,25 +2621,20 @@
 
         function switchView(view) {
             currentView = view;
-            const dashboardView = document.getElementById('dashboardView');
-            const goalsView = document.getElementById('goalsView');
-            const periodFilterBar = document.getElementById('periodFilterBar');
-            const tabDashboard = document.getElementById('viewTabDashboard');
-            const tabGoals = document.getElementById('viewTabGoals');
+            const views = { dashboard: 'dashboardView', goals: 'goalsView', shopping: 'shoppingView' };
+            const tabs = { dashboard: 'viewTabDashboard', goals: 'viewTabGoals', shopping: 'viewTabShopping' };
+            Object.keys(views).forEach(key => {
+                document.getElementById(views[key])?.classList.toggle('hidden', key !== view);
+                document.getElementById(tabs[key])?.classList.toggle('view-tab-active', key === view);
+            });
+            // O filtro de período só faz sentido no Dashboard
+            document.getElementById('periodFilterBar')?.classList.toggle('hidden', view !== 'dashboard');
+
             if (view === 'goals') {
-                dashboardView.classList.add('hidden');
-                goalsView.classList.remove('hidden');
-                if (periodFilterBar) periodFilterBar.classList.add('hidden');
-                tabDashboard.classList.remove('view-tab-active');
-                tabGoals.classList.add('view-tab-active');
                 renderGoalsView();
                 updateUI();
-            } else {
-                dashboardView.classList.remove('hidden');
-                goalsView.classList.add('hidden');
-                if (periodFilterBar) periodFilterBar.classList.remove('hidden');
-                tabGoals.classList.remove('view-tab-active');
-                tabDashboard.classList.add('view-tab-active');
+            } else if (view === 'shopping') {
+                renderShoppingList();
             }
         }
 
