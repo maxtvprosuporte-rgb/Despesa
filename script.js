@@ -1,7 +1,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc as fsDeleteDoc } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, onSnapshot, arrayUnion, deleteDoc as fsDeleteDoc } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA91xQGPS55qp8ckpnDaVa2d9vA4ztg9Hk",
@@ -62,6 +62,13 @@
         let currentDebtRolloverId = null;
         let householdMemberCount = 1;
         let householdMembers = [];
+        // Solicitações de entrada na casa (ver bloco "Solicitações de entrada" mais abaixo)
+        let pendingJoinRequests = [];
+        let joinRequestsUnsub = null;   // listener do master (lista de pedidos)
+        let myJoinUnsub = null;         // listener de quem pediu (status do próprio pedido)
+        let myJoinCode = null;
+        let joinRequestsFirstSnap = true;
+        let finalizingJoin = false;
         let householdCreatedBy = null;
         let savingsGoals = []; // metas de economia (pessoais, uma lista por usuário)
         let savingsInstallments = []; // parcelas mensais de cada meta
@@ -238,6 +245,10 @@
         window.openMembersModal = openMembersModal;
         window.closeMembersModal = closeMembersModal;
         window.removeMember = removeMember;
+        window.approveJoinRequest = approveJoinRequest;
+        window.rejectJoinRequest = rejectJoinRequest;
+        window.cancelJoinRequest = cancelJoinRequest;
+        window.shareHouseholdInvite = shareHouseholdInvite;
         window.openThemeModal = openThemeModal;
         window.closeThemeModal = closeThemeModal;
         window.setTheme = setTheme;
@@ -275,8 +286,11 @@
                 } else {
                     document.getElementById('appContent').classList.add('hidden');
                     document.getElementById('setupHouseholdScreen').classList.remove('hidden');
+                    // Se a pessoa já tinha pedido entrada em uma casa, volta para a tela de espera
+                    await resumePendingJoinRequest();
                 }
             } else {
+                stopJoinWatchers();
                 currentUser = null;
                 householdCode = null;
                 meuNome = '';
@@ -377,7 +391,7 @@
             const spinner = document.getElementById('joinHouseSpinner');
             
             btn.disabled = true;
-            btnText.textContent = 'Entrando...';
+            btnText.textContent = 'Enviando pedido...';
             spinner.classList.remove('hidden');
             document.getElementById('setupError').classList.add('hidden');
             
@@ -392,8 +406,10 @@
                 const hhData = hhSnap.data();
                 const members = hhData.members || [];
                 if (!members.includes(currentUser.uid)) {
-                    members.push(currentUser.uid);
-                    await setDoc(householdRef, { ...hhData, members }, { merge: true });
+                    // Não entra direto: envia um pedido e espera o criador(a) da casa aprovar
+                    await submitJoinRequest(currentUser, code);
+                    showPendingJoinScreen(code);
+                    return;
                 }
                 
                 await setDoc(doc(db, 'users', currentUser.uid), {
@@ -419,7 +435,7 @@
                 document.getElementById('setupError').classList.remove('hidden');
             } finally {
                 btn.disabled = false;
-                btnText.textContent = 'Entrar na Casa';
+                btnText.textContent = 'Solicitar Entrada';
                 spinner.classList.add('hidden');
             }
         }
@@ -451,6 +467,7 @@
                 await updateProfile(cred.user, { displayName: name });
 
                 let code;
+                let pendingJoinCode = null;
                 if (inputCode) {
                     code = inputCode;
                     const householdRef = doc(db, 'households', code);
@@ -466,12 +483,8 @@
                             categoryMeta: {}
                         });
                     } else {
-                        const hhData = hhSnap.data();
-                        const members = hhData.members || [];
-                        if (!members.includes(cred.user.uid)) {
-                            members.push(cred.user.uid);
-                            await setDoc(householdRef, { ...hhData, members }, { merge: true });
-                        }
+                        // Casa já existe: a entrada depende da aprovação do criador(a)
+                        pendingJoinCode = code;
                     }
                 } else {
                     code = generateHouseholdCode();
@@ -492,6 +505,19 @@
                     });
                 }
 
+                if (pendingJoinCode) {
+                    await setDoc(doc(db, 'users', cred.user.uid), {
+                        name,
+                        email,
+                        createdAt: new Date().toISOString()
+                    }, { merge: true });
+                    await submitJoinRequest(cred.user, pendingJoinCode, name);
+                    currentUser = cred.user;
+                    showPendingJoinScreen(pendingJoinCode);
+                    showRegLoading(false);
+                    return;
+                }
+
                 await setDoc(doc(db, 'users', cred.user.uid), {
                     name,
                     email,
@@ -508,6 +534,7 @@
         }
 
         async function handleLogout() {
+            stopJoinWatchers();
             await signOut(auth);
         }
 
@@ -553,6 +580,7 @@
                 householdCreatedBy = hhData.createdBy || members[0] || null;
                 householdMemberCount = members.length || 1;
                 updateHouseCardsVisibility();
+                startJoinRequestsListener();
 
                 if (settingsSnap.exists()) {
                     const data = settingsSnap.data();
@@ -674,6 +702,11 @@
         function openMembersModal() {
             document.getElementById('membersModal').style.display = 'block';
             document.getElementById('membersHouseholdCode').textContent = householdCode || '';
+            document.getElementById('membersInviteHint').textContent = isHouseholdMaster()
+                ? 'Envie o código para quem vai entrar. A pessoa faz o pedido com ele e você aprova ou recusa aqui.'
+                : 'Quem usar este código fica aguardando a aprovação de quem criou a casa.';
+            document.getElementById('shareInviteBtn').classList.toggle('hidden', !navigator.share);
+            renderJoinRequests();
             renderMembersList();
         }
         function closeMembersModal() {
@@ -765,6 +798,280 @@
             } catch (error) {
                 console.error('Erro ao remover integrante:', error);
                 showToast(`Erro ao remover: ${error.message}`, 'error');
+            }
+        }
+
+        // ── Solicitações de entrada na casa ──
+        // Fluxo: quem tem o código cria households/{código}/joinRequests/{uid} (status "pending").
+        // O criador(a) da casa (master) vê o pedido em tempo real e aprova (entra em `members`)
+        // ou recusa. Quem pediu acompanha o próprio pedido e, ao ser aprovado, vincula a conta.
+        function isHouseholdMaster() {
+            return !!currentUser && householdCreatedBy === currentUser.uid;
+        }
+
+        function stopMyJoinWatcher() {
+            if (myJoinUnsub) { myJoinUnsub(); myJoinUnsub = null; }
+            myJoinCode = null;
+        }
+
+        function stopJoinWatchers() {
+            if (joinRequestsUnsub) { joinRequestsUnsub(); joinRequestsUnsub = null; }
+            stopMyJoinWatcher();
+            pendingJoinRequests = [];
+            joinRequestsFirstSnap = true;
+            updateJoinRequestsUI();
+        }
+
+        // ---- Lado do master ----
+        function startJoinRequestsListener() {
+            if (joinRequestsUnsub) { joinRequestsUnsub(); joinRequestsUnsub = null; }
+            pendingJoinRequests = [];
+            joinRequestsFirstSnap = true;
+            if (!isHouseholdMaster() || !householdCode) { updateJoinRequestsUI(); return; }
+
+            joinRequestsUnsub = onSnapshot(
+                collection(db, 'households', householdCode, 'joinRequests'),
+                (snap) => {
+                    const prevIds = new Set(pendingJoinRequests.map(r => r.uid));
+                    pendingJoinRequests = snap.docs
+                        .map(d => ({ ...d.data(), uid: d.data().uid || d.id }))
+                        .filter(r => r.status === 'pending')
+                        .sort((x, y) => String(x.requestedAt || '').localeCompare(String(y.requestedAt || '')));
+
+                    if (joinRequestsFirstSnap) {
+                        if (pendingJoinRequests.length) {
+                            showToast(`Você tem ${pendingJoinRequests.length} pedido(s) de entrada. Veja em Configurações › Integrantes.`);
+                        }
+                    } else {
+                        pendingJoinRequests.filter(r => !prevIds.has(r.uid)).forEach(r => {
+                            showToast(`${r.name || 'Alguém'} quer entrar na casa. Veja em Configurações › Integrantes.`);
+                        });
+                    }
+                    joinRequestsFirstSnap = false;
+                    updateJoinRequestsUI();
+                },
+                (err) => console.error('Erro ao ouvir pedidos de entrada:', err)
+            );
+        }
+
+        function updateJoinRequestsUI() {
+            const n = pendingJoinRequests.length;
+            const badge = document.getElementById('membersPendingBadge');
+            if (badge) { badge.textContent = n; badge.classList.toggle('hidden', n === 0); }
+            const dot = document.getElementById('settingsBtnDot');
+            if (dot) dot.classList.toggle('hidden', n === 0);
+            const modal = document.getElementById('membersModal');
+            if (modal && modal.style.display === 'block') renderJoinRequests();
+        }
+
+        function renderJoinRequests() {
+            const container = document.getElementById('joinRequestsSection');
+            if (!container) return;
+            if (!isHouseholdMaster() || !pendingJoinRequests.length) { container.innerHTML = ''; return; }
+
+            const rows = pendingJoinRequests.map(r => {
+                const name = r.name || 'Novo integrante';
+                const initials = name.trim().slice(0, 2).toUpperCase();
+                const uid = escapeHtml(r.uid);
+                return `
+                    <div class="member-row">
+                        <span class="member-avatar">${escapeHtml(initials)}</span>
+                        <div style="flex:1;min-width:0;">
+                            <div class="member-name">${escapeHtml(name)}</div>
+                            <div style="font-size:11px;color:rgb(var(--c-text-faint));overflow:hidden;text-overflow:ellipsis;">${escapeHtml(r.email || 'Quer entrar na casa')}</div>
+                        </div>
+                        <div class="join-request-actions">
+                            <button class="join-btn join-btn-reject" onclick="rejectJoinRequest('${uid}')">Recusar</button>
+                            <button class="join-btn join-btn-approve" onclick="approveJoinRequest('${uid}')">Aprovar</button>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="join-requests-box">
+                    <div class="join-requests-title">Pedidos de entrada <span class="pending-badge">${pendingJoinRequests.length}</span></div>
+                    ${rows}
+                </div>`;
+        }
+
+        async function decideJoinRequest(uid, status) {
+            if (!isHouseholdMaster()) {
+                showToast('Apenas quem criou a casa pode aprovar ou recusar pedidos.', 'error');
+                return false;
+            }
+            await withTimeout(setDoc(
+                doc(db, 'households', householdCode, 'joinRequests', uid),
+                { status, decidedAt: new Date().toISOString(), decidedBy: currentUser.uid },
+                { merge: true }
+            ));
+            return true;
+        }
+
+        async function approveJoinRequest(uid) {
+            const req = pendingJoinRequests.find(r => r.uid === uid);
+            const name = req?.name || 'Integrante';
+            if (!isHouseholdMaster()) {
+                showToast('Apenas quem criou a casa pode aprovar pedidos.', 'error');
+                return;
+            }
+            document.querySelectorAll('.join-btn').forEach(b => b.disabled = true);
+            try {
+                // 1º entra na lista de membros, 2º marca o pedido como aprovado
+                await withTimeout(setDoc(doc(db, 'households', householdCode), { members: arrayUnion(uid) }, { merge: true }));
+                await decideJoinRequest(uid, 'approved');
+
+                if (!householdMembers.includes(uid)) householdMembers = [...householdMembers, uid];
+                householdMemberCount = householdMembers.length || 1;
+                updateHouseCardsVisibility();
+                updateUI();
+                renderMembersList();
+                showToast(`${name} agora faz parte da casa!`);
+            } catch (error) {
+                console.error('Erro ao aprovar pedido:', error);
+                showToast(`Erro ao aprovar: ${error.message}`, 'error');
+                renderJoinRequests();
+            }
+        }
+
+        async function rejectJoinRequest(uid) {
+            const req = pendingJoinRequests.find(r => r.uid === uid);
+            const name = req?.name || 'esta pessoa';
+            if (!confirm(`Recusar a entrada de ${name} na casa?`)) return;
+            document.querySelectorAll('.join-btn').forEach(b => b.disabled = true);
+            try {
+                if (await decideJoinRequest(uid, 'rejected')) {
+                    showToast(`Pedido de ${name} recusado.`);
+                }
+            } catch (error) {
+                console.error('Erro ao recusar pedido:', error);
+                showToast(`Erro ao recusar: ${error.message}`, 'error');
+                renderJoinRequests();
+            }
+        }
+
+        async function shareHouseholdInvite() {
+            if (!householdCode) return;
+            const text = `Entre na nossa casa no FinControl! Crie sua conta (ou entre) e use o código ${householdCode} para pedir entrada.`;
+            try {
+                await navigator.share({ title: 'FinControl', text, url: location.href.split('#')[0] });
+            } catch (e) { /* cancelado pelo usuário */ }
+        }
+
+        // ---- Lado de quem pede para entrar ----
+        async function submitJoinRequest(user, code, nameOverride) {
+            const name = nameOverride || meuNome || user.displayName || user.email;
+            await withTimeout(setDoc(doc(db, 'households', code, 'joinRequests', user.uid), {
+                uid: user.uid,
+                name,
+                email: user.email || '',
+                status: 'pending',
+                requestedAt: new Date().toISOString()
+            }));
+            await withTimeout(setDoc(doc(db, 'users', user.uid), { pendingHouseholdCode: code }, { merge: true }));
+        }
+
+        function showPendingJoinScreen(code) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContent').classList.add('hidden');
+            document.getElementById('setupHouseholdScreen').classList.remove('hidden');
+            document.getElementById('setupOptions').classList.add('hidden');
+            document.getElementById('joinHouseForm').classList.add('hidden');
+            document.getElementById('setupError').classList.add('hidden');
+            document.getElementById('joinPendingCode').textContent = code;
+            document.getElementById('joinPendingPanel').classList.remove('hidden');
+            watchMyJoinRequest(code);
+        }
+
+        function hidePendingJoinScreen() {
+            document.getElementById('joinPendingPanel').classList.add('hidden');
+            document.getElementById('setupOptions').classList.remove('hidden');
+        }
+
+        function watchMyJoinRequest(code) {
+            if (!currentUser) return;
+            if (myJoinUnsub && myJoinCode === code) return;
+            stopMyJoinWatcher();
+            myJoinCode = code;
+            myJoinUnsub = onSnapshot(
+                doc(db, 'households', code, 'joinRequests', currentUser.uid),
+                (snap) => {
+                    if (!snap.exists()) return;
+                    const status = snap.data().status;
+                    if (status === 'approved') finalizeApprovedJoin(code);
+                    else if (status === 'rejected') handleJoinRejected(code);
+                },
+                (err) => console.error('Erro ao acompanhar pedido de entrada:', err)
+            );
+        }
+
+        async function finalizeApprovedJoin(code) {
+            if (finalizingJoin || !currentUser) return;
+            finalizingJoin = true;
+            try {
+                // Confirma que realmente já está na lista de membros da casa
+                const hh = await withTimeout(getDoc(doc(db, 'households', code)));
+                const members = hh.exists() ? (hh.data().members || []) : [];
+                if (!members.includes(currentUser.uid)) return;
+
+                stopMyJoinWatcher();
+                await withTimeout(setDoc(doc(db, 'users', currentUser.uid), {
+                    householdCode: code,
+                    pendingHouseholdCode: null
+                }, { merge: true }));
+                try { await withTimeout(fsDeleteDoc(doc(db, 'households', code, 'joinRequests', currentUser.uid))); } catch (e) { /* ignore */ }
+
+                householdCode = code;
+                document.getElementById('joinPendingPanel').classList.add('hidden');
+                document.getElementById('setupHouseholdScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+                await loadHouseholdData();
+                initApp();
+                showToast('Sua entrada foi aprovada! Bem-vindo(a) à casa.');
+            } catch (error) {
+                console.error('Erro ao concluir entrada na casa:', error);
+                showToast(`Erro ao entrar na casa: ${error.message}`, 'error');
+            } finally {
+                finalizingJoin = false;
+            }
+        }
+
+        async function handleJoinRejected(code) {
+            stopMyJoinWatcher();
+            try { await withTimeout(setDoc(doc(db, 'users', currentUser.uid), { pendingHouseholdCode: null }, { merge: true })); } catch (e) { /* ignore */ }
+            try { await withTimeout(fsDeleteDoc(doc(db, 'households', code, 'joinRequests', currentUser.uid))); } catch (e) { /* ignore */ }
+            hidePendingJoinScreen();
+            const err = document.getElementById('setupError');
+            err.textContent = 'Seu pedido de entrada foi recusado por quem criou a casa.';
+            err.classList.remove('hidden');
+        }
+
+        async function cancelJoinRequest() {
+            if (!currentUser) return;
+            const code = myJoinCode;
+            stopMyJoinWatcher();
+            try {
+                if (code) await withTimeout(fsDeleteDoc(doc(db, 'households', code, 'joinRequests', currentUser.uid)));
+            } catch (e) { /* ignore */ }
+            try { await withTimeout(setDoc(doc(db, 'users', currentUser.uid), { pendingHouseholdCode: null }, { merge: true })); } catch (e) { /* ignore */ }
+            hidePendingJoinScreen();
+            hideJoinHouseholdForm();
+            showToast('Pedido cancelado.');
+        }
+
+        async function resumePendingJoinRequest() {
+            if (!currentUser) return;
+            try {
+                const uSnap = await getDoc(doc(db, 'users', currentUser.uid));
+                const code = uSnap.exists() ? uSnap.data().pendingHouseholdCode : null;
+                if (!code) return;
+                const reqSnap = await getDoc(doc(db, 'households', code, 'joinRequests', currentUser.uid));
+                if (!reqSnap.exists()) {
+                    await setDoc(doc(db, 'users', currentUser.uid), { pendingHouseholdCode: null }, { merge: true });
+                    return;
+                }
+                showPendingJoinScreen(code);
+            } catch (error) {
+                console.error('Erro ao retomar pedido de entrada:', error);
             }
         }
 

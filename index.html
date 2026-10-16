@@ -90,7 +90,7 @@
                     <div>
                         <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Código da Casa <span class="text-zinc-600 dark:text-zinc-300">(opcional)</span></label>
                         <input type="text" id="regHouseholdCode" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Deixe vazio para criar nova" maxlength="6">
-                        <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Seu parceiro(a) já criou uma casa? Digite o código aqui para entrar. Se deixar vazio, uma nova casa será criada e você receberá um código para compartilhar.</p>
+                        <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Seu parceiro(a) já criou uma casa? Digite o código aqui para pedir entrada (quem criou a casa precisa aprovar). Se deixar vazio, uma nova casa será criada e você receberá um código para compartilhar.</p>
                     </div>
                     <button type="submit" id="regBtn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
                         <span id="regBtnText">Criar Conta</span>
@@ -139,14 +139,25 @@
                     <div>
                         <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Código da Casa</label>
                         <input type="text" id="joinHouseCode" required maxlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Ex: A7K3NP">
-                        <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Peça o código para seu parceiro(a). Ele aparece no header do app após o login.</p>
+                        <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Peça o código para quem criou a casa (ele aparece no header do app). Essa pessoa precisará aprovar sua entrada.</p>
                     </div>
                     <button type="submit" id="joinHouseBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
-                        <span id="joinHouseBtnText">Entrar na Casa</span>
+                        <span id="joinHouseBtnText">Solicitar Entrada</span>
                         <span id="joinHouseSpinner" class="spinner hidden"></span>
                     </button>
                     <button type="button" onclick="hideJoinHouseholdForm()" class="w-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-sm transition-colors">Voltar</button>
                 </form>
+
+                <div id="joinPendingPanel" class="hidden join-pending-panel">
+                    <div class="join-pending-icon"><span class="spinner"></span></div>
+                    <h2 class="font-display font-semibold text-lg">Aguardando aprovação</h2>
+                    <p class="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed">
+                        Seu pedido para entrar na casa <span id="joinPendingCode" class="font-mono font-semibold tracking-wider text-accent"></span> foi enviado.
+                        Quem criou a casa precisa aprovar. Esta tela atualiza sozinha assim que houver resposta.
+                    </p>
+                    <button type="button" onclick="cancelJoinRequest()" class="w-full bg-surface hover:bg-surfaceHighlight text-zinc-900 dark:text-zinc-50 font-medium py-3 rounded-lg transition-all border border-zinc-900/10 dark:border-white/10">Cancelar pedido</button>
+                    <button type="button" onclick="handleLogout()" class="w-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-sm transition-colors">Sair da conta</button>
+                </div>
             </div>
         </div>
     </div>
@@ -171,7 +182,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     <span class="hidden sm:inline">Sair</span>
                 </button>
-                <button onclick="openSettingsModal()" class="btn-icon-only bg-surface hover:bg-surfaceHighlight text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-50 border border-zinc-900/10 dark:border-white/10 px-2 sm:px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Configurações">
+                <button id="settingsBtn" onclick="openSettingsModal()" class="btn-icon-only bg-surface hover:bg-surfaceHighlight text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-50 border border-zinc-900/10 dark:border-white/10 px-2 sm:px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" title="Configurações"><span id="settingsBtnDot" class="settings-dot hidden"></span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     <span class="hidden sm:inline">Configurações</span>
                 </button>
@@ -748,7 +759,7 @@
                             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8zm6 0a4 4 0 10-2.83-6.83"></path></svg>
                         </span>
                         <span class="settings-row-text">
-                            <span class="settings-row-title">Integrantes da Casa</span>
+                            <span class="settings-row-title">Integrantes da Casa <span id="membersPendingBadge" class="pending-badge hidden"></span></span>
                             <span class="settings-row-desc">Gerencie quem faz parte da casa</span>
                         </span>
                         <svg class="settings-row-chevron" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -800,13 +811,20 @@
                     </button>
                 </div>
                 <div style="padding:16px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:rgb(var(--c-accent) / 0.08);border:1px solid rgb(var(--c-accent) / 0.2);border-radius:10px;margin-bottom:16px;">
-                        <div>
-                            <div style="font-size:11px;color:rgb(var(--c-text-faint));margin-bottom:2px;">Código de convite</div>
-                            <div id="membersHouseholdCode" style="font-family:monospace;font-weight:700;font-size:15px;letter-spacing:0.08em;color:rgb(var(--c-accent));"></div>
+                    <div class="invite-box">
+                        <div class="invite-box-head">
+                            <div style="min-width:0;">
+                                <div style="font-size:11px;color:rgb(var(--c-text-faint));margin-bottom:2px;">Incluir usuário · Código da casa</div>
+                                <div id="membersHouseholdCode" style="font-family:monospace;font-weight:700;font-size:15px;letter-spacing:0.08em;color:rgb(var(--c-accent));"></div>
+                            </div>
+                            <div class="invite-actions">
+                                <button type="button" onclick="copyHouseholdCode()" class="invite-btn">Copiar</button>
+                                <button type="button" id="shareInviteBtn" onclick="shareHouseholdInvite()" class="invite-btn hidden">Compartilhar</button>
+                            </div>
                         </div>
-                        <button onclick="copyHouseholdCode()" style="background:rgb(var(--c-accent));color:white;font-weight:500;font-size:12px;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;">Copiar e convidar</button>
+                        <p id="membersInviteHint" class="invite-hint"></p>
                     </div>
+                    <div id="joinRequestsSection"></div>
                     <div id="membersList" style="display:flex;flex-direction:column;gap:8px;">
                         <div style="text-align:center;padding:20px;color:rgb(var(--c-text-faint));font-size:13px;">Carregando integrantes...</div>
                     </div>
