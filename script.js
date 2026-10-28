@@ -14,7 +14,8 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
+        let analytics = null;
+        try { analytics = getAnalytics(app); } catch (error) { /* Métricas opcionais não devem impedir o acesso ao app. */ }
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -51,7 +52,8 @@
         let transactions = [];
         let categories = [];
         let categoryMeta = {};
-        let currentMonth = new Date().toISOString().slice(0, 7);
+        const bootNow = new Date();
+        let currentMonth = `${bootNow.getFullYear()}-${String(bootNow.getMonth() + 1).padStart(2, '0')}`;
         let editingId = null;
         let expenseChartInstance = null;
         let currentUser = null;
@@ -116,9 +118,20 @@
             return `${day}/${m}/${y}`;
         };
         const dateToString = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        function parseTxDate(value) {
+            const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+            if (!match) return null;
+            const [, year, month, day] = match.map(Number);
+            const date = new Date(year, month - 1, day, 12);
+            return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+        }
         const addMonthsToDate = (dateStr, months) => {
-            const d = new Date(dateStr + 'T12:00:00');
+            const d = parseTxDate(dateStr);
+            if (!d) throw new Error('Data inválida.');
+            const day = d.getDate();
+            d.setDate(1);
             d.setMonth(d.getMonth() + months);
+            d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
             return dateToString(d);
         };
         const stripInstallmentSuffix = (text = '') => String(text).replace(/\s*\(\d+\/\d+\)\s*$/, '');
@@ -759,7 +772,7 @@
                                 </div>
                                 ${email ? `<div style="font-size:11px;color:rgb(var(--c-text-faint));">${escapeHtml(email)}</div>` : ''}
                             </div>
-                            ${canRemove ? `<button class="member-remove-btn" onclick="removeMember('${uid}', '${escapeHtml(name).replace(/'/g, "\\'")}')">Remover</button>` : ''}
+                            ${canRemove ? `<button class="member-remove-btn" data-uid="${escapeHtml(uid)}" data-name="${escapeHtml(name)}" onclick="removeMember(this.dataset.uid, this.dataset.name)">Remover</button>` : ''}
                         </div>`;
                 }));
                 container.innerHTML = rows.join('') || '<div style="text-align:center;padding:20px;color:rgb(var(--c-text-faint));font-size:13px;">Nenhum integrante encontrado.</div>';
@@ -1424,7 +1437,7 @@
             monthInput.value = currentMonth;
             monthInput.onchange = (e) => { currentMonth = e.target.value; updateUI(); };
             const dateInput = document.querySelector('#transactionForm input[name="date"]');
-            if (dateInput) dateInput.valueAsDate = new Date();
+            if (dateInput) dateInput.value = dateToString(new Date());
             populateCategorySelects();
             onChartViewModeChange();
             setChartFilter('all');
@@ -1738,7 +1751,13 @@
                 return true;
             });
 
-            if (filtered.length === 0) { emptyState.classList.remove('hidden'); return; }
+            if (filtered.length === 0) {
+                const hasAny = monthFiltered.some(t => t.userId === currentUser?.uid || !t.isAnonymous);
+                emptyState.querySelector('p').textContent = hasAny ? 'Nenhuma transação com esses filtros.' : 'Nenhuma transação registrada neste mês.';
+                emptyState.querySelector('button').classList.toggle('hidden', hasAny);
+                emptyState.classList.remove('hidden');
+                return;
+            }
             emptyState.classList.add('hidden');
 
             // Apply sort
@@ -1804,7 +1823,7 @@
             if (!items.length) return;
 
             const catOrder = [];
-            const catMap = {};
+            const catMap = Object.create(null);
             items.forEach(t => {
                 if (!catMap[t.category]) { catMap[t.category] = []; catOrder.push(t.category); }
                 catMap[t.category].push(t);
@@ -2076,12 +2095,14 @@
 
             if (viewMode === 'month') {
                 filtered = transactions.filter(t => {
-                    const txDate = new Date(t.date);
+                    const txDate = parseTxDate(t.date);
+                    if (!txDate) return false;
                     return txDate.getFullYear() === selYear && (txDate.getMonth() + 1) === selMonth;
                 });
             } else { // 'year'
                 filtered = transactions.filter(t => {
-                    const txDate = new Date(t.date);
+                    const txDate = parseTxDate(t.date);
+                    if (!txDate) return false;
                     return txDate.getFullYear() === selYear;
                 });
             }
@@ -2121,13 +2142,13 @@
                 const [selYear, selMonth] = currentMonth.split('-').map(Number);
                 const daysInMonth = new Date(selYear, selMonth, 0).getDate();
                 labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
-                groupingFn = (t) => new Date(t.date).getDate() - 1;
+                groupingFn = (t) => parseTxDate(t.date).getDate() - 1;
             } else { // 'year'
                 labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                groupingFn = (t) => new Date(t.date).getMonth();
+                groupingFn = (t) => parseTxDate(t.date).getMonth();
             }
 
-            const categoryBuckets = {};
+            const categoryBuckets = Object.create(null);
             filtered.forEach(t => {
                 if (t.type !== 'expense') return;
                 const bucket = groupingFn(t);
@@ -2136,7 +2157,7 @@
                 categoryBuckets[t.category][bucket] += t.amount;
             });
 
-            if (Object.keys(categoryBuckets).length === 0) return;
+            if (Object.keys(categoryBuckets).length === 0) return false;
 
             // Categorias ordenadas da maior pra menor
             const sortedEntries = Object.entries(categoryBuckets).sort((a, b) => {
@@ -2153,7 +2174,8 @@
                     borderColor: color,
                     backgroundColor: hexToRgba(color, 0.1),
                     borderWidth: 2,
-                    tension: 0.3,
+                    tension: 0.25,
+                    cubicInterpolationMode: 'monotone',
                     fill: false,
                     pointBackgroundColor: color,
                     pointBorderColor: color,
@@ -2220,23 +2242,49 @@
                     }
                 }
             });
+            return true;
         }
 
         function safeDestroyChart() {
             const canvas = document.getElementById('expenseChart');
             if (canvas) {
-                const existing = Chart.getChart(canvas);
+                const existing = typeof Chart !== 'undefined' ? Chart.getChart(canvas) : null;
                 if (existing) existing.destroy();
                 const ctx2 = canvas.getContext('2d');
-                ctx2.clearRect(0, 0, canvas.width, canvas.height);
+                if (ctx2) ctx2.clearRect(0, 0, canvas.width, canvas.height);
             }
             expenseChartInstance = null;
         }
 
         function renderChart() {
-            safeDestroyChart();
-            const ctx = document.getElementById('expenseChart').getContext('2d');
-            renderCombinedChart(ctx);
+            const canvas = document.getElementById('expenseChart');
+            if (!canvas) return;
+            const host = canvas.parentElement;
+            host.querySelector('.chart-empty')?.remove();
+            canvas.style.display = '';
+            const showEmpty = (title, message) => {
+                canvas.style.display = 'none';
+                const empty = document.createElement('div');
+                empty.className = 'chart-empty';
+                empty.setAttribute('role', 'status');
+                const heading = document.createElement('strong');
+                heading.textContent = title;
+                const detail = document.createElement('span');
+                detail.textContent = message;
+                empty.append(heading, detail);
+                host.appendChild(empty);
+            };
+            try {
+                safeDestroyChart();
+                const ctx = canvas.getContext('2d');
+                if (typeof Chart === 'undefined' || !ctx) {
+                    showEmpty('Gráfico indisponível', 'Verifique a conexão e recarregue a página.');
+                    return;
+                }
+                if (!renderCombinedChart(ctx)) showEmpty('Sem despesas no período', 'Adicione uma despesa ou escolha outro período.');
+            } catch (error) {
+                showEmpty('Gráfico indisponível', 'Não foi possível exibir o gráfico. Os demais dados continuam disponíveis.');
+            }
         }
 
         async function handleTransactionSubmit(e) {
@@ -2304,8 +2352,7 @@
                     const totalFromStart = (wasGrouped ? group.length : 1) - currentIdx + (installments - 1);
 
                     for (let i = 0; i < installments; i++) {
-                        const cd = new Date(editBaseDate);
-                        cd.setMonth(editBaseDate.getMonth() + i);
+                        const cd = parseTxDate(addMonthsToDate(dateToString(editBaseDate), i));
                         const ds = `${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
                         const instNum = startNum + i;
                         const totalInst = wasGrouped ? (currentIdx + installments) : installments;
@@ -2342,7 +2389,7 @@
                 } else {
                     const baseId = Date.now();
                     for(let i=0;i<installments;i++){
-                        const cd=new Date(baseDate); cd.setMonth(baseDate.getMonth()+i);
+                        const cd=parseTxDate(addMonthsToDate(dateToString(baseDate), i));
                         const ds=`${cd.getFullYear()}-${String(cd.getMonth()+1).padStart(2,'0')}-${String(cd.getDate()).padStart(2,'0')}`;
                         let desc=baseDesc; if(installments>1) desc=`${baseDesc} (${i+1}/${installments})`;
                         const t={
@@ -2368,7 +2415,7 @@
                 updateUI();
                 closeModal();
                 e.target.reset();
-                const di=e.target.querySelector('input[name="date"]'); if(di)di.valueAsDate=new Date();
+                const di=e.target.querySelector('input[name="date"]'); if(di)di.value=dateToString(new Date());
                 
                 showToast('Transação salva com sucesso!');
                 
@@ -3461,7 +3508,7 @@
         function openModal(transaction=null){
             const modal=document.getElementById('transactionModal'), form=document.getElementById('transactionForm');
             form.reset();
-            const di=form.querySelector('input[name="date"]'); if(di)di.valueAsDate=new Date();
+            const di=form.querySelector('input[name="date"]'); if(di)di.value=dateToString(new Date());
             populateCategorySelects();
 
             // Track category changes to update description

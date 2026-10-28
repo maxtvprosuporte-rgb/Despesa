@@ -56,11 +56,11 @@
 
                 <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">E-mail</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5" for="loginEmail">E-mail</label>
                         <input type="email" id="loginEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Senha</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5" for="loginPassword">Senha</label>
                         <input type="password" id="loginPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
                     </div>
                     <button type="submit" id="loginBtn" class="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 rounded-lg transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2">
@@ -76,19 +76,19 @@
 
                 <form id="registerForm" onsubmit="handleRegister(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-zinc-900/8 dark:border-white/5">
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Nome</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5" for="regName">Nome</label>
                         <input type="text" id="regName" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="Seu nome">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">E-mail</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5" for="regEmail">E-mail</label>
                         <input type="email" id="regEmail" required class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="seu@email.com">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Senha (min. 6 caracteres)</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5" for="regPassword">Senha (min. 6 caracteres)</label>
                         <input type="password" id="regPassword" required minlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm" placeholder="••••••">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Código da Casa <span class="text-zinc-600 dark:text-zinc-300">(opcional)</span></label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5" for="regHouseholdCode">Código da Casa <span class="text-zinc-600 dark:text-zinc-300">(opcional)</span></label>
                         <input type="text" id="regHouseholdCode" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Deixe vazio para criar nova" maxlength="6">
                         <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Seu parceiro(a) já criou uma casa? Digite o código aqui para pedir entrada (quem criou a casa precisa aprovar). Se deixar vazio, uma nova casa será criada e você receberá um código para compartilhar.</p>
                     </div>
@@ -137,7 +137,7 @@
 
                 <form id="joinHouseForm" onsubmit="joinExistingHousehold(event)" class="hidden mt-4 space-y-4 pt-4 border-t border-zinc-900/8 dark:border-white/5">
                     <div>
-                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5">Código da Casa</label>
+                        <label class="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5" for="joinHouseCode">Código da Casa</label>
                         <input type="text" id="joinHouseCode" required maxlength="6" class="login-input w-full px-4 py-3 rounded-lg text-sm uppercase tracking-widest text-center font-mono" placeholder="Ex: A7K3NP">
                         <p class="text-[11px] text-zinc-600 dark:text-zinc-300 mt-1.5 leading-relaxed">Peça o código para quem criou a casa (ele aparece no header do app). Essa pessoa precisará aprovar sua entrada.</p>
                     </div>
@@ -219,7 +219,7 @@
             <!-- Só aparece na aba Dashboard; switchView() esconde/mostra isto -->
             <div id="periodFilterBar" class="flex items-center gap-1.5 sm:gap-3 bg-surface border border-zinc-900/8 dark:border-white/5 rounded-xl px-2 sm:px-4 py-2 sm:py-2.5 flex-shrink-0" title="Período">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5 text-zinc-500 dark:text-zinc-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <label class="hidden sm:inline text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">Período:</label>
+                <label class="hidden sm:inline text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium" for="monthFilter">Período:</label>
                 <input type="month" id="monthFilter" class="bg-transparent text-zinc-900 dark:text-zinc-50 text-xs sm:text-sm font-semibold outline-none cursor-pointer hover:text-accent transition-colors min-w-0">
             </div>
         </div>
@@ -513,12 +513,12 @@
                 </div>
                 <form id="goalForm" onsubmit="handleGoalSubmit(event)" style="padding:16px;">
                     <div style="margin-bottom:14px;">
-                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Nome da meta</label>
-                        <input type="text" name="title" required placeholder="Ex: Viagem, reserva de emergência..." class="form-input">
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;" for="fincontrol-field-9">Nome da meta</label>
+                        <input type="text" name="title" required placeholder="Ex: Viagem, reserva de emergência..." class="form-input" id="fincontrol-field-9">
                     </div>
 
                     <div style="margin-bottom:14px;">
-                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Como você quer planejar?</label>
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;" for="goalTotalAmount">Como você quer planejar?</label>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                             <button type="button" id="goalModeTotalBtn" onclick="setSavingsInputMode('total')" class="goal-mode-btn goal-mode-active">Tenho um valor total</button>
                             <button type="button" id="goalModeInstallmentBtn" onclick="setSavingsInputMode('installment')" class="goal-mode-btn">Sei quanto guardo/mês</button>
@@ -530,23 +530,23 @@
                         <input type="number" step="0.01" min="0" name="totalAmount" id="goalTotalAmount" oninput="updateGoalPreview()" placeholder="0,00" class="form-input">
                     </div>
                     <div id="goalInstallmentAmountField" class="hidden" style="margin-bottom:14px;">
-                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Valor que consigo guardar por mês</label>
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;" for="goalInstallmentAmount">Valor que consigo guardar por mês</label>
                         <input type="number" step="0.01" min="0" name="installmentAmount" id="goalInstallmentAmount" oninput="updateGoalPreview()" placeholder="0,00" class="form-input">
                     </div>
 
                     <div style="margin-bottom:14px;">
-                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Valor de entrada (opcional)</label>
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;" for="goalEntradaAmount">Valor de entrada (opcional)</label>
                         <input type="number" step="0.01" min="0" name="entradaAmount" id="goalEntradaAmount" oninput="updateGoalPreview()" placeholder="0,00" class="form-input">
                         <p style="font-size:11px;color:rgb(var(--c-text-faint));margin:5px 0 0;">Já tem algum valor guardado pra essa meta? Ele entra direto como progresso, sem contar como parcela.</p>
                     </div>
 
                     <div style="margin-bottom:14px;">
-                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Mês de início</label>
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;" for="goalStartMonth">Mês de início</label>
                         <input type="month" name="startMonth" id="goalStartMonth" class="form-input">
                     </div>
 
                     <div style="margin-bottom:6px;">
-                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Em quantas parcelas (meses)</label>
+                        <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;" for="goalInstallments">Em quantas parcelas (meses)</label>
                         <input type="number" step="1" min="1" name="installments" id="goalInstallments" oninput="updateGoalPreview()" placeholder="Ex: 12" class="form-input">
                     </div>
 
@@ -578,7 +578,7 @@
                         A diferença fica ajustada automaticamente nas próximas parcelas pendentes.
                     </p>
                     <input type="hidden" id="partialSaveInstId">
-                    <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;">Quanto você conseguiu guardar?</label>
+                    <label style="display:block;font-size:12px;font-weight:500;color:rgb(var(--c-text-faint));margin-bottom:6px;" for="partialSaveAmount">Quanto você conseguiu guardar?</label>
                     <input type="number" step="0.01" min="0.01" id="partialSaveAmount" required placeholder="0,00" class="form-input">
 
                     <div style="display:flex;gap:10px;padding-top:16px;">
@@ -631,16 +631,16 @@
                         <select name="category" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;"></select>
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Data 1ª Parcela</label>
-                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;text-align:center;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;" for="fincontrol-field-16">Data 1ª Parcela</label>
+                        <input type="date" name="date" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;text-align:center;" id="fincontrol-field-16">
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Nº de Parcelas</label>
-                        <input type="number" name="installments" min="1" value="1" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;" for="fincontrol-field-17">Nº de Parcelas</label>
+                        <input type="number" name="installments" min="1" value="1" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" id="fincontrol-field-17">
                     </div>
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Descrição (opcional)</label>
-                        <input type="text" name="description" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Ex: Supermercado, Salário...">
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;" for="fincontrol-field-18">Descrição (opcional)</label>
+                        <input type="text" name="description" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Ex: Supermercado, Salário..." id="fincontrol-field-18">
                     </div>
                     <button type="button" id="saveTransactionBtn" onclick="document.getElementById('transactionForm').requestSubmit()" style="width:100%;background:rgb(var(--c-accent));color:white;font-weight:500;padding:10px;border-radius:8px;font-size:14px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgb(var(--c-accent) / 0.3);transition:all 0.2s;">
                         <span id="saveBtnText">Salvar Transação</span>
@@ -720,16 +720,16 @@
                         </select>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
                             <div>
-                                <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;">Entrada paga (R$)</label>
-                                <input type="number" name="downPayment" step="0.01" min="0" value="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;">
+                                <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;" for="fincontrol-field-19">Entrada paga (R$)</label>
+                                <input type="number" name="downPayment" step="0.01" min="0" value="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" id="fincontrol-field-19">
                             </div>
                             <div>
-                                <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;">Nº parcelas</label>
-                                <input type="number" name="newInstallments" min="1" value="1" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;">
+                                <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;" for="fincontrol-field-20">Nº parcelas</label>
+                                <input type="number" name="newInstallments" min="1" value="1" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" id="fincontrol-field-20">
                             </div>
                         </div>
-                        <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;">Valor de cada parcela (R$)</label>
-                        <input type="number" name="newInstallmentAmount" step="0.01" min="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Deixe vazio para calcular automático">
+                        <label style="display:block;font-size:11px;font-weight:600;color:rgb(var(--c-text-soft));margin-bottom:4px;" for="fincontrol-field-21">Valor de cada parcela (R$)</label>
+                        <input type="number" name="newInstallmentAmount" step="0.01" min="0" style="width:100%;padding:8px 12px;border-radius:8px;font-size:13px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Deixe vazio para calcular automático" id="fincontrol-field-21">
                         <p style="font-size:10px;color:rgb(var(--c-text-faint));margin:6px 0 0;">A entrada só reduz o saldo levado para frente; as novas parcelas começam no mês seguinte.</p>
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -754,7 +754,7 @@
                 </div>
                 <form id="profileForm" onsubmit="handleProfileSubmit(event)" style="padding:16px;">
                     <div style="margin-bottom:12px;">
-                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;">Seu Nome</label>
+                        <label style="display:block;font-size:11px;font-weight:500;color:rgb(var(--c-text-soft));margin-bottom:4px;" for="profileNameInput">Seu Nome</label>
                         <input type="text" id="profileNameInput" required style="width:100%;padding:8px 12px;border-radius:8px;font-size:14px;background:rgb(var(--c-input-bg));border:1px solid rgb(var(--c-overlay) / 0.1);color:rgb(var(--c-text-strong));box-sizing:border-box;" placeholder="Como deseja ser chamado(a)?">
                     </div>
                     <div style="margin-bottom:16px;">
